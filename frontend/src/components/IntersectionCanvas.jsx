@@ -430,55 +430,128 @@ function drawRiskZone(ctx, risk, vehicles, now) {
   const isCritical = ttc < TTC_CRITICAL;
   const dangerColor = isCritical ? '#EF4444' : '#F59E0B';
 
-  const pulse = 0.3 + 0.4 * (1 + Math.sin(now / (isCritical ? 150 : 250)));
+  // Pulse corect: sin în [-1,1] → pulseAbs în [0,1]
+  const rawSin = Math.sin(now / (isCritical ? 150 : 280));
+  const pulseAbs = 0.5 + 0.5 * rawSin; // 0..1
 
-  // ── 1. Cerc pulsant
+  // ── 1. Cerc pulsant în jurul zonei de conflict (centrul intersecției)
+  // Fill foarte transparent
   ctx.save();
-  ctx.globalAlpha = pulse * 0.6;
-  ctx.strokeStyle = dangerColor;
-  ctx.lineWidth = isCritical ? 5 : 3;
-  ctx.setLineDash([12, 6]);
-  ctx.shadowColor = dangerColor;
-  ctx.shadowBlur = isCritical ? 25 : 15;
+  ctx.globalAlpha = 0.08 + pulseAbs * 0.14;
+  ctx.fillStyle = dangerColor;
   ctx.beginPath();
   ctx.arc(CX, CY, RISK_CIRCLE_RADIUS, 0, Math.PI * 2);
-  ctx.stroke();
-
-  // Fill foarte transparent
-  ctx.fillStyle = dangerColor;
-  ctx.globalAlpha = pulse * 0.05;
   ctx.fill();
   ctx.restore();
 
-  // ── 2. Linie de pericol
+  // Contur pulsant cu glow
+  ctx.save();
+  ctx.globalAlpha = 0.45 + pulseAbs * 0.45;
+  ctx.strokeStyle = dangerColor;
+  ctx.lineWidth = isCritical ? 4 : 2.5;
+  ctx.setLineDash([14, 7]);
+  ctx.shadowColor = dangerColor;
+  ctx.shadowBlur = isCritical ? 32 : 18;
+  ctx.beginPath();
+  ctx.arc(CX, CY, RISK_CIRCLE_RADIUS, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+
+  // ── 2. Cercuri individuale (aura) în jurul fiecărui vehicul în risc
   const [id1, id2] = risk.pair || [];
   const v1 = vehicles.find(v => v.id === id1);
   const v2 = vehicles.find(v => v.id === id2);
+  const ttcPerV = risk.ttc_per_vehicle || {};
+  const VEHICLE_AURA_R = 34;
 
+  [v1, v2].forEach((v, idx) => {
+    if (!v) return;
+    const vid = idx === 0 ? id1 : id2;
+    const vttc = ttcPerV[vid] ?? ttc;
+    const vCritical = vttc < TTC_CRITICAL;
+    const vColor = vCritical ? '#EF4444' : '#F59E0B';
+
+    // Fill aura
+    ctx.save();
+    ctx.globalAlpha = (0.12 + 0.22 * pulseAbs) * (vCritical ? 1 : 0.8);
+    ctx.fillStyle = vColor;
+    ctx.beginPath();
+    ctx.arc(v.x, v.y, VEHICLE_AURA_R, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Contur cerc vehicul
+    ctx.save();
+    ctx.globalAlpha = 0.65 + 0.35 * pulseAbs;
+    ctx.strokeStyle = vColor;
+    ctx.lineWidth = vCritical ? 2.5 : 1.8;
+    ctx.setLineDash([6, 4]);
+    ctx.shadowColor = vColor;
+    ctx.shadowBlur = vCritical ? 18 : 10;
+    ctx.beginPath();
+    ctx.arc(v.x, v.y, VEHICLE_AURA_R, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    // Badge TTC individual deasupra vehiculului
+    if (vttc < 999) {
+      const bx = v.x;
+      const by = v.y - VEHICLE_AURA_R - 10;
+      const vtxt = `${vttc.toFixed(1)}s`;
+      ctx.save();
+      ctx.font = "bold 11px 'Inter', sans-serif";
+      const vtw = ctx.measureText(vtxt).width;
+      ctx.beginPath();
+      ctx.roundRect(bx - vtw / 2 - 6, by - 10, vtw + 12, 20, 5);
+      ctx.fillStyle = 'rgba(17,24,39,0.88)';
+      ctx.fill();
+      ctx.strokeStyle = vColor;
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      ctx.fillStyle = vColor;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(vtxt, bx, by);
+      ctx.restore();
+    }
+  });
+
+  // ── 3. Linie de pericol între cele două vehicule
   if (v1 && v2) {
     ctx.save();
-    ctx.globalAlpha = pulse;
+    ctx.globalAlpha = 0.45 + 0.45 * pulseAbs;
     ctx.strokeStyle = dangerColor;
-    ctx.lineWidth = 3;
-    ctx.setLineDash([8, 6]);
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([9, 6]);
+    ctx.shadowColor = dangerColor;
+    ctx.shadowBlur = 12;
     ctx.beginPath();
     ctx.moveTo(v1.x, v1.y);
     ctx.lineTo(v2.x, v2.y);
     ctx.stroke();
+    ctx.restore();
 
-    // Label TTC
+    // ── 4. Badge TTC global la mijlocul liniei
     const mx = (v1.x + v2.x) / 2;
     const my = (v1.y + v2.y) / 2;
-    ctx.font = "bold 14px 'Inter', sans-serif";
+    ctx.save();
+    ctx.font = "bold 13px 'Inter', sans-serif";
     const txt = `⚠ TTC: ${ttc.toFixed(1)}s`;
     const tw = ctx.measureText(txt).width;
 
-    ctx.fillStyle = 'rgba(17, 24, 39, 0.9)';
-    ctx.roundRect(mx - tw / 2 - 8, my - 12, tw + 16, 24, 6);
+    ctx.beginPath();
+    ctx.roundRect(mx - tw / 2 - 10, my - 13, tw + 20, 26, 7);
+    ctx.fillStyle = 'rgba(17,24,39,0.92)';
     ctx.fill();
+    ctx.strokeStyle = dangerColor;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
     ctx.fillStyle = dangerColor;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    ctx.shadowColor = dangerColor;
+    ctx.shadowBlur = 6;
     ctx.fillText(txt, mx, my);
     ctx.restore();
   }
