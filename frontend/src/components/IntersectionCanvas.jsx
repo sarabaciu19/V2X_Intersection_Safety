@@ -236,7 +236,7 @@ function drawSemaphore(ctx, semaphore) {
 }
 
 function drawVehicle(ctx, v, manualMode = false) {
-  const heading = HEADING[v.direction] ?? 0;
+  if (v.state === 'done') return;   // deja iesit din canvas — nu desena
   const color   = PRIORITY_COLOR[v.priority] || STATE_COLOR[v.state] || STATE_COLOR.moving;
   const isClickable = manualMode && v.state === 'waiting';
 
@@ -255,7 +255,7 @@ function drawVehicle(ctx, v, manualMode = false) {
 
   ctx.save();
   ctx.translate(v.x, v.y);
-  ctx.rotate(heading);
+  ctx.rotate(HEADING[v.direction] ?? 0);
 
   // Corp masina (18×30px, centrat)
   const W2 = 14, H2 = 22;

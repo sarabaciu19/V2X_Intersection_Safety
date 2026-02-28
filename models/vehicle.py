@@ -33,6 +33,17 @@ VELOCITY = {
     'E': (-3, 0),    # spre Vest
     'V': (+3, 0),    # spre Est
 }
+# Conversie km/h ↔ speed_multiplier
+# 3 px/tick × 30 FPS = 90 px/s = viteza de baza
+# Definim: speed_multiplier=1.0 ↔ 50 km/h
+# => 1 km/h = speed_multiplier / 50
+KMH_BASE = 50.0   # km/h la speed_multiplier=1.0
+
+def kmh_to_multiplier(kmh: float) -> float:
+    return round(max(0.1, kmh / KMH_BASE), 3)
+
+def multiplier_to_kmh(mult: float) -> int:
+    return max(1, round(mult * KMH_BASE))
 class Vehicle:
     def __init__(self, id: str, direction: str, intent: str = 'straight',
                  priority: str = 'normal', speed_multiplier: float = 1.0):
@@ -83,24 +94,16 @@ class Vehicle:
         if self.direction == 'V':
             return self.x >= self.wait_line
     def is_past_intersection(self) -> bool:
-        """Vehiculul a trecut complet de intersectie (a depasit centrul cu ROAD_WIDTH)."""
-        margin = ROAD_WIDTH
+        """Vehiculul a iesit complet din canvas (dispare din peisaj)."""
+        CANVAS = 800
         if self.direction == 'N':
-            return self.y > INTERSECTION_Y + margin
+            return self.y > CANVAS + 40
         if self.direction == 'S':
-            return self.y < INTERSECTION_Y - margin
+            return self.y < -40
         if self.direction == 'E':
-            return self.x < INTERSECTION_X - margin
+            return self.x < -40
         if self.direction == 'V':
-            return self.x > INTERSECTION_X + margin
-        return False
-
-    def is_off_screen(self) -> bool:
-        """Vehiculul a iesit complet din canvas (800x800)."""
-        margin = 40
-        return (self.x < -margin or self.x > 800 + margin or
-                self.y < -margin or self.y > 800 + margin)
-
+            return self.x > CANVAS + 40
     def update(self):
         """Misca vehiculul un tick in functie de stare si clearance."""
 
@@ -116,31 +119,21 @@ class Vehicle:
             self.vy = 0
             return
 
-        # 3. Miscare normala (moving) — opreste la linia de stop daca n-are clearance
-        if self.state == 'moving':
-            if self.is_at_wait_line() and not self.clearance:
-                self.state = 'waiting'
-                self.vx = 0
-                self.vy = 0
-                return
-            self.vx = self._base_vx
-            self.vy = self._base_vy
-            self.x += self.vx
-            self.y += self.vy
+        # 3. Daca se misca si a ajuns la linia de stop fara clearance → opreste
+        if self.state == 'moving' and self.is_at_wait_line() and not self.clearance:
+            self.state = 'waiting'
+            self.vx = 0
+            self.vy = 0
+            return
 
-        # 4. Traversare (crossing)
-        elif self.state == 'crossing':
+        # 4. Miscare normala (moving sau crossing)
+        if self.state in ('moving', 'crossing'):
             self.vx = self._base_vx
             self.vy = self._base_vy
             self.x += self.vx
             self.y += self.vy
             if self.is_past_intersection():
                 self.state = 'done'
-
-        # 5. Stare 'done' — vehiculul continua sa se miste pana iese din canvas
-        elif self.state == 'done':
-            self.x += self._base_vx
-            self.y += self._base_vy
     def reset(self):
         self.x, self.y, self.vx, self.vy = self._init
         self._base_vx = self.vx
@@ -149,6 +142,9 @@ class Vehicle:
         self.clearance = False
         self.wait_line = self._calc_wait_line()
     def to_dict(self) -> dict:
+        import math as _math
+        speed_px_s = _math.sqrt(self.vx**2 + self.vy**2) * 30  # px/s
+        speed_kmh  = round(speed_px_s / 90 * KMH_BASE)         # km/h
         return {
             'id':         self.id,
             'direction':  self.direction,
@@ -160,6 +156,7 @@ class Vehicle:
             'y':          round(self.y, 1),
             'vx':         round(self.vx, 2),
             'vy':         round(self.vy, 2),
+            'speed_kmh':  speed_kmh,
             'dist_to_intersection': round(self.dist_to_intersection(), 1),
             'timestamp':  time.time(),
         }

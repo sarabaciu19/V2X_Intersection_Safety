@@ -121,7 +121,7 @@ const Dashboard = ({ vehicles = [], semaphore = {}, cooperation = true, onGrantC
                 <Row label="Direcție" value={DIR_LABEL[v.direction] || v.direction} />
                 <Row label="Intenție" value={INTENT_LABEL[v.intent] || v.intent} />
                 <Row label="Distanță" value={`${v.dist_to_intersection ?? '—'}px`} />
-                <Row label="Viteză"   value={`${Math.round(Math.sqrt((v.vx||0)**2+(v.vy||0)**2)*10)} km/h`} />
+                <Row label="Viteză"   value={v.speed_kmh != null ? `${v.speed_kmh} km/h` : `${Math.round(Math.sqrt((v.vx||0)**2+(v.vy||0)**2)*30/90*50)} km/h`} />
               </div>
 
               {/* Buton manual clearance — doar în modul manual și când vehiculul așteaptă */}
