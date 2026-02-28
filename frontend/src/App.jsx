@@ -38,6 +38,7 @@ function App() {
   const liveCooperation = wsState?.cooperation ?? true;
   const livePaused = wsState?.paused ?? false;
   const agentsMemory = wsState?.agents_memory ?? {};
+  const collisions = wsState?.collisions || [];
 
   const handleToggleCooperation = async () => { await toggleCooperation(); };
 
@@ -98,10 +99,34 @@ function App() {
               </div>
             </div>
           )}
+          {/* Collision Banner overlay */}
+          {collisions.length > 0 && (
+            <div style={{
+              position: 'absolute', top: risk?.risk ? 70 : 12, left: '50%', transform: 'translateX(-50%)',
+              zIndex: 101, pointerEvents: 'none',
+              background: 'rgba(153,27,27,0.95)',
+              border: '2px solid #FCA5A5',
+              borderRadius: 10, padding: '8px 22px',
+              display: 'flex', alignItems: 'center', gap: 12,
+              boxShadow: '0 0 24px rgba(239,68,68,0.6)',
+              animation: 'riskPulse 0.5s ease-in-out infinite alternate',
+            }}>
+              <span style={{ fontSize: 22 }}>💥</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ color: '#fff', fontWeight: 900, fontSize: 14, letterSpacing: 1 }}>
+                  COLIZIUNE DETECTATĂ!
+                </span>
+                <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: 12 }}>
+                  {collisions.map(c => c.vehicles.join(' ↔ ')).join(', ')}
+                </span>
+              </div>
+            </div>
+          )}
           <IntersectionCanvas
             vehicles={vehicles}
             semaphore={semaphore}
             risk={risk}
+            collisions={collisions}
             agentsMemory={agentsMemory}
             cooperation={liveCooperation}
             onGrantClearance={!liveCooperation ? grantClearance : null}
@@ -117,6 +142,7 @@ function App() {
             risk={risk}
             cooperation={liveCooperation}
             agentsMemory={agentsMemory}
+            collisions={collisions}
             onGrantClearance={!liveCooperation ? grantClearance : null}
           />
         </aside>

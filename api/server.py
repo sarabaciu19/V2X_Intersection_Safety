@@ -55,11 +55,13 @@ class CustomVehicleRequest(BaseModel):
     intent: Literal['straight', 'left', 'right'] = Field('straight', description="Intentia la intersectie")
     priority: Literal['normal', 'emergency'] = Field('normal', description="Prioritate vehicul")
     speed_multiplier: float = Field(1.0, ge=0.2, le=3.0, description="Multiplicator viteza (0.2–3.0)")
+    v2x_enabled: bool = Field(True, description="True = vehicul cu V2X, False = fără V2X (ignoră semnale)")
 
 class CustomVehicleUpdate(BaseModel):
     intent: Optional[Literal['straight', 'left', 'right']] = None
     priority: Optional[Literal['normal', 'emergency']] = None
     speed_multiplier: Optional[float] = Field(None, ge=0.2, le=3.0)
+    v2x_enabled: Optional[bool] = None
 
 # ── Control simulare ─────────────────────────────────────────────────────
 

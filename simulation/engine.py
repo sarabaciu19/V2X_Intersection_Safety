@@ -9,7 +9,7 @@ from models.agent import Agent
 from services import v2x_bus
 from services.central_system import CentralSystem
 from services.infrastructure import InfrastructureAgent
-from services.collision import time_to_intersection, TTC_BRAKE, TTC_YIELD
+from services.collision import time_to_intersection, TTC_BRAKE, TTC_YIELD, check_physical_collision
 from utils import logger
 
 FPS           = 30
@@ -43,6 +43,10 @@ SCENARIOS = {
         {'id': 'D', 'direction': 'E', 'intent': 'right'},
         {'id': 'E', 'direction': 'N', 'intent': 'right', 'speed_multiplier': 0.7},
         {'id': 'AMB', 'direction': 'S', 'intent': 'straight', 'priority': 'emergency', 'speed_multiplier': 1.4},
+    ],
+    'no_v2x': [
+        {'id': 'A', 'direction': 'N', 'intent': 'straight'},
+        {'id': 'BLIND', 'direction': 'V', 'intent': 'straight', 'v2x_enabled': False, 'speed_multiplier': 1.2},
     ],
 }
 
@@ -88,6 +92,7 @@ class SimulationEngine:
                 intent=d.get('intent', 'straight'),
                 priority=d.get('priority', 'normal'),
                 speed_multiplier=d.get('speed_multiplier', 1.0),
+                v2x_enabled=d.get('v2x_enabled', True),
             )
             for d in defs
         ]
@@ -155,6 +160,7 @@ class SimulationEngine:
             'intent':           vehicle_def.get('intent', 'straight'),
             'priority':         vehicle_def.get('priority', 'normal'),
             'speed_multiplier': float(vehicle_def.get('speed_multiplier', 1.0)),
+            'v2x_enabled':      vehicle_def.get('v2x_enabled', True),
         }
         self._custom_scenario.append(entry)
 
@@ -165,6 +171,7 @@ class SimulationEngine:
                 intent=entry['intent'],
                 priority=entry['priority'],
                 speed_multiplier=entry['speed_multiplier'],
+                v2x_enabled=entry['v2x_enabled'],
             )
             self.vehicles.append(v)
             self.agents.append(Agent(v, cooperation=self.cooperation))
@@ -192,6 +199,8 @@ class SimulationEngine:
                     entry['priority'] = updates['priority']
                 if 'speed_multiplier' in updates:
                     entry['speed_multiplier'] = float(updates['speed_multiplier'])
+                if 'v2x_enabled' in updates:
+                    entry['v2x_enabled'] = bool(updates['v2x_enabled'])
                 return {'ok': True, 'vehicle': entry}
         return {'ok': False, 'reason': f'{vehicle_id} negasit'}
 
@@ -277,6 +286,14 @@ class SimulationEngine:
             for agent in self.agents
         }
 
+        # ── Detectare coliziuni fizice ────────────────────────────────────
+        active_data = {v.id: v.to_dict() for v in self.vehicles if v.state != 'done'}
+        collisions = check_physical_collision(active_data)
+        collision_list = []
+        for (id1, id2) in collisions:
+            collision_list.append({'vehicles': [id1, id2], 'tick': self.tick_count})
+            logger.log_decision(id1, '💥 COLIZIUNE', 0.0, f'coliziune fizică cu {id2}')
+
         self._last_state = {
             'tick':            self.tick_count,
             'timestamp':       time.time(),
@@ -288,7 +305,7 @@ class SimulationEngine:
             'custom_scenario': self._custom_scenario,
             'risk':            {'risk': False, 'ttc': 999, 'action': 'go', 'pair': None, 'ttc_per_vehicle': {}},
             'risk_zones':      risk_zones,
-            'collisions':      [],
+            'collisions':      collision_list,
             'event_log':       list(self._event_log[-20:]),
             'agents_memory':   agents_memory,
         }

@@ -2,22 +2,22 @@ import React, { useState } from 'react';
 
 // Benzile corecte per directie (sens unic)
 const DIRECTION_INFO = {
-  N: { label: 'Nord → Sud',  icon: '↓', color: '#7c5c38', banda: 'banda dreapta (x=415)', desc: 'Intră din sus, merge în jos' },
-  S: { label: 'Sud → Nord',  icon: '↑', color: '#5c8a50', banda: 'banda dreapta (x=385)', desc: 'Intră din jos, merge în sus' },
-  E: { label: 'Est → Vest',  icon: '←', color: '#b45309', banda: 'banda dreapta (y=415)', desc: 'Intră din dreapta, merge spre stânga' },
-  V: { label: 'Vest → Est',  icon: '→', color: '#7c5098', banda: 'banda dreapta (y=385)', desc: 'Intră din stânga, merge spre dreapta' },
+  N: { label: 'Nord → Sud', icon: '↓', color: '#7c5c38', banda: 'banda dreapta (x=415)', desc: 'Intră din sus, merge în jos' },
+  S: { label: 'Sud → Nord', icon: '↑', color: '#5c8a50', banda: 'banda dreapta (x=385)', desc: 'Intră din jos, merge în sus' },
+  E: { label: 'Est → Vest', icon: '←', color: '#b45309', banda: 'banda dreapta (y=415)', desc: 'Intră din dreapta, merge spre stânga' },
+  V: { label: 'Vest → Est', icon: '→', color: '#7c5098', banda: 'banda dreapta (y=385)', desc: 'Intră din stânga, merge spre dreapta' },
 };
 
 const INTENT_INFO = {
   straight: { label: 'Înainte', icon: '↑' },
-  left:     { label: 'Stânga',  icon: '↰' },
-  right:    { label: 'Dreapta', icon: '↱' },
+  left: { label: 'Stânga', icon: '↰' },
+  right: { label: 'Dreapta', icon: '↱' },
 };
 
 // Conversie km/h ↔ speed_multiplier (50 km/h = multiplier 1.0)
 const KMH_BASE = 50;
 const kmhToMult = (kmh) => Math.max(0.1, +(kmh / KMH_BASE).toFixed(3));
-const multToKmh = (m)   => Math.max(1, Math.round(m * KMH_BASE));
+const multToKmh = (m) => Math.max(1, Math.round(m * KMH_BASE));
 
 const DEFAULT_FORM = {
   id: '',
@@ -25,6 +25,7 @@ const DEFAULT_FORM = {
   intent: 'straight',
   priority: 'normal',
   speed_kmh: 50,   // UI în km/h
+  v2x_enabled: true,
 };
 
 const CustomScenarioEditor = ({
@@ -36,11 +37,11 @@ const CustomScenarioEditor = ({
   onRunCustom,
   isCustomActive = false,
 }) => {
-  const [form, setForm]         = useState(DEFAULT_FORM);
-  const [editId, setEditId]     = useState(null);
+  const [form, setForm] = useState(DEFAULT_FORM);
+  const [editId, setEditId] = useState(null);
   const [editData, setEditData] = useState({});
-  const [err, setErr]           = useState('');
-  const [busy, setBusy]         = useState(false);   // previne double-click
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);   // previne double-click
 
   // ── Validare ID ────────────────────────────────────────────────
   const usedDirections = customScenario.map(v => v.direction);
@@ -54,11 +55,12 @@ const CustomScenarioEditor = ({
     setBusy(true);
     try {
       await onAdd({
-        id:               form.id.trim(),
-        direction:        form.direction,
-        intent:           form.intent,
-        priority:         form.priority,
+        id: form.id.trim(),
+        direction: form.direction,
+        intent: form.intent,
+        priority: form.priority,
         speed_multiplier: kmhToMult(form.speed_kmh),
+        v2x_enabled: form.v2x_enabled,
       });
       setForm({ ...DEFAULT_FORM });
       setErr('');
@@ -159,6 +161,9 @@ const CustomScenarioEditor = ({
                 <Tag label="intent" value={INTENT_INFO[v.intent]?.icon + ' ' + v.intent} />
                 <Tag label="viteză" value={`${multToKmh(v.speed_multiplier)} km/h`} />
                 <Tag label="tip" value={v.priority} color={v.priority === 'emergency' ? '#b91c1c' : '#6b4f35'} />
+                {v.v2x_enabled === false && (
+                  <Tag label="V2X" value="⛔ FĂRĂ" color="#dc2626" />
+                )}
               </div>
             )}
 
@@ -203,6 +208,20 @@ const CustomScenarioEditor = ({
                 <button onClick={() => handleSaveEdit(v.id)} style={s.saveBtn}>
                   💾 Salvează modificările
                 </button>
+                {/* V2X toggle in edit mode */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                  <div style={s.fieldLabel}>V2X</div>
+                  <button
+                    onClick={() => setEditData(d => ({ ...d, v2x_enabled: !(editData.v2x_enabled ?? v.v2x_enabled ?? true) }))}
+                    style={{
+                      ...s.intentBtn, flex: 1,
+                      background: (editData.v2x_enabled ?? v.v2x_enabled ?? true) ? '#deeede' : '#fde8e8',
+                      borderColor: (editData.v2x_enabled ?? v.v2x_enabled ?? true) ? '#3a8a3a' : '#dc2626',
+                      color: (editData.v2x_enabled ?? v.v2x_enabled ?? true) ? '#1a5a1a' : '#dc2626',
+                    }}>
+                    {(editData.v2x_enabled ?? v.v2x_enabled ?? true) ? '✅ V2X Activ' : '⛔ FĂRĂ V2X'}
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -217,9 +236,11 @@ const CustomScenarioEditor = ({
           Hartă benzi
         </div>
         {Object.entries(DIRECTION_INFO).map(([dir, info]) => (
-          <div key={dir} style={{ display: 'flex', alignItems: 'center', gap: 6,
+          <div key={dir} style={{
+            display: 'flex', alignItems: 'center', gap: 6,
             background: '#faf7f2', border: `1px solid ${info.color}44`, borderRadius: 4,
-            padding: '4px 6px', marginBottom: 3 }}>
+            padding: '4px 6px', marginBottom: 3
+          }}>
             <span style={{ color: info.color, fontWeight: 800, fontSize: 14, width: 16 }}>{info.icon}</span>
             <div>
               <span style={{ color: info.color, fontWeight: 700, fontSize: 10 }}>{dir} — {info.label}</span>
@@ -233,8 +254,10 @@ const CustomScenarioEditor = ({
       <div style={s.label}>Adaugă vehicul nou</div>
 
       {err && (
-        <div style={{ background: '#fde8e8', border: '1px solid #b91c1c', borderRadius: 6,
-          padding: '6px 10px', color: '#b91c1c', fontSize: 11, marginBottom: 6 }}>
+        <div style={{
+          background: '#fde8e8', border: '1px solid #b91c1c', borderRadius: 6,
+          padding: '6px 10px', color: '#b91c1c', fontSize: 11, marginBottom: 6
+        }}>
           ⚠ {err}
         </div>
       )}
@@ -254,9 +277,9 @@ const CustomScenarioEditor = ({
               <button key={dir} onClick={() => setForm(f => ({ ...f, direction: dir }))}
                 style={{
                   ...s.dirBtn,
-                  background:  form.direction === dir ? info.color + '20' : '#faf7f2',
+                  background: form.direction === dir ? info.color + '20' : '#faf7f2',
                   borderColor: form.direction === dir ? info.color : '#c8b89a',
-                  color:       form.direction === dir ? info.color : '#6b4f35',
+                  color: form.direction === dir ? info.color : '#6b4f35',
                 }}>
                 <span style={{ fontSize: 16 }}>{info.icon}</span>
                 <span style={{ fontSize: 10 }}>{info.label}</span>
@@ -273,9 +296,9 @@ const CustomScenarioEditor = ({
               <button key={k} onClick={() => setForm(f => ({ ...f, intent: k }))}
                 style={{
                   ...s.intentBtn,
-                  background:  form.intent === k ? '#7c5c3820' : '#faf7f2',
+                  background: form.intent === k ? '#7c5c3820' : '#faf7f2',
                   borderColor: form.intent === k ? '#7c5c38' : '#c8b89a',
-                  color:       form.intent === k ? '#5c4028' : '#6b4f35',
+                  color: form.intent === k ? '#5c4028' : '#6b4f35',
                 }}>
                 {i.icon} {i.label}
               </button>
@@ -286,18 +309,41 @@ const CustomScenarioEditor = ({
         <div>
           <div style={s.fieldLabel}>Tip vehicul</div>
           <div style={{ display: 'flex', gap: 4 }}>
-            {[['normal','🚗 Normal','#6b4f35'],['emergency','🚑 Urgență','#b91c1c']].map(([k,l,c]) => (
+            {[['normal', '🚗 Normal', '#6b4f35'], ['emergency', '🚑 Urgență', '#b91c1c']].map(([k, l, c]) => (
               <button key={k} onClick={() => setForm(f => ({ ...f, priority: k }))}
                 style={{
                   ...s.intentBtn, flex: 1,
-                  background:  form.priority === k ? c + '18' : '#faf7f2',
+                  background: form.priority === k ? c + '18' : '#faf7f2',
                   borderColor: form.priority === k ? c : '#c8b89a',
-                  color:       form.priority === k ? c : '#6b4f35',
+                  color: form.priority === k ? c : '#6b4f35',
                 }}>
                 {l}
               </button>
             ))}
           </div>
+        </div>
+
+        {/* V2X Toggle */}
+        <div>
+          <div style={s.fieldLabel}>Comunicare V2X</div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {[['true', '✅ Cu V2X', '#166534'], ['false', '⛔ Fără V2X', '#dc2626']].map(([k, l, c]) => (
+              <button key={k} onClick={() => setForm(f => ({ ...f, v2x_enabled: k === 'true' }))}
+                style={{
+                  ...s.intentBtn, flex: 1,
+                  background: String(form.v2x_enabled) === k ? c + '18' : '#faf7f2',
+                  borderColor: String(form.v2x_enabled) === k ? c : '#c8b89a',
+                  color: String(form.v2x_enabled) === k ? c : '#6b4f35',
+                }}>
+                {l}
+              </button>
+            ))}
+          </div>
+          {!form.v2x_enabled && (
+            <div style={{ color: '#dc2626', fontSize: 9, marginTop: 3, fontStyle: 'italic' }}>
+              ⚠ Vehiculul va ignora semaforul și semnalele V2X — poate cauza accident!
+            </div>
+          )}
         </div>
 
         <div>
@@ -326,11 +372,11 @@ const CustomScenarioEditor = ({
           disabled={customScenario.length === 0 || busy}
           style={{
             ...s.runBtn,
-            opacity:     (customScenario.length === 0 || busy) ? 0.4 : 1,
-            cursor:      (customScenario.length === 0 || busy) ? 'not-allowed' : 'pointer',
-            background:  isCustomActive ? '#d4edda' : '#e6ddd0',
+            opacity: (customScenario.length === 0 || busy) ? 0.4 : 1,
+            cursor: (customScenario.length === 0 || busy) ? 'not-allowed' : 'pointer',
+            background: isCustomActive ? '#d4edda' : '#e6ddd0',
             borderColor: isCustomActive ? '#166534' : '#7c5c38',
-            color:       isCustomActive ? '#166534' : '#5c4028',
+            color: isCustomActive ? '#166534' : '#5c4028',
           }}>
           {busy ? 'Se procesează…' : isCustomActive ? '🔄 Restart custom' : '▶ Rulează scenariul'}
         </button>
@@ -364,7 +410,7 @@ const s = {
     borderBottom: '1px solid #c8b89a', paddingBottom: 8,
   },
   label: { fontSize: 10, color: '#a08060', letterSpacing: 2, textTransform: 'uppercase' },
-  sep:   { height: 1, background: '#c8b89a', margin: '2px 0' },
+  sep: { height: 1, background: '#c8b89a', margin: '2px 0' },
   vehicleCard: {
     background: '#e6ddd0', border: '1px solid', borderRadius: 8, padding: '8px 10px',
   },

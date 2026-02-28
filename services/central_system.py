@@ -53,7 +53,14 @@ class CentralSystem:
         """Acorda clearance respectand regulile de prioritate si semaforul."""
         lights = _get_semaphore_lights()
 
-        waiting  = [v for v in vehicles if v.state == 'waiting']
+        # Vehiculele fara V2X nu pot fi controlate — le excludem din decizii
+        # dar le logam ca pericol
+        for v in vehicles:
+            if not v.v2x_enabled and v.state not in ('done',):
+                # Marcam ca necontrolabil — nu primeste/asteapta clearance
+                pass
+
+        waiting  = [v for v in vehicles if v.state == 'waiting' and v.v2x_enabled]
         crossing = [v for v in vehicles if v.state == 'crossing']
 
         self._crossing = {v.id for v in crossing}

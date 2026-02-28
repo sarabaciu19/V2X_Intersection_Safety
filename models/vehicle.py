@@ -77,16 +77,20 @@ def multiplier_to_kmh(mult: float) -> int:
 
 class Vehicle:
     def __init__(self, id: str, direction: str, intent: str = 'straight',
-                 priority: str = 'normal', speed_multiplier: float = 1.0):
+                 priority: str = 'normal', speed_multiplier: float = 1.0,
+                 v2x_enabled: bool = True):
         """
-        direction: 'N' | 'S' | 'E' | 'V'  (de unde vine)
-        intent:    'straight' | 'left' | 'right'
-        priority:  'normal' | 'emergency'
+        direction:   'N' | 'S' | 'E' | 'V'  (de unde vine)
+        intent:      'straight' | 'left' | 'right'
+        priority:    'normal' | 'emergency'
+        v2x_enabled: True = vehicul cu V2X (respecta semafor/clearance)
+                     False = vehicul FARA V2X (ignora toate semnalele, poate cauza accidente)
         """
         self.id        = id
         self.direction = direction
         self.intent    = intent
         self.priority  = priority
+        self.v2x_enabled = v2x_enabled
         self.state     = 'moving'   # moving | waiting | crossing | done
         sx, sy    = SPAWN[direction]
         vx0, vy0  = VELOCITY[direction]
@@ -229,7 +233,12 @@ class Vehicle:
         Calculeaza factorul de viteza dorit (0..1) tinand cont de:
         - distanta fata de vehiculul din fata (following)
         - distanta fata de linia de stop (daca nu are clearance)
+        Vehiculele FARA V2X ignora linia de stop si clearance!
         """
+        # Vehicul fara V2X — merge mereu cu viteza plina, ignora totul
+        if not self.v2x_enabled:
+            return 1.0
+
         factor = 1.0
 
         # Following: cauta cel mai aproape vehicul din fata
@@ -330,6 +339,7 @@ class Vehicle:
         self.wait_line = self._calc_wait_line()
         self._exit_dir = EXIT_DIRECTION.get((self.direction, self.intent), self.direction)
         self._turned   = False
+        # v2x_enabled ramane nemodificat la reset
 
     def to_dict(self) -> dict:
         import math as _math
@@ -340,6 +350,7 @@ class Vehicle:
             'direction':  self.direction,
             'intent':     self.intent,
             'priority':   self.priority,
+            'v2x_enabled': self.v2x_enabled,
             'state':      self.state,
             'clearance':  self.clearance,
             'x':          round(self.x, 1),

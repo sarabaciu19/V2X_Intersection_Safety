@@ -1,24 +1,24 @@
 import React from 'react';
 
 const STATE_COLOR = {
-  moving:   '#2563eb',
-  waiting:  '#b45309',
+  moving: '#2563eb',
+  waiting: '#b45309',
   crossing: '#166534',
-  done:     '#a08060',
+  done: '#a08060',
 };
 
 const INTENT_LABEL = { straight: '↑ Înainte', left: '← Stânga', right: '→ Dreapta' };
-const DIR_LABEL    = { N: '↓ Nord→Sud', S: '↑ Sud→Nord', E: '← Est→Vest', V: '→ Vest→Est' };
+const DIR_LABEL = { N: '↓ Nord→Sud', S: '↑ Sud→Nord', E: '← Est→Vest', V: '→ Vest→Est' };
 
-const Dashboard = ({ vehicles = [], semaphore = {}, risk = null, cooperation = true, agentsMemory = {}, onGrantClearance = null }) => {
-  const waiting  = vehicles.filter(v => v.state === 'waiting').length;
+const Dashboard = ({ vehicles = [], semaphore = {}, risk = null, cooperation = true, agentsMemory = {}, collisions = [], onGrantClearance = null }) => {
+  const waiting = vehicles.filter(v => v.state === 'waiting').length;
   const crossing = vehicles.filter(v => v.state === 'crossing').length;
 
   const hasRisk = risk?.risk === true;
   const isCritical = hasRisk && (risk.ttc ?? 999) < 1.5;
   const riskColor = isCritical ? '#dc2626' : '#d97706';
-  const riskBg    = isCritical ? 'rgba(220,38,38,0.12)' : 'rgba(217,119,6,0.12)';
-  const riskBorder= isCritical ? '#ef4444' : '#f59e0b';
+  const riskBg = isCritical ? 'rgba(220,38,38,0.12)' : 'rgba(217,119,6,0.12)';
+  const riskBorder = isCritical ? '#ef4444' : '#f59e0b';
 
   return (
     <div style={s.container}>
@@ -135,6 +135,41 @@ const Dashboard = ({ vehicles = [], semaphore = {}, risk = null, cooperation = t
             : '✓ Trafic normal · Niciun risc detectat'}
         </div>
       </section>
+
+      {/* ── Coliziuni Detectate ── */}
+      {collisions.length > 0 && (
+        <section style={{
+          ...s.section,
+          background: 'rgba(153,27,27,0.12)',
+          border: '2px solid #dc2626',
+          borderRadius: 10,
+          padding: '12px 14px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <span style={{ fontSize: 20 }}>💥</span>
+            <span style={{ fontSize: 13, fontWeight: 900, color: '#dc2626', letterSpacing: 0.5 }}>
+              COLIZIUNI DETECTATE ({collisions.length})
+            </span>
+          </div>
+          {collisions.map((col, i) => (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: '#fde8e8', borderRadius: 6, padding: '6px 10px',
+              border: '1px solid #fca5a5',
+            }}>
+              <span style={{ fontSize: 14 }}>💥</span>
+              {col.vehicles.map(vid => (
+                <span key={vid} style={{
+                  padding: '2px 10px', borderRadius: 6,
+                  background: '#dc262622', border: '1px solid #dc2626',
+                  color: '#dc2626', fontWeight: 900, fontSize: 12,
+                }}>{vid}</span>
+              ))}
+              <span style={{ fontSize: 10, color: '#991b1b' }}>tick #{col.tick}</span>
+            </div>
+          ))}
+        </section>
+      )}
       <section style={s.section}>
         <div style={s.label}>
           Semafoare V2I
@@ -153,10 +188,10 @@ const Dashboard = ({ vehicles = [], semaphore = {}, risk = null, cooperation = t
           ].map(({ dir, label }) => {
             const lights = semaphore.lights || {};
             const lc = lights[dir] || 'red';
-            const bg   = lc === 'green' ? '#16a34a' : lc === 'yellow' ? '#ca8a04' : '#dc2626';
+            const bg = lc === 'green' ? '#16a34a' : lc === 'yellow' ? '#ca8a04' : '#dc2626';
             const glow = lc === 'green' ? 'rgba(22,163,74,0.4)'
-                       : lc === 'yellow' ? 'rgba(202,138,4,0.4)' : 'rgba(220,38,38,0.4)';
-            const txt  = lc === 'green' ? 'Verde' : lc === 'yellow' ? 'Galben' : 'Roșu';
+              : lc === 'yellow' ? 'rgba(202,138,4,0.4)' : 'rgba(220,38,38,0.4)';
+            const txt = lc === 'green' ? 'Verde' : lc === 'yellow' ? 'Galben' : 'Roșu';
             return (
               <div key={dir} style={{
                 display: 'flex', alignItems: 'center', gap: 7,
@@ -187,9 +222,9 @@ const Dashboard = ({ vehicles = [], semaphore = {}, risk = null, cooperation = t
         <div style={s.label}>Sumar intersecție</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
           {[
-            { val: vehicles.length, label: 'total',       col: '#6b4f35' },
-            { val: waiting,         label: 'așteaptă',    col: '#b45309' },
-            { val: crossing,        label: 'traversează', col: '#166534' },
+            { val: vehicles.length, label: 'total', col: '#6b4f35' },
+            { val: waiting, label: 'așteaptă', col: '#b45309' },
+            { val: crossing, label: 'traversează', col: '#166534' },
           ].map(({ val, label, col }) => (
             <div key={label} style={{ ...s.stat, borderColor: col }}>
               <span style={{ fontSize: 22, fontWeight: 900, color: col }}>{val}</span>
@@ -221,6 +256,11 @@ const Dashboard = ({ vehicles = [], semaphore = {}, risk = null, cooperation = t
                   <span style={{ ...s.pill, background: col + '22', color: col }}>
                     {v.state}
                   </span>
+                  {v.v2x_enabled === false && (
+                    <span style={{ ...s.pill, background: '#dc262618', color: '#dc2626', border: '1px solid #dc2626' }}>
+                      ⛔ FĂRĂ V2X
+                    </span>
+                  )}
                 </div>
                 <span style={{ ...s.pill, background: '#e6ddd0', color: '#a08060', fontSize: 10 }}>
                   {v.clearance ? '🟢 clearance' : '🔴 stop'}
@@ -232,7 +272,7 @@ const Dashboard = ({ vehicles = [], semaphore = {}, risk = null, cooperation = t
                 <Row label="Direcție" value={DIR_LABEL[v.direction] || v.direction} />
                 <Row label="Intenție" value={INTENT_LABEL[v.intent] || v.intent} />
                 <Row label="Distanță" value={`${v.dist_to_intersection ?? '—'}px`} />
-                <Row label="Viteză"   value={v.speed_kmh != null ? `${v.speed_kmh} km/h` : `${Math.round(Math.sqrt((v.vx||0)**2+(v.vy||0)**2)*30/90*50)} km/h`} />
+                <Row label="Viteză" value={v.speed_kmh != null ? `${v.speed_kmh} km/h` : `${Math.round(Math.sqrt((v.vx || 0) ** 2 + (v.vy || 0) ** 2) * 30 / 90 * 50)} km/h`} />
               </div>
 
               {/* Buton manual clearance — doar în modul manual și când vehiculul așteaptă */}
@@ -266,8 +306,8 @@ const Dashboard = ({ vehicles = [], semaphore = {}, risk = null, cooperation = t
               const last = mem[mem.length - 1];
               const actionColor =
                 last.action === 'YIELD' ? '#b91c1c'
-                : last.action === 'BRAKE' ? '#b45309'
-                : '#166534';
+                  : last.action === 'BRAKE' ? '#b45309'
+                    : '#166534';
               return (
                 <div key={vid} style={{ ...s.card, borderColor: actionColor + '55', padding: '8px 10px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
@@ -279,8 +319,8 @@ const Dashboard = ({ vehicles = [], semaphore = {}, risk = null, cooperation = t
                   <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                     {mem.slice(-10).map((m, i) => {
                       const c = m.action === 'YIELD' ? '#b91c1c'
-                              : m.action === 'BRAKE' ? '#b45309'
-                              : '#166534';
+                        : m.action === 'BRAKE' ? '#b45309'
+                          : '#166534';
                       return (
                         <span key={i} title={`${m.action} TTC=${m.ttc}s ${m.reason}`}
                           style={{
@@ -322,17 +362,17 @@ const s = {
     fontFamily: "'Inter','Segoe UI',sans-serif", overflowY: 'auto',
     border: '1px solid #c8b89a',
   },
-  title:   { fontSize: 18, fontWeight: 900, borderBottom: '1px solid #c8b89a', paddingBottom: 10, color: '#2c1e0f' },
+  title: { fontSize: 18, fontWeight: 900, borderBottom: '1px solid #c8b89a', paddingBottom: 10, color: '#2c1e0f' },
   section: { display: 'flex', flexDirection: 'column', gap: 8 },
-  label:   { fontSize: 10, color: '#a08060', letterSpacing: 2, textTransform: 'uppercase' },
-  sep:     { height: 1, background: '#c8b89a' },
-  badge:   { padding: '8px 12px', borderRadius: 6, border: '1px solid', fontSize: 12, fontWeight: 700 },
+  label: { fontSize: 10, color: '#a08060', letterSpacing: 2, textTransform: 'uppercase' },
+  sep: { height: 1, background: '#c8b89a' },
+  badge: { padding: '8px 12px', borderRadius: 6, border: '1px solid', fontSize: 12, fontWeight: 700 },
   stat: {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
     background: '#e6ddd0', padding: '8px 4px', borderRadius: 6, border: '1px solid',
   },
-  card:  { background: '#e6ddd0', border: '1px solid', borderRadius: 8, padding: '10px 12px' },
-  pill:  { padding: '2px 7px', borderRadius: 10, fontSize: 10, fontWeight: 700 },
+  card: { background: '#e6ddd0', border: '1px solid', borderRadius: 8, padding: '10px 12px' },
+  pill: { padding: '2px 7px', borderRadius: 10, fontSize: 10, fontWeight: 700 },
 };
 
 export default Dashboard;

@@ -104,6 +104,12 @@ class Agent:
     def decide(self) -> str:
         v = self.vehicle
 
+        # Vehicul FARA V2X → merge fara restrictii, ignora TOATE semnalele
+        if not v.v2x_enabled:
+            self._record_if_new("GO", 999, "⛔ vehicul FĂRĂ V2X — nu poate citi semnale, ignoră intersecția")
+            self.last_action = "go"
+            return "go"
+
         # Fara cooperare → merge fara restrictii
         if not self.cooperation:
             self.last_action = "go"
