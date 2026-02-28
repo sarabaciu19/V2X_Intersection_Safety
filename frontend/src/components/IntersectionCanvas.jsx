@@ -83,11 +83,8 @@ const IntersectionCanvas = ({
     // 6. Semafor (indicator luminos)
     drawSemaphore(ctx, semaphore);
 
-    // 7. Vehicule (nu desena vehiculele care au iesit din canvas)
-    vehicles.forEach(v => {
-      if (v.state === 'done' && (v.x < -40 || v.x > 840 || v.y < -40 || v.y > 840)) return;
-      drawVehicle(ctx, v, !!onGrantClearance);
-    });
+    // 7. Vehicule
+    vehicles.forEach(v => drawVehicle(ctx, v, !!onGrantClearance));
 
     // 8. Legenda cooperation
     drawLegend(ctx, cooperation, W);
@@ -236,7 +233,8 @@ function drawSemaphore(ctx, semaphore) {
 }
 
 function drawVehicle(ctx, v, manualMode = false) {
-  if (v.state === 'done') return;   // deja iesit din canvas — nu desena
+  // Nu desena vehiculul daca a iesit complet din canvas (margine 60px)
+  if (v.x < -60 || v.x > 860 || v.y < -60 || v.y > 860) return;
   const color   = PRIORITY_COLOR[v.priority] || STATE_COLOR[v.state] || STATE_COLOR.moving;
   const isClickable = manualMode && v.state === 'waiting';
 

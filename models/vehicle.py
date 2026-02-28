@@ -94,16 +94,21 @@ class Vehicle:
         if self.direction == 'V':
             return self.x >= self.wait_line
     def is_past_intersection(self) -> bool:
+        """Vehiculul a depasit centrul intersectiei."""
+        if self.direction == 'N':   return self.y > INTERSECTION_Y + ROAD_WIDTH // 2 + 5
+        if self.direction == 'S':   return self.y < INTERSECTION_Y - ROAD_WIDTH // 2 - 5
+        if self.direction == 'E':   return self.x < INTERSECTION_X - ROAD_WIDTH // 2 - 5
+        if self.direction == 'V':   return self.x > INTERSECTION_X + ROAD_WIDTH // 2 + 5
+        return False
+
+    def is_off_screen(self) -> bool:
         """Vehiculul a iesit complet din canvas (dispare din peisaj)."""
-        CANVAS = 800
-        if self.direction == 'N':
-            return self.y > CANVAS + 40
-        if self.direction == 'S':
-            return self.y < -40
-        if self.direction == 'E':
-            return self.x < -40
-        if self.direction == 'V':
-            return self.x > CANVAS + 40
+        MARGIN = 50
+        if self.direction == 'N':   return self.y > 800 + MARGIN
+        if self.direction == 'S':   return self.y < -MARGIN
+        if self.direction == 'E':   return self.x < -MARGIN
+        if self.direction == 'V':   return self.x > 800 + MARGIN
+        return False
     def update(self):
         """Misca vehiculul un tick in functie de stare si clearance."""
 
@@ -132,7 +137,11 @@ class Vehicle:
             self.vy = self._base_vy
             self.x += self.vx
             self.y += self.vy
-            if self.is_past_intersection():
+            # Trece la crossing dupa ce depaseste centrul intersectiei
+            if self.state == 'moving' and self.is_past_intersection():
+                self.state = 'crossing'
+            # Done abia cand iese complet din canvas
+            if self.is_off_screen():
                 self.state = 'done'
     def reset(self):
         self.x, self.y, self.vx, self.vy = self._init
