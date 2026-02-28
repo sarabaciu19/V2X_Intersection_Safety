@@ -11,7 +11,7 @@ import { FAKE_STATE } from '../data/fakeData';
  * - Fallback: dacă WebSocket nu e conectat, folosește fakeData automat
  * - Astfel poți lucra independent și integrezi ușor când backend-ul e gata
  */
-export function useSimulation(url = 'ws://localhost:8000/ws') {
+export function useSimulation(url = 'ws://localhost:8000/ws', apiUrl = 'http://localhost:8000') {
   // State pentru date simulare - începe cu FAKE_STATE
   const [state, setState] = useState(FAKE_STATE);
 
@@ -41,8 +41,31 @@ export function useSimulation(url = 'ws://localhost:8000/ws') {
         const data = JSON.parse(event.data);
         console.log('📡 WebSocket message received:', data);
 
-        // Update state cu datele primite
-        setState(data);
+        // Transformează date de la backend în format frontend
+        // Backend trimite: {tick, cooperation, scenario, vehicles, risk, semaphore, collisions, event_log}
+        // Frontend așteaptă: {vehicles, risk, cooperation, events}
+        const transformedState = {
+          vehicles: data.vehicles || [],
+          risk: {
+            danger: data.risk?.risk === true,
+            ttc: data.risk?.ttc || 999,
+            action: data.risk?.action || 'go',
+          },
+          cooperation: data.cooperation || true,
+          events: (data.event_log || []).map(evt => ({
+            timestamp: evt.timestamp || new Date().toISOString(),
+            type: evt.action?.toLowerCase() || 'info',
+            message: `${evt.agent}: ${evt.action}`,
+            details: { ttc: evt.ttc },
+            vehicleId: evt.agent,
+          })),
+          semaphore: data.semaphore || {},
+          collisions: data.collisions || [],
+          tick: data.tick || 0,
+        };
+
+        // Update state cu datele transformate
+        setState(transformedState);
       } catch (err) {
         console.error('❌ Error parsing WebSocket message:', err);
         // Fallback la FAKE_STATE dacă parse failed
@@ -73,7 +96,6 @@ export function useSimulation(url = 'ws://localhost:8000/ws') {
       // Optional: Auto-reconnect după 3 secunde
       reconnectTimeoutRef.current = setTimeout(() => {
         console.log('🔄 Attempting to reconnect...');
-        // Re-run effect by updating a dummy state (nu e necesar aici)
       }, 3000);
     };
 
@@ -91,11 +113,68 @@ export function useSimulation(url = 'ws://localhost:8000/ws') {
     };
   }, [url]);
 
-  // Return state și info conexiune
+  // ===== METODE DE CONTROL =====
+
+  /**
+   * Reset simulation - resets to initial state
+   */
+  const resetSimulation = async (scenario = null) => {
+    try {
+      const response = await fetch(`${apiUrl}/reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scenario }),
+      });
+      const data = await response.json();
+      console.log('✅ Reset successful:', data);
+      return data;
+    } catch (err) {
+      console.error('❌ Reset failed:', err);
+      return null;
+    }
+  };
+
+  /**
+   * Toggle cooperation - ON/OFF for V2X
+   */
+  const toggleCooperation = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/toggle-cooperation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json();
+      console.log('✅ Cooperation toggled:', data);
+      return data;
+    } catch (err) {
+      console.error('❌ Toggle cooperation failed:', err);
+      return null;
+    }
+  };
+
+  /**
+   * Get scenarios list
+   */
+  const getScenarios = async () => {
+    try {
+      const response = await fetch(`${apiUrl}/scenarios`);
+      const data = await response.json();
+      console.log('✅ Scenarios loaded:', data);
+      return data;
+    } catch (err) {
+      console.error('❌ Get scenarios failed:', err);
+      return null;
+    }
+  };
+
+  // Return state și metode
   return {
     state,           // Date simulare (fie de la WebSocket, fie FAKE_STATE)
     isConnected,     // Boolean: WebSocket conectat?
     error,           // Error message (dacă există)
+    resetSimulation, // Metoda: reset
+    toggleCooperation, // Metoda: toggle cooperation
+    getScenarios,    // Metoda: get scenarios
   };
 }
 

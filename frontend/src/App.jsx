@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import IntersectionCanvas from './components/IntersectionCanvas';
 import Dashboard from './components/Dashboard';
 import ControlPanel from './components/ControlPanel';
@@ -10,13 +10,33 @@ import './App.css';
 /**
  * App.jsx - Layout principal al aplicației V2X Intersection Safety
  * Integrează toate componentele și gestionează starea globală
+ * Conectează frontend cu backend prin WebSocket
  */
 function App() {
-  // Opțiune pentru a folosi date mock sau WebSocket
-  const [useMockData, setUseMockData] = useState(true);
-
   // WebSocket hook - cu fallback automat la FAKE_STATE
-  const { state: wsState, isConnected, error } = useSimulation('ws://localhost:8000/ws');
+  const {
+    state: wsState,
+    isConnected,
+    error,
+    resetSimulation,
+    toggleCooperation,
+  } = useSimulation('ws://localhost:8000/ws');
+
+  // Auto-switch: dacă e conectat, folosim WebSocket, altfel mock
+  const [useMockData, setUseMockData] = useState(!isConnected);
+
+  // Update mock/websocket based on connection
+  useEffect(() => {
+    // Dacă e conectat la WebSocket, folosim date live
+    if (isConnected) {
+      setUseMockData(false);
+      console.log('✅ Switched to WebSocket data');
+    } else {
+      // Altfel, fallback la mock data
+      setUseMockData(true);
+      console.log('📊 Switched to Mock data (fallback)');
+    }
+  }, [isConnected]);
 
   // State local pentru date mock
   const [mockState, setMockState] = useState({
@@ -24,37 +44,33 @@ function App() {
     events: mockEvents,
     systemStatus: mockSystemStatus,
     risk: { danger: false, ttc: 5.0 },
-    cooperation: true, // Adaugă cooperation
+    cooperation: true,
   });
 
   const [isRunning, setIsRunning] = useState(false);
   const [currentScenario, setCurrentScenario] = useState('normal');
-  const [cooperation, setCooperation] = useState(true); // State pentru cooperation
+  const [cooperation, setCooperation] = useState(true);
 
   // Selectează sursa de date
-  const vehicles = useMockData ? mockState.vehicles : (wsState.vehicles || []);
-  const events = useMockData ? mockState.events : [];
-  const systemStatus = useMockData ? mockState.systemStatus : {};
-  const risk = useMockData ? mockState.risk : (wsState.risk || { danger: false, ttc: 5.0 });
+  const vehicles = useMockData ? mockState.vehicles : (wsState?.vehicles || []);
+  const events = useMockData ? mockState.events : (wsState?.events || []);
+  const systemStatus = useMockData ? mockState.systemStatus : (wsState?.systemStatus || {});
+  const risk = useMockData ? mockState.risk : (wsState?.risk || { danger: false, ttc: 5.0 });
 
   // Handler pentru start/stop simulare
   const handleStart = () => {
     if (useMockData) {
       setIsRunning(true);
-      // Pornește simularea mock
       const cleanup = createMockSimulation((data) => {
         setMockState({
           ...data,
           cooperation: cooperation,
         });
       }, 500, currentScenario);
-
-      // Salvează cleanup pentru stop
       window.mockSimulationCleanup = cleanup;
     } else {
-      // Pentru WebSocket, doar setează running
-      // Backend-ul va trimite date automat
       setIsRunning(true);
+      // Backend-ul va porni automat
     }
   };
 
@@ -66,7 +82,6 @@ function App() {
         window.mockSimulationCleanup = null;
       }
     } else {
-      // Pentru WebSocket, doar setează stopped
       setIsRunning(false);
     }
   };
@@ -86,16 +101,16 @@ function App() {
         window.mockSimulationCleanup = null;
       }
     } else {
-      // Pentru WebSocket, doar resetează local state
-      // Backend-ul va trimite date fresh
-      setIsRunning(false);
+      // Apelează backend API
+      resetSimulation().then(() => {
+        setIsRunning(false);
+      });
     }
   };
 
   const handleScenarioChange = (scenarioId) => {
     setCurrentScenario(scenarioId);
     if (useMockData) {
-      // Restart simulation cu noul scenariu
       if (isRunning && window.mockSimulationCleanup) {
         window.mockSimulationCleanup();
       }
@@ -109,38 +124,39 @@ function App() {
         window.mockSimulationCleanup = cleanup;
       }
     } else {
-      // Pentru WebSocket, doar schimbă scenariul
-      // Backend-ul va trimite date noi automat
-      console.log('Scenario changed to:', scenarioId);
+      // Apelează backend API pentru schimbare scenariu
+      resetSimulation(scenarioId).then(() => {
+        console.log('✅ Scenario changed to:', scenarioId);
+      });
     }
   };
 
-  // TOGGLE COOPERATION - CEL MAI IMPORTANT!
-  const handleToggleCooperation = () => {
-    const newCooperation = !cooperation;
-    setCooperation(newCooperation);
-
+  // TOGGLE COOPERATION - APELEAZĂ BACKEND
+  const handleToggleCooperation = async () => {
     if (useMockData) {
+      const newCooperation = !cooperation;
+      setCooperation(newCooperation);
       setMockState(prev => ({
         ...prev,
         cooperation: newCooperation,
       }));
     } else {
-      // TODO: Send POST request la backend
-      // fetch('/api/cooperation', { method: 'POST', body: JSON.stringify({ cooperation: newCooperation }) })
+      // Apelează backend API
+      const result = await toggleCooperation();
+      if (result) {
+        console.log('✅ Cooperation toggled:', result);
+      }
     }
   };
 
   // RESET SCENARIO - Resetează pozițiile mașinilor
-  const handleResetScenario = () => {
+  const handleResetScenario = async () => {
     if (useMockData) {
-      // Stop simularea curentă
       if (window.mockSimulationCleanup) {
         window.mockSimulationCleanup();
         window.mockSimulationCleanup = null;
       }
 
-      // Resetează la scenariul curent cu poziții noi
       const { SCENARIOS } = require('./data/fakeData');
       const scenarioData = SCENARIOS[currentScenario] || SCENARIOS.normal;
 
@@ -159,8 +175,12 @@ function App() {
 
       setIsRunning(false);
     } else {
-      // Pentru WebSocket, doar resetează local
-      setIsRunning(false);
+      // Apelează backend API
+      const result = await resetSimulation(currentScenario);
+      if (result) {
+        setIsRunning(false);
+        console.log('✅ Scenario reset:', result);
+      }
     }
   };
 
