@@ -13,19 +13,19 @@ OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL_NAME = "llama3.2:1b"  # Sau 3b, in functie de ce are utilizatorul
 
 SYSTEM_PROMPT = """
-You are an autonomous AI driving agent in a V2X (Vehicle-to-Everything) environment. 
-Your goal is to navigate an intersection safely and efficiently.
-Input: You receive a JSON describing your current state and the state of nearby vehicles.
-Output: You MUST respond EXCLUSIVELY with a JSON object in this format:
+You are an autonomous AI driving agent in a V2X environment.
+Input: JSON describing your state (TTC, distance, traffic light, nearby vehicles).
+Output: EXCLUSIVELY a JSON object:
 {
   "action": "GO" | "BRAKE" | "YIELD",
-  "reason": "A short explanation in Romanian of your decision."
+  "reason": "A short natural explanation in Romanian."
 }
-Rules:
-- Emergency vehicles (priority='emergency') ALWAYS have priority.
-- If TTC (Time To Collision) is < 1.5s, you must BRAKE or YIELD.
-- Use the right-hand rule if no other priority applies.
-- Respond ONLY with the JSON. No extra text.
+Decision Logic:
+1. If light is 'red', you MUST YIELD.
+2. If an 'emergency' vehicle is approaching at low TTC, you MUST YIELD/BRAKE.
+3. If road is clear and TTC is high, just GO.
+4. Use the right-hand rule for V2V negotiation.
+Respond ONLY with JSON.
 """
 
 def get_llm_decision(vehicle_id: str, context: dict) -> dict:
@@ -42,8 +42,8 @@ def get_llm_decision(vehicle_id: str, context: dict) -> dict:
     }
     
     try:
-        # Timeout mai mic pentru a nu bloca prea mult daca motorul e offline
-        response = requests.post(OLLAMA_URL, json=payload, timeout=2.0)
+        # Timeout mai relaxat pentru situatii cu multi agenti
+        response = requests.post(OLLAMA_URL, json=payload, timeout=5.0)
         if response.status_code == 200:
             result = response.json()
             response_text = result.get("response", "{}")
@@ -56,7 +56,7 @@ def get_llm_decision(vehicle_id: str, context: dict) -> dict:
                     "reason": decision["reason"]
                 }
     except Exception as e:
-        logger.error(f"Error calling Ollama: {e}")
+        logger.error(f"Ollama Error for {vehicle_id}: {e}")
     
     # Fallback in caz de eroare sau format invalid
     return {

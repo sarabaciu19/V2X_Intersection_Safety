@@ -116,54 +116,38 @@ class Agent:
         my_ttc = time_to_intersection(my_data)
         dist   = round(my_data.get("dist_to_intersection", 0), 1)
 
-        # 4. Departe de intersectie → GO, inregistreaza in memorie si continua
-        if my_ttc >= TTC_BRAKE:
-            if v.state not in ("normal", "moving", "crossing", "waiting", "done"):
-                v.state = "normal"
-                self.last_action = "go"
-            self._record_decision("GO", round(my_ttc, 2), f"liber — dist={dist}px")
+        # 4. Decizie Generativa (V2I + V2V)
+        # Pentru performanta: Chemam AI-ul doar daca suntem la o distanta relevanta
+        if dist > 350 and my_ttc > 10:
+            self._record_decision("GO", round(my_ttc, 2), f"abordez intersectia (dist={dist}px)")
             return "go"
 
-        # 5. Aproape de intersectie → verifica semaforul V2I din bus
+        # Citeste starea semaforului si a celorlalti vehicule de pe bus
         light = _get_my_light(v.direction)
-        if light == "red":
-            self._apply("yield", my_ttc, reason="SEMAFOR ROSU")
-            return "yield"
-        if light == "yellow":
-            action = "yield" if my_ttc < TTC_YIELD else "brake"
-            self._apply(action, my_ttc, reason="SEMAFOR GALBEN")
-            return action
-
-        # 6. Negociere V2V — citeste ceilalti agenti EXCLUSIV din bus
         others = {
             k: val for k, val in v2x_bus.get_others(v.id).items()
             if val.get("priority") != "infrastructure"
         }
 
-        if not others:
-            self._record_decision("GO", round(my_ttc, 2),
-                                  f"niciun alt vehicul pe bus — dist={dist}px")
-            return "go"
-
-        action, target_id = self._evaluate(my_data, my_ttc, others)
+        # LLM decide tot contextul: distanță, semafor, vecini
+        action, target_id = self._evaluate(my_data, my_ttc, light, others)
         self._apply(action, my_ttc, target_id=target_id)
         return action
 
-    def _evaluate(self, my_data: dict, my_ttc: float, others: dict) -> tuple:
+    def _evaluate(self, my_data: dict, my_ttc: float, light: str, others: dict) -> tuple:
         """Evalueaza actiunea consultand LLM-ul (Ollama)."""
         # Daca avem deja o cerere in curs, nu facem alta
         if hasattr(self, '_future') and not self._future.done():
             return (self.last_action, None)
 
-        # Throttling/Cooldown: Nu apelam AI-ul la fiecare tick
+        # Throttling/Cooldown constant
         if self.ai_cooldown > 0:
             self.ai_cooldown -= 1
             return (self.last_action, None)
 
-        # Reset cooldown (ex: la fiecare 10 tick-uri pentru a nu asfixia Ollama)
-        self.ai_cooldown = 10
+        self.ai_cooldown = 15
 
-        # Pregatim contextul pentru LLM
+        # Pregatim contextul complet pentru LLM
         context = {
             "my_state": {
                 "id": self.vehicle.id,
@@ -171,14 +155,15 @@ class Agent:
                 "dist": round(my_data.get("dist_to_intersection", 0), 1),
                 "priority": my_data.get("priority", "normal"),
                 "direction": my_data.get("direction", "N"),
-                "intent": my_data.get("intent", "straight")
+                "intent": my_data.get("intent", "straight"),
+                "light": light
             },
             "others": []
         }
 
         for oid, odata in others.items():
             ottc = time_to_intersection(odata)
-            if ottc < TTC_BRAKE: # Doar vehiculele relevante
+            if ottc < TTC_BRAKE:
                 context["others"].append({
                     "id": oid,
                     "ttc": round(ottc, 2),
@@ -189,7 +174,7 @@ class Agent:
         # Apelam LLM in fundal (non-blocking)
         self._future = executor.submit(get_llm_decision, self.vehicle.id, context)
 
-        # Determinam target_id imediat (optional pt sageti pe canvas)
+        # Target ID pentru vizualizare
         target_id = None
         if self.last_action != "go" and context["others"]:
             target_id = context["others"][0]["id"]
