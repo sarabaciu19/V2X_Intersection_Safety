@@ -30,7 +30,7 @@ function App() {
   const [currentScenario, setCurrentScenario] = useState('perpendicular');
 
   // Date live din backend
-  const vehicles        = wsState?.vehicles        || [];
+  const vehicles        = wsState?.vehicles       || [];
   const events          = wsState?.event_log       || [];
   const semaphore       = wsState?.semaphore        || {};
   const customScenario  = wsState?.custom_scenario  || [];
