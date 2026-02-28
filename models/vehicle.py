@@ -14,11 +14,19 @@ import math
 # Geometrie intersectie
 INTERSECTION_X = 400
 INTERSECTION_Y = 400
-LANE_WIDTH     = 30   # px per banda
-ROAD_WIDTH     = LANE_WIDTH * 2  # 2 benzi per directie = 60px
-# Offset banda (fata de centrul drumului) — trafic pe STANGA (stil UK)
-LANE_IN_OFFSET  = -15   # vehicule care vin spre intersectie (banda stanga)
-LANE_OUT_OFFSET =  15   # vehicule care pleaca (banda dreapta)
+LANE_WIDTH     = 50   # px per banda
+ROAD_WIDTH     = LANE_WIDTH * 2  # 2 benzi per directie = 100px
+# Offset banda (fata de centrul drumului)
+LANE_IN_OFFSET  = -25   # vehicule care vin spre intersectie (banda stanga)
+LANE_OUT_OFFSET =  25   # vehicule care pleaca (banda dreapta)
+
+# Zona de franare graduala inainte de linia de stop (px)
+BRAKE_ZONE_DIST  = 90    # incepe sa franeze la 90px de linia de stop
+MIN_SPEED_FACTOR = 0.15  # viteza minima la care coboara (15% din baza)
+# Distanta dintre centrul intersectiei si linia alba: ROAD_WIDTH/2 + 8px (canvas)
+# Masina are ~18px jumatate de lungime. Oprim masina cu 20px inainte de linia alba:
+# STOP_MARGIN = 8 (offset linie) + 20 (spatiu) = 28px fata de marginea drumului
+STOP_MARGIN = 28
 # Pozitii de start per directie (pe banda IN)
 SPAWN = {
     'N': (INTERSECTION_X + LANE_IN_OFFSET, 50),    # vine din Nord, merge spre Sud
@@ -98,15 +106,15 @@ class Vehicle:
         self.wait_line = self._calc_wait_line()
 
     def _calc_wait_line(self) -> float:
-        """Distanta de la intersectie unde masina se opreste sa astepte."""
+        """Pozitia unde masina se opreste — cu STOP_MARGIN px inainte de linia alba."""
         if self.direction == 'N':
-            return INTERSECTION_Y - ROAD_WIDTH / 2 - 10
+            return INTERSECTION_Y - ROAD_WIDTH / 2 - STOP_MARGIN
         if self.direction == 'S':
-            return INTERSECTION_Y + ROAD_WIDTH / 2 + 10
+            return INTERSECTION_Y + ROAD_WIDTH / 2 + STOP_MARGIN
         if self.direction == 'E':
-            return INTERSECTION_X + ROAD_WIDTH / 2 + 10
+            return INTERSECTION_X + ROAD_WIDTH / 2 + STOP_MARGIN
         if self.direction == 'V':
-            return INTERSECTION_X - ROAD_WIDTH / 2 - 10
+            return INTERSECTION_X - ROAD_WIDTH / 2 - STOP_MARGIN
 
     def _is_inside_intersection(self) -> bool:
         """Vehiculul se afla in cutia intersectiei."""
@@ -187,42 +195,69 @@ class Vehicle:
             return _m.atan2(vx0, -vy0)
         return math.atan2(self._base_vx, -self._base_vy)
 
+    def _dist_to_wait_line(self) -> float:
+        """Distanta ramasa pana la linia de stop (pozitiva = inca n-a ajuns)."""
+        if self.direction == 'N':   return self.wait_line - self.y
+        if self.direction == 'S':   return self.y - self.wait_line
+        if self.direction == 'E':   return self.x - self.wait_line
+        if self.direction == 'V':   return self.wait_line - self.x
+        return 999.0
+
     def update(self):
         """Misca vehiculul un tick in functie de stare si clearance."""
 
-        # 1. Daca asteapta SI a primit clearance → incepe traversarea
+        # 1. Asteapta SI a primit clearance → incepe traversarea
         if self.state == 'waiting' and self.clearance:
             self.state = 'crossing'
             self.vx = self._base_vx
             self.vy = self._base_vy
 
-        # 2. Daca asteapta fara clearance → sta pe loc
+        # 2. Asteapta fara clearance → sta pe loc
         if self.state == 'waiting':
             self.vx = 0
             self.vy = 0
             return
 
-        # 3. Daca se misca si a ajuns la linia de stop fara clearance → opreste
-        if self.state == 'moving' and self.is_at_wait_line() and not self.clearance:
+        # 3. Se misca si a ajuns exact la linia de stop fara clearance → opreste
+        if self.state in ('moving', 'braking') and self.is_at_wait_line() and not self.clearance:
             self.state = 'waiting'
             self.vx = 0
             self.vy = 0
             return
 
-        # 4. Miscare normala (moving sau crossing)
-        if self.state in ('moving', 'crossing'):
-            # Aplica virajul o singura data cand vehiculul ajunge in centrul intersectiei
+        # 4. Miscare / traversare / franare
+        if self.state in ('moving', 'crossing', 'braking'):
+            if self.state == 'crossing':
+                # Traversare: viteza de baza intotdeauna
+                self.vx = self._base_vx
+                self.vy = self._base_vy
+            elif self.state == 'braking':
+                # Viteza setata de agent (V2I/V2V) — nu se suprascrie
+                pass
+            else:
+                # moving: franare graduala in zona de stop
+                dist_to_stop = self._dist_to_wait_line()
+                if 0 < dist_to_stop <= BRAKE_ZONE_DIST and not self.clearance:
+                    # Factor liniar: 1.0 la intrarea in zona → MIN_SPEED_FACTOR la linie
+                    t = dist_to_stop / BRAKE_ZONE_DIST
+                    factor = MIN_SPEED_FACTOR + (1.0 - MIN_SPEED_FACTOR) * t
+                    self.vx = self._base_vx * factor
+                    self.vy = self._base_vy * factor
+                else:
+                    self.vx = self._base_vx
+                    self.vy = self._base_vy
+
+            # Aplica virajul cand vehiculul ajunge in centrul intersectiei
             if not self._turned and self.intent != 'straight' and self._has_reached_turn_point():
                 self._apply_turn()
 
-            self.vx = self._base_vx
-            self.vy = self._base_vy
             self.x += self.vx
             self.y += self.vy
-            # Trece la crossing dupa ce depaseste centrul intersectiei
-            if self.state == 'moving' and self.is_past_intersection():
+
+            # Trece la crossing dupa centrul intersectiei
+            if self.state in ('moving', 'braking') and self.is_past_intersection():
                 self.state = 'crossing'
-            # Done abia cand iese complet din canvas
+            # Done cand iese din canvas
             if self.is_off_screen():
                 self.state = 'done'
 

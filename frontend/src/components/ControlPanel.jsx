@@ -10,8 +10,8 @@ const SCENARIOS = [
   { id: 'custom', icon: '🛠', name: 'Custom', desc: 'Configurează tu vehiculele' },
 ];
 
-const TABS = ['control', 'scenarii', 'custom', 'legenda'];
-const TAB_LABELS = { control: '⚙ Control', scenarii: '📋 Scenarii', custom: '🛠 Custom', legenda: '🗺 Legendă' };
+const TABS = ['control', 'scenarii', 'custom'];
+const TAB_LABELS = { control: '⚙ Control', scenarii: '📋 Scenarii', custom: '🛠 Custom' };
 
 const ControlPanel = ({
   cooperation = true,
@@ -153,54 +153,6 @@ const ControlPanel = ({
             onRunCustom={handleRunCustom}
             isCustomActive={currentScenario === 'custom'}
           />
-        )}
-
-        {/* ── TAB: LEGENDA ── */}
-        {tab === 'legenda' && (
-          <div style={s.section}>
-            <div style={s.label}>Stări vehicule</div>
-            {[
-              ['#2563eb', 'moving', 'Se apropie de intersecție'],
-              ['#b45309', 'waiting', 'Așteaptă la linia de stop'],
-              ['#166534', 'crossing', 'A primit clearance, traversează'],
-              ['#b91c1c', 'urgență', 'Vehicul de urgență'],
-            ].map(([col, name, desc]) => (
-              <div key={name} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 6 }}>
-                <div style={{ width: 10, height: 10, borderRadius: 2, background: col, marginTop: 2, flexShrink: 0 }} />
-                <div>
-                  <span style={{ color: col, fontSize: 11, fontWeight: 700 }}>{name}</span>
-                  <div style={{ color: '#a08060', fontSize: 10 }}>{desc}</div>
-                </div>
-              </div>
-            ))}
-
-            <div style={s.sep} />
-            <div style={s.label}>Reguli de circulație (România)</div>
-            {[
-              '🚑 Urgența trece întotdeauna primul',
-              '🔄 Vehicul în intersecție continuă traversarea',
-              '➡ Prioritate de dreapta (cedezi celui din dreapta ta)',
-              '↰ Viraj stânga cedează celor care merg înainte/dreapta',
-              '⏱ La egalitate → FIFO (cine a așteptat mai mult trece)',
-            ].map((r, i) => (
-              <div key={i} style={{ color: '#6b4f35', fontSize: 10, marginBottom: 4 }}>{r}</div>
-            ))}
-
-            <div style={s.sep} />
-            <div style={s.label}>Benzi — sens unic</div>
-            {[
-              ['#2563eb', 'N', '↓ Nord → Sud  (banda x=415)'],
-              ['#166534', 'S', '↑ Sud → Nord  (banda x=385)'],
-              ['#b45309', 'E', '← Est → Vest  (banda y=415)'],
-              ['#7c3aed', 'V', '→ Vest → Est  (banda y=385)'],
-            ].map(([col, dir, desc]) => (
-              <div key={dir} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
-                <div style={{ width: 10, height: 10, borderRadius: 2, background: col, flexShrink: 0 }} />
-                <span style={{ color: col, fontSize: 11, fontWeight: 700, minWidth: 14 }}>{dir}</span>
-                <span style={{ color: '#a08060', fontSize: 10 }}>{desc}</span>
-              </div>
-            ))}
-          </div>
         )}
       </div>
     </div>
