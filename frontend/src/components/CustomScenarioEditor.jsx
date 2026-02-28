@@ -211,7 +211,25 @@ const CustomScenarioEditor = ({
 
       <div style={s.sep} />
 
-      {/* Formular adăugare */}
+      {/* Harta benzi */}
+      <div style={{ background: '#e6ddd0', border: '1px solid #c8b89a', borderRadius: 6, padding: 8 }}>
+        <div style={{ color: '#a08060', fontSize: 9, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 6 }}>
+          Hartă benzi
+        </div>
+        {Object.entries(DIRECTION_INFO).map(([dir, info]) => (
+          <div key={dir} style={{ display: 'flex', alignItems: 'center', gap: 6,
+            background: '#faf7f2', border: `1px solid ${info.color}44`, borderRadius: 4,
+            padding: '4px 6px', marginBottom: 3 }}>
+            <span style={{ color: info.color, fontWeight: 800, fontSize: 14, width: 16 }}>{info.icon}</span>
+            <div>
+              <span style={{ color: info.color, fontWeight: 700, fontSize: 10 }}>{dir} — {info.label}</span>
+              <span style={{ color: '#a08060', fontSize: 9, marginLeft: 6 }}>{info.banda}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={s.sep} />
       <div style={s.label}>Adaugă vehicul nou</div>
 
       {err && (
