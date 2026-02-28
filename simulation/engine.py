@@ -116,7 +116,7 @@ class SimulationEngine:
                     v.state = 'crossing'
                     v.vx = v._base_vx
                     v.vy = v._base_vy
-                    self.central._log_change(vehicle_id, 'CLEARANCE', 'acordat manual de utilizator')
+                    self.central._log(vehicle_id, 'CLEARANCE', reason='acordat manual de utilizator')
                     return {'ok': True, 'vehicle_id': vehicle_id, 'state': 'crossing'}
                 return {'ok': False, 'reason': f'{vehicle_id} este {v.state}, nu waiting'}
         return {'ok': False, 'reason': f'{vehicle_id} negasit'}
@@ -210,7 +210,9 @@ class SimulationEngine:
     def _tick(self):
         self.tick_count += 1
 
-        all_done = self.vehicles and all(v.state == 'done' for v in self.vehicles)
+        all_done = self.vehicles and all(
+            v.state == 'done' and v.is_off_screen() for v in self.vehicles
+        )
         if all_done:
             # Custom: nu se reseteaza automat (utilizatorul controleaza)
             if self.scenario_name == 'custom':

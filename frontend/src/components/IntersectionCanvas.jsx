@@ -83,8 +83,11 @@ const IntersectionCanvas = ({
     // 6. Semafor (indicator luminos)
     drawSemaphore(ctx, semaphore);
 
-    // 7. Vehicule
-    vehicles.forEach(v => drawVehicle(ctx, v, !!onGrantClearance));
+    // 7. Vehicule (nu desena vehiculele care au iesit din canvas)
+    vehicles.forEach(v => {
+      if (v.state === 'done' && (v.x < -40 || v.x > 840 || v.y < -40 || v.y > 840)) return;
+      drawVehicle(ctx, v, !!onGrantClearance);
+    });
 
     // 8. Legenda cooperation
     drawLegend(ctx, cooperation, W);

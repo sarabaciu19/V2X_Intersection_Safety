@@ -45,23 +45,14 @@ class CentralSystem:
         Acorda clearance vehiculelor care asteapta, respectand prioritatile.
         Permite cel mult UN vehicul simultan in zona de intersectie (crossing).
         Vehiculul de urgenta primeste intotdeauna prioritate.
+        NB: tranzitia moving→waiting este gestionata exclusiv de vehicle.update().
         """
         if not vehicles:
             return
 
-        # Grupeaza vehiculele pe stari
-        crossing  = [v for v in vehicles if v.state == 'crossing']
-        waiting   = [v for v in vehicles if v.state == 'waiting']
-        moving    = [v for v in vehicles if v.state == 'moving']
-
-        # Vehiculele in miscare care au ajuns la linia de asteptare trec in 'waiting'
-        for v in moving:
-            if v.is_at_wait_line():
-                v.state = 'waiting'
-                v.vx = 0.0
-                v.vy = 0.0
-                waiting.append(v)
-                self._log(v.id, 'WAIT', reason='A ajuns la linia de oprire')
+        # Grupeaza vehiculele pe stari relevante (ignoram 'done')
+        crossing = [v for v in vehicles if v.state == 'crossing']
+        waiting  = [v for v in vehicles if v.state == 'waiting']
 
         # Daca nimeni nu traverseaza acum, acordam clearance urmatorului
         if not crossing and waiting:

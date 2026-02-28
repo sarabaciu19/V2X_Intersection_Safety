@@ -1,20 +1,54 @@
-/* App.css - Stiluri pentru aplicația V2X Intersection Safety */
+/* App.css — V2X Intersection Safety · Warm Cream/Brown Theme */
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+/* ── Google Fonts are loaded in index.html ── */
+
+/* ── Theme palette ────────────────────────────────────────── */
+:root {
+  /* Fonts */
+  --font-ui:   'Inter', 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+
+  /* Warm palette */
+  --bg-base:       #f5f0e8;   /* parchment */
+  --bg-panel:      #ede5d8;   /* warm cream */
+  --bg-card:       #e6ddd0;   /* slightly darker cream */
+  --bg-input:      #faf7f2;   /* near-white input */
+  --bg-hover:      #d9cfc2;   /* warm hover */
+
+  --border:        #c8b89a;   /* light tan */
+  --border-light:  #b5a080;   /* medium tan */
+
+  --accent:        #7c5c38;   /* warm brown */
+  --accent-dim:    #5c4028;   /* darker brown */
+  --accent-light:  #a87c50;   /* lighter brown */
+  --accent-glow:   rgba(124,92,56,0.15);
+
+  --text-primary:   #2c1e0f;  /* dark espresso */
+  --text-secondary: #6b4f35;  /* warm brown text */
+  --text-muted:     #a08060;  /* muted tan */
+
+  --warn:   #b45309;   /* amber brown */
+  --danger: #b91c1c;   /* deep red */
+  --ok:     #166534;   /* forest green */
+
+  /* Header gradient */
+  --header-grad: linear-gradient(135deg, #5c4028 0%, #7c5c38 50%, #9a7050 100%);
 }
 
-html, body {
-  height: 100%;
-  overflow: hidden;
-}
+/* ── Reset ────────────────────────────────────────────────── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; overflow: hidden; }
 
 body {
-  font-family: 'Arial', 'Helvetica', sans-serif;
-  background-color: #111827;
-  color: #ffffff;
+  font-family: var(--font-ui);
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+}
+
+/* JetBrains Mono for any inline monospace */
+[style*="monospace"], code, pre, kbd {
+  font-family: var(--font-mono) !important;
 }
 
 /* ── Root shell ───────────────────────────────────────────── */
@@ -26,22 +60,26 @@ body {
   overflow: hidden;
 }
 
-/* ── Header (fixed height) ───────────────────────────────── */
+/* ── Header ───────────────────────────────────────────────── */
 .app-header {
   flex-shrink: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--header-grad);
   padding: 10px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.25);
   z-index: 10;
   height: 52px;
+  border-bottom: 1px solid var(--accent-dim);
 }
 
 .app-header h1 {
   font-size: 20px;
-  font-weight: bold;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  letter-spacing: -0.3px;
+  color: #fdf6ec;
   margin: 0;
 }
 
@@ -55,28 +93,28 @@ body {
   padding: 4px 10px;
   border-radius: 20px;
   font-size: 11px;
-  font-weight: bold;
+  font-weight: 600;
+  font-family: var(--font-mono);
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
 
-.status-connected    { background: rgba(0,255,0,0.15);  border: 1px solid #22c55e; }
-.status-disconnected { background: rgba(255,0,0,0.15);  border: 1px solid #ef4444; }
-.status-mock         { background: rgba(255,165,0,0.15); border: 1px solid #f59e0b; }
+.status-connected    { background: rgba(22,101,52,0.2);  border: 1px solid #166534; color: #14532d; }
+.status-disconnected { background: rgba(185,28,28,0.2);  border: 1px solid #b91c1c; color: #7f1d1d; }
+.status-mock         { background: rgba(180,83,9,0.2);   border: 1px solid #b45309; color: #92400e; }
 
-/* ── Middle row (panels + canvas) — fills space between header & footer ── */
+/* ── Layout ───────────────────────────────────────────────── */
 .app-layout {
   flex: 1;
-  min-height: 0;           /* critical: lets flex children shrink below content size */
+  min-height: 0;
   display: grid;
   grid-template-columns: 300px 1fr 300px;
-  gap: 10px;
-  padding: 10px;
+  gap: 8px;
+  padding: 8px;
   overflow: hidden;
 }
 
-/* Side panels — transparent wrapper, components style themselves */
 .left-panel,
 .right-panel {
   min-height: 0;
@@ -86,21 +124,19 @@ body {
   border-radius: 8px;
 }
 
-/* Canvas area — centres and scales the canvas to fit available space */
 .main-content {
   min-height: 0;
   min-width: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #1f2937;
+  background: var(--bg-panel);
   border-radius: 8px;
-  border: 1px solid #374151;
+  border: 1px solid var(--border);
   overflow: hidden;
   padding: 4px;
 }
 
-/* Scale canvas down if needed without distorting */
 .main-content canvas {
   max-width: 100%;
   max-height: 100%;
@@ -108,72 +144,51 @@ body {
   border-radius: 6px;
 }
 
-/* ── Footer — Event Log (fixed height) ───────────────────── */
+/* ── Footer ───────────────────────────────────────────────── */
 .app-footer {
   flex-shrink: 0;
   height: 160px;
-  margin: 0 10px 10px 10px;
-  background: #1f2937;
+  margin: 0 8px 8px 8px;
+  background: var(--bg-panel);
   border-radius: 8px;
-  border: 1px solid #374151;
+  border: 1px solid var(--border);
   overflow: hidden;
 }
 
 /* ── Scrollbar ────────────────────────────────────────────── */
-::-webkit-scrollbar       { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: #111827; border-radius: 3px; }
-::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+::-webkit-scrollbar       { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--bg-base); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
 /* ── Responsive ───────────────────────────────────────────── */
-@media (max-width: 1280px) {
-  .app-layout {
-    grid-template-columns: 260px 1fr 260px;
-  }
-}
-
+@media (max-width: 1280px) { .app-layout { grid-template-columns: 260px 1fr 260px; } }
 @media (max-width: 1024px) {
-  .app-layout {
-    grid-template-columns: 220px 1fr 220px;
-    gap: 6px;
-    padding: 6px;
-  }
+  .app-layout { grid-template-columns: 220px 1fr 220px; gap: 6px; padding: 6px; }
   .app-footer { height: 130px; margin: 0 6px 6px 6px; }
 }
-
 @media (max-width: 800px) {
-  .app-layout {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr auto;
-    overflow-y: auto;
-  }
+  .app-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; overflow-y: auto; }
   .main-content { min-height: 320px; }
-  .app-footer   { height: 120px; }
+  .app-footer { height: 120px; }
 }
 
 /* ── Animations ───────────────────────────────────────────── */
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.5; }
-}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
-/* ── Button effects ───────────────────────────────────────── */
+/* ── Buttons ──────────────────────────────────────────────── */
 button { transition: all 0.2s ease; }
-button:hover  { transform: translateY(-1px); box-shadow: 0 3px 6px rgba(0,0,0,0.35); }
-button:active { transform: translateY(0);    box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+button:hover  { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,0.15); }
+button:active { transform: translateY(0);    box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
 
 /* ── Error banner ─────────────────────────────────────────── */
 .error-banner {
-  background: #ef4444;
-  color: #fff;
-  padding: 8px 24px;
-  text-align: center;
-  font-weight: bold;
-  flex-shrink: 0;
+  background: var(--danger); color: #fff;
+  padding: 8px 24px; text-align: center; font-weight: 600; flex-shrink: 0;
 }
 
 /* ── Utility ──────────────────────────────────────────────── */
 .text-center { text-align: center; }
-.mt-2  { margin-top:    0.5rem; }
-.mb-2  { margin-bottom: 0.5rem; }
-.p-2   { padding:       0.5rem; }
+.mt-2 { margin-top: .5rem; }
+.mb-2 { margin-bottom: .5rem; }
+.p-2  { padding: .5rem; }
