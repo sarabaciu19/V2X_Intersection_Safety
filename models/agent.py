@@ -85,47 +85,51 @@ class Agent:
         """
         v = self.vehicle
 
-        # Publica propria stare pe bus inainte de a decide
+        # 1. Publica propria stare pe bus inainte de a decide
         self._publish_self()
 
-        # Fara cooperare → vehiculul continua, ignora V2X si semaforul
+        # 2. Fara cooperare → ignora V2X, inregistreaza si continua
         if not self.cooperation:
             v.state = "normal"
             self.last_action = "go"
+            self._record_decision("GO", 999.0, "V2X dezactivat — cooperation=False")
             return "go"
 
-        # Citeste propria stare din V2X Bus (nu din atribute Python direct)
+        # 3. Citeste propria stare EXCLUSIV din V2X Bus
         my_data = self._read_self()
         if not my_data:
             return "go"
 
-        # Calculeaza TTC din datele de pe bus
         my_ttc = time_to_intersection(my_data)
+        dist   = round(my_data.get("dist_to_intersection", 0), 1)
 
-        # ── Verifica semaforul V2I (citit din V2X Bus) ──────────────────
-        if my_ttc < TTC_BRAKE:
-            light = _get_my_light(v.direction)
-            if light == "red":
-                self._apply("yield", my_ttc, reason="SEMAFOR ROSU")
-                return "yield"
-            if light == "yellow":
-                action = "yield" if my_ttc < TTC_YIELD else "brake"
-                self._apply(action, my_ttc, reason="SEMAFOR GALBEN")
-                return action
-
-        # Departe de intersectie → revin la normal daca eram in frana
+        # 4. Departe de intersectie → GO, inregistreaza in memorie si continua
         if my_ttc >= TTC_BRAKE:
             if v.state not in ("normal", "moving", "crossing", "waiting", "done"):
                 v.state = "normal"
                 self.last_action = "go"
+            self._record_decision("GO", round(my_ttc, 2), f"liber — dist={dist}px")
             return "go"
 
-        # ── Negociere V2V (citit din V2X Bus) ───────────────────────────
-        # Agentul citeste EXCLUSIV mesajele celorlalti de pe bus
-        others = v2x_bus.get_others(v.id)
-        others = {k: val for k, val in others.items() if val.get("priority") != "infrastructure"}
+        # 5. Aproape de intersectie → verifica semaforul V2I din bus
+        light = _get_my_light(v.direction)
+        if light == "red":
+            self._apply("yield", my_ttc, reason="SEMAFOR ROSU")
+            return "yield"
+        if light == "yellow":
+            action = "yield" if my_ttc < TTC_YIELD else "brake"
+            self._apply(action, my_ttc, reason="SEMAFOR GALBEN")
+            return action
+
+        # 6. Negociere V2V — citeste ceilalti agenti EXCLUSIV din bus
+        others = {
+            k: val for k, val in v2x_bus.get_others(v.id).items()
+            if val.get("priority") != "infrastructure"
+        }
 
         if not others:
+            self._record_decision("GO", round(my_ttc, 2),
+                                  f"niciun alt vehicul pe bus — dist={dist}px")
             return "go"
 
         action = self._evaluate(my_data, my_ttc, others)

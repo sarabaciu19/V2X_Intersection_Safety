@@ -16,9 +16,9 @@ INTERSECTION_X = 400
 INTERSECTION_Y = 400
 LANE_WIDTH     = 30   # px per banda
 ROAD_WIDTH     = LANE_WIDTH * 2  # 2 benzi per directie = 60px
-# Offset banda (fata de centrul drumului)
-LANE_IN_OFFSET  =  15   # vehicule care vin spre intersectie (banda dreapta)
-LANE_OUT_OFFSET = -15   # vehicule care pleaca (banda stanga)
+# Offset banda (fata de centrul drumului) — trafic pe STANGA (stil UK)
+LANE_IN_OFFSET  = -15   # vehicule care vin spre intersectie (banda stanga)
+LANE_OUT_OFFSET =  15   # vehicule care pleaca (banda dreapta)
 # Pozitii de start per directie (pe banda IN)
 SPAWN = {
     'N': (INTERSECTION_X + LANE_IN_OFFSET, 50),    # vine din Nord, merge spre Sud
@@ -33,6 +33,24 @@ VELOCITY = {
     'E': (-3, 0),    # spre Vest
     'V': (+3, 0),    # spre Est
 }
+
+# Directia de iesire dupa viraj: (entry_direction, intent) -> exit_direction
+# Trafic pe STANGA (UK): viraj stanga = pe dreapta geometric, viraj dreapta = pe stanga geometric
+EXIT_DIRECTION = {
+    ('N', 'straight'): 'N',   # continua spre Sud
+    ('N', 'left'):     'E',   # vireaza spre Vest (stanga fata de sensul de mers)
+    ('N', 'right'):    'V',   # vireaza spre Est  (dreapta fata de sensul de mers)
+    ('S', 'straight'): 'S',
+    ('S', 'left'):     'V',   # stanga → spre Est
+    ('S', 'right'):    'E',   # dreapta → spre Vest
+    ('E', 'straight'): 'E',   # continua spre Vest
+    ('E', 'left'):     'S',   # stanga → spre Nord
+    ('E', 'right'):    'N',   # dreapta → spre Sud
+    ('V', 'straight'): 'V',   # continua spre Est
+    ('V', 'left'):     'N',   # stanga → spre Sud
+    ('V', 'right'):    'S',   # dreapta → spre Nord
+}
+
 # Conversie km/h ↔ speed_multiplier
 # 3 px/tick × 30 FPS = 90 px/s = viteza de baza
 # Definim: speed_multiplier=1.0 ↔ 50 km/h
@@ -44,6 +62,7 @@ def kmh_to_multiplier(kmh: float) -> float:
 
 def multiplier_to_kmh(mult: float) -> int:
     return max(1, round(mult * KMH_BASE))
+
 class Vehicle:
     def __init__(self, id: str, direction: str, intent: str = 'straight',
                  priority: str = 'normal', speed_multiplier: float = 1.0):
@@ -59,6 +78,7 @@ class Vehicle:
         self.state     = 'moving'   # moving | waiting | crossing | done
         sx, sy    = SPAWN[direction]
         vx0, vy0  = VELOCITY[direction]
+        self.speed_multiplier = speed_multiplier
         self.x    = float(sx)
         self.y    = float(sy)
         self.vx   = vx0 * speed_multiplier
@@ -66,9 +86,13 @@ class Vehicle:
         self._base_vx = self.vx
         self._base_vy = self.vy
         self._init    = (self.x, self.y, self.vx, self.vy)
+        # Directia de iesire (poate diferi de direction dupa viraj)
+        self._exit_dir: str = EXIT_DIRECTION.get((direction, intent), direction)
+        self._turned: bool = False   # a efectuat deja virajul in intersectie?
         # Decizie sistem central
         self.clearance = False   # True = sistemul i-a dat voie sa treaca
         self.wait_line = self._calc_wait_line()
+
     def _calc_wait_line(self) -> float:
         """Distanta de la intersectie unde masina se opreste sa astepte."""
         if self.direction == 'N':
@@ -79,10 +103,26 @@ class Vehicle:
             return INTERSECTION_X + ROAD_WIDTH / 2 + 10
         if self.direction == 'V':
             return INTERSECTION_X - ROAD_WIDTH / 2 - 10
+
+    def _is_inside_intersection(self) -> bool:
+        """Vehiculul se afla in cutia intersectiei."""
+        return (abs(self.x - INTERSECTION_X) <= ROAD_WIDTH / 2 + 5 and
+                abs(self.y - INTERSECTION_Y) <= ROAD_WIDTH / 2 + 5)
+
+    def _apply_turn(self) -> None:
+        """Aplica noul vector viteza corespunzator virajului si actualizeaza exit_dir."""
+        speed = math.sqrt(self._base_vx**2 + self._base_vy**2)
+        vx_new, vy_new = VELOCITY[self._exit_dir]
+        # Normalizeaza la aceeasi magnitudine
+        self._base_vx = vx_new / 3.0 * speed
+        self._base_vy = vy_new / 3.0 * speed
+        self._turned  = True
+
     def dist_to_intersection(self) -> float:
         dx = INTERSECTION_X - self.x
         dy = INTERSECTION_Y - self.y
         return math.sqrt(dx*dx + dy*dy)
+
     def is_at_wait_line(self) -> bool:
         """Vehiculul a ajuns la linia de asteptare."""
         if self.direction == 'N':
@@ -93,22 +133,35 @@ class Vehicle:
             return self.x <= self.wait_line
         if self.direction == 'V':
             return self.x >= self.wait_line
+
     def is_past_intersection(self) -> bool:
-        """Vehiculul a depasit centrul intersectiei."""
-        if self.direction == 'N':   return self.y > INTERSECTION_Y + ROAD_WIDTH // 2 + 5
-        if self.direction == 'S':   return self.y < INTERSECTION_Y - ROAD_WIDTH // 2 - 5
-        if self.direction == 'E':   return self.x < INTERSECTION_X - ROAD_WIDTH // 2 - 5
-        if self.direction == 'V':   return self.x > INTERSECTION_X + ROAD_WIDTH // 2 + 5
+        """Vehiculul a depasit centrul intersectiei (folosind directia de iesire)."""
+        d = self._exit_dir
+        if d == 'N':   return self.y > INTERSECTION_Y + ROAD_WIDTH // 2 + 5
+        if d == 'S':   return self.y < INTERSECTION_Y - ROAD_WIDTH // 2 - 5
+        if d == 'E':   return self.x < INTERSECTION_X - ROAD_WIDTH // 2 - 5
+        if d == 'V':   return self.x > INTERSECTION_X + ROAD_WIDTH // 2 + 5
         return False
 
     def is_off_screen(self) -> bool:
-        """Vehiculul a iesit complet din canvas (dispare din peisaj)."""
+        """Vehiculul a iesit complet din canvas (folosind directia de iesire)."""
         MARGIN = 50
-        if self.direction == 'N':   return self.y > 800 + MARGIN
-        if self.direction == 'S':   return self.y < -MARGIN
-        if self.direction == 'E':   return self.x < -MARGIN
-        if self.direction == 'V':   return self.x > 800 + MARGIN
+        d = self._exit_dir
+        if d == 'N':   return self.y > 800 + MARGIN
+        if d == 'S':   return self.y < -MARGIN
+        if d == 'E':   return self.x < -MARGIN
+        if d == 'V':   return self.x > 800 + MARGIN
         return False
+
+    def heading_angle(self) -> float:
+        """Unghi de orientare (radiani) bazat pe viteza curenta, pentru randare."""
+        if self._base_vx == 0 and self._base_vy == 0:
+            # Stationat — pastreaza directia de intrare
+            import math as _m
+            vx0, vy0 = VELOCITY[self.direction]
+            return _m.atan2(vx0, -vy0)
+        return math.atan2(self._base_vx, -self._base_vy)
+
     def update(self):
         """Misca vehiculul un tick in functie de stare si clearance."""
 
@@ -133,6 +186,10 @@ class Vehicle:
 
         # 4. Miscare normala (moving sau crossing)
         if self.state in ('moving', 'crossing'):
+            # Aplica virajul o singura data cand vehiculul intra in intersectie
+            if not self._turned and self.intent != 'straight' and self._is_inside_intersection():
+                self._apply_turn()
+
             self.vx = self._base_vx
             self.vy = self._base_vy
             self.x += self.vx
@@ -143,6 +200,7 @@ class Vehicle:
             # Done abia cand iese complet din canvas
             if self.is_off_screen():
                 self.state = 'done'
+
     def reset(self):
         self.x, self.y, self.vx, self.vy = self._init
         self._base_vx = self.vx
@@ -150,6 +208,9 @@ class Vehicle:
         self.state     = 'moving'
         self.clearance = False
         self.wait_line = self._calc_wait_line()
+        self._exit_dir = EXIT_DIRECTION.get((self.direction, self.intent), self.direction)
+        self._turned   = False
+
     def to_dict(self) -> dict:
         import math as _math
         speed_px_s = _math.sqrt(self.vx**2 + self.vy**2) * 30  # px/s
@@ -166,9 +227,11 @@ class Vehicle:
             'vx':         round(self.vx, 2),
             'vy':         round(self.vy, 2),
             'speed_kmh':  speed_kmh,
+            'heading':    round(self.heading_angle(), 4),
             'dist_to_intersection': round(self.dist_to_intersection(), 1),
             'timestamp':  time.time(),
         }
+
     def __repr__(self):
         return (f"Vehicle({self.id} dir={self.direction} intent={self.intent} "
                 f"state={self.state} pos=({self.x:.0f},{self.y:.0f}))")

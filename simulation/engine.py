@@ -4,7 +4,7 @@ simulation/engine.py — Loop principal 30 FPS
 import asyncio
 import time
 from typing import List, Dict, Any
-from models.vehicle import Vehicle, SPAWN, VELOCITY
+from models.vehicle import Vehicle
 from models.agent import Agent
 from services import v2x_bus
 from services.central_system import CentralSystem
@@ -193,6 +193,7 @@ class SimulationEngine:
         self._custom_scenario = []
         if self.scenario_name == 'custom':
             self.vehicles = []
+            self.agents   = []
         return {'ok': True, 'custom_scenario': []}
 
     def get_custom_scenario(self) -> list:

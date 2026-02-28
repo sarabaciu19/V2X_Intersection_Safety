@@ -18,7 +18,16 @@ const INTENT_ICON = { straight: '↑', left: '←', right: '→' };
 const PRIORITY_COLOR = { emergency: '#EF4444', normal: null };
 
 // Heading (unghi radiani) per directie, pentru a roti vehiculul corect
+// Folosit ca fallback daca backend-ul nu trimite heading
 const HEADING = { N: Math.PI, S: 0, V: Math.PI / 2, E: -Math.PI / 2 };
+
+// Returneaza unghiul de rotatie al vehiculului:
+// - daca backend trimite 'heading' (dupa viraj), il folosim direct
+// - altfel fallback la HEADING per directie de intrare
+function getVehicleHeading(v) {
+  if (v.heading !== undefined && v.heading !== null) return v.heading;
+  return HEADING[v.direction] ?? 0;
+}
 
 // ── Risk zone constants ──
 const TTC_CRITICAL = 1.5;  // secunde — rosu
@@ -180,14 +189,14 @@ function drawLaneMarkings(ctx, W, H) {
   ctx.font = 'bold 18px Arial';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  // N → spre Sud (x=415)
-  ctx.fillText('↓', CX + LANE_W / 2, 120);
-  // S → spre Nord (x=385)
-  ctx.fillText('↑', CX - LANE_W / 2, 680);
-  // V → spre Est (y=385)
-  ctx.fillText('→', 120, CY - LANE_W / 2);
-  // E → spre Vest (y=415)
-  ctx.fillText('←', 680, CY + LANE_W / 2);
+  // N → spre Sud (x=385, banda stanga)
+  ctx.fillText('↓', CX - LANE_W / 2, 120);
+  // S → spre Nord (x=415, banda stanga)
+  ctx.fillText('↑', CX + LANE_W / 2, 680);
+  // V → spre Est (y=415, banda stanga)
+  ctx.fillText('→', 120, CY + LANE_W / 2);
+  // E → spre Vest (y=385, banda stanga)
+  ctx.fillText('←', 680, CY - LANE_W / 2);
   ctx.restore();
 }
 
@@ -197,28 +206,28 @@ function drawStopLines(ctx) {
   ctx.lineWidth = 3;
   const STOP = 8; // distanta extra inainte de intersectie
 
-  // Nord — linie orizontala la y = CY - HALF - STOP
+  // Nord — banda stanga (x=370..400)
   ctx.beginPath();
-  ctx.moveTo(CX, CY - HALF - STOP);
-  ctx.lineTo(CX + HALF, CY - HALF - STOP);
+  ctx.moveTo(CX - HALF, CY - HALF - STOP);
+  ctx.lineTo(CX, CY - HALF - STOP);
   ctx.stroke();
 
-  // Sud
+  // Sud — banda stanga (x=400..430)
   ctx.beginPath();
-  ctx.moveTo(CX - HALF, CY + HALF + STOP);
-  ctx.lineTo(CX, CY + HALF + STOP);
+  ctx.moveTo(CX, CY + HALF + STOP);
+  ctx.lineTo(CX + HALF, CY + HALF + STOP);
   ctx.stroke();
 
-  // Vest
+  // Vest — banda stanga (y=400..430)
   ctx.beginPath();
-  ctx.moveTo(CX - HALF - STOP, CY - HALF);
-  ctx.lineTo(CX - HALF - STOP, CY);
+  ctx.moveTo(CX - HALF - STOP, CY);
+  ctx.lineTo(CX - HALF - STOP, CY + HALF);
   ctx.stroke();
 
-  // Est
+  // Est — banda stanga (y=370..400)
   ctx.beginPath();
-  ctx.moveTo(CX + HALF + STOP, CY);
-  ctx.lineTo(CX + HALF + STOP, CY + HALF);
+  ctx.moveTo(CX + HALF + STOP, CY - HALF);
+  ctx.lineTo(CX + HALF + STOP, CY);
   ctx.stroke();
 
   ctx.restore();
@@ -237,10 +246,10 @@ function drawIntersectionBox(ctx) {
 // Pozitiile semafoarelor per directie
 // Fiecare semafor e plasat pe banda de intrare, langa linia de stop
 const LIGHT_POS = {
-  N: { x: CX + HALF + 16, y: CY - HALF - 30 },  // banda N (x=430+), deasupra liniei de stop
-  S: { x: CX - HALF - 16, y: CY + HALF + 30 },  // banda S (x=370-), sub linia de stop
-  E: { x: CX + HALF + 30, y: CY + HALF + 16 },  // banda E (y=430+), dreapta liniei de stop
-  V: { x: CX - HALF - 30, y: CY - HALF - 16 },  // banda V (y=370-), stanga liniei de stop
+  N: { x: CX - HALF - 16, y: CY - HALF - 30 },  // banda N stanga (x=370-), deasupra liniei de stop
+  S: { x: CX + HALF + 16, y: CY + HALF + 30 },  // banda S stanga (x=430+), sub linia de stop
+  E: { x: CX + HALF + 30, y: CY - HALF - 16 },  // banda E stanga (y=370-), dreapta liniei de stop
+  V: { x: CX - HALF - 30, y: CY + HALF + 16 },  // banda V stanga (y=430+), stanga liniei de stop
 };
 
 function drawSemaphore(ctx, semaphore) {
@@ -316,7 +325,7 @@ function drawVehicle(ctx, v, manualMode = false) {
 
   ctx.save();
   ctx.translate(v.x, v.y);
-  ctx.rotate(HEADING[v.direction] ?? 0);
+  ctx.rotate(getVehicleHeading(v));
 
   // Corp masina (18×30px, centrat)
   const W2 = 14, H2 = 22;
