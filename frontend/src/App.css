@@ -6,252 +6,174 @@
   box-sizing: border-box;
 }
 
-body {
-  font-family: 'Arial', 'Helvetica', sans-serif;
-  background-color: #1a1a1a;
-  color: #ffffff;
+html, body {
+  height: 100%;
   overflow: hidden;
 }
 
+body {
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  background-color: #111827;
+  color: #ffffff;
+}
+
+/* ── Root shell ───────────────────────────────────────────── */
 .app {
   display: flex;
   flex-direction: column;
   height: 100vh;
   width: 100vw;
+  overflow: hidden;
 }
 
-/* Header */
+/* ── Header (fixed height) ───────────────────────────────── */
 .app-header {
+  flex-shrink: 0;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 15px 30px;
+  padding: 10px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
   z-index: 10;
+  height: 52px;
 }
 
 .app-header h1 {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: bold;
   margin: 0;
 }
 
 .connection-status {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
 }
 
 .status-badge {
-  padding: 5px 12px;
+  padding: 4px 10px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: bold;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
 }
 
-.status-connected {
-  background-color: rgba(0, 255, 0, 0.2);
-  border: 1px solid #00ff00;
-}
+.status-connected    { background: rgba(0,255,0,0.15);  border: 1px solid #22c55e; }
+.status-disconnected { background: rgba(255,0,0,0.15);  border: 1px solid #ef4444; }
+.status-mock         { background: rgba(255,165,0,0.15); border: 1px solid #f59e0b; }
 
-.status-disconnected {
-  background-color: rgba(255, 0, 0, 0.2);
-  border: 1px solid #ff0000;
-}
-
-.status-mock {
-  background-color: rgba(255, 165, 0, 0.2);
-  border: 1px solid #ffa500;
-}
-
-.toggle-mode-btn {
-  padding: 8px 16px;
-  background-color: #444;
-  color: #fff;
-  border: 1px solid #666;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 12px;
-  transition: all 0.3s;
-}
-
-.toggle-mode-btn:hover {
-  background-color: #555;
-  border-color: #888;
-}
-
-/* Error Banner */
-.error-banner {
-  background-color: #ff4444;
-  color: #fff;
-  padding: 10px 30px;
-  text-align: center;
-  font-weight: bold;
-  animation: slideDown 0.3s ease;
-}
-
-@keyframes slideDown {
-  from {
-    transform: translateY(-100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-/* Main Layout */
+/* ── Middle row (panels + canvas) — fills space between header & footer ── */
 .app-layout {
-  display: grid;
-  grid-template-columns: 280px 1fr 320px;
-  gap: 15px;
-  padding: 15px;
   flex: 1;
+  min-height: 0;           /* critical: lets flex children shrink below content size */
+  display: grid;
+  grid-template-columns: 300px 1fr 300px;
+  gap: 10px;
+  padding: 10px;
   overflow: hidden;
 }
 
+/* Side panels — transparent wrapper, components style themselves */
 .left-panel,
 .right-panel {
+  min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  border-radius: 8px;
 }
 
+/* Canvas area — centres and scales the canvas to fit available space */
 .main-content {
+  min-height: 0;
+  min-width: 0;
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #2a2a2a;
+  background: #1f2937;
   border-radius: 8px;
-  padding: 20px;
+  border: 1px solid #374151;
+  overflow: hidden;
+  padding: 4px;
 }
 
-/* Footer - Event Log */
+/* Scale canvas down if needed without distorting */
+.main-content canvas {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+  border-radius: 6px;
+}
+
+/* ── Footer — Event Log (fixed height) ───────────────────── */
 .app-footer {
-  height: 250px;
-  margin: 0 15px 15px 15px;
+  flex-shrink: 0;
+  height: 160px;
+  margin: 0 10px 10px 10px;
+  background: #1f2937;
+  border-radius: 8px;
+  border: 1px solid #374151;
+  overflow: hidden;
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+/* ── Scrollbar ────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #111827; border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #6b7280; }
 
-::-webkit-scrollbar-track {
-  background: #2a2a2a;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #555;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #666;
-}
-
-/* Responsive Design */
-@media (max-width: 1400px) {
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 1280px) {
   .app-layout {
-    grid-template-columns: 250px 1fr 280px;
+    grid-template-columns: 260px 1fr 260px;
   }
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1024px) {
+  .app-layout {
+    grid-template-columns: 220px 1fr 220px;
+    gap: 6px;
+    padding: 6px;
+  }
+  .app-footer { height: 130px; margin: 0 6px 6px 6px; }
+}
+
+@media (max-width: 800px) {
   .app-layout {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto 1fr auto;
+    overflow-y: auto;
   }
-
-  .left-panel {
-    order: 1;
-  }
-
-  .main-content {
-    order: 2;
-    height: 400px;
-  }
-
-  .right-panel {
-    order: 3;
-  }
-
-  .app-footer {
-    height: 200px;
-  }
+  .main-content { min-height: 320px; }
+  .app-footer   { height: 120px; }
 }
 
-@media (max-width: 768px) {
-  .app-header h1 {
-    font-size: 18px;
-  }
-
-  .app-layout {
-    gap: 10px;
-    padding: 10px;
-  }
-
-  .main-content {
-    padding: 10px;
-  }
-
-  .app-footer {
-    height: 150px;
-    margin: 0 10px 10px 10px;
-  }
-}
-
-/* Animations */
+/* ── Animations ───────────────────────────────────────────── */
 @keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.5; }
 }
 
-/* Button hover effects */
-button {
-  transition: all 0.3s ease;
-}
+/* ── Button effects ───────────────────────────────────────── */
+button { transition: all 0.2s ease; }
+button:hover  { transform: translateY(-1px); box-shadow: 0 3px 6px rgba(0,0,0,0.35); }
+button:active { transform: translateY(0);    box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
 
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-button:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-/* Canvas container */
-.intersection-canvas-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-/* Utility classes */
-.text-center {
+/* ── Error banner ─────────────────────────────────────────── */
+.error-banner {
+  background: #ef4444;
+  color: #fff;
+  padding: 8px 24px;
   text-align: center;
+  font-weight: bold;
+  flex-shrink: 0;
 }
 
-.mt-2 {
-  margin-top: 0.5rem;
-}
-
-.mb-2 {
-  margin-bottom: 0.5rem;
-}
-
-.p-2 {
-  padding: 0.5rem;
-}
-
+/* ── Utility ──────────────────────────────────────────────── */
+.text-center { text-align: center; }
+.mt-2  { margin-top:    0.5rem; }
+.mb-2  { margin-bottom: 0.5rem; }
+.p-2   { padding:       0.5rem; }

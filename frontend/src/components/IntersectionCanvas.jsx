@@ -92,13 +92,15 @@ const IntersectionCanvas = ({
   }, [vehicles, semaphore, cooperation]);
 
   return (
-    <div style={{ position: 'relative', display: 'inline-block' }}>
+    <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
       <canvas
         ref={canvasRef}
         width={dimensions.width}
         height={dimensions.height}
         onClick={handleClick}
         style={{
+          maxWidth: '100%',
+          maxHeight: '100%',
           border: '2px solid #374151', borderRadius: 8, display: 'block',
           cursor: onGrantClearance ? 'pointer' : 'default',
         }}
