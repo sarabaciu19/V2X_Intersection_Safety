@@ -30,5 +30,53 @@
     "ttc": 0.0,
     "reason": "No cooperation \u2014 physical collision",
     "timestamp": 1772274344.352656
+  },
+  {
+    "time": "12:32:44",
+    "agent": "A+B",
+    "action": "COLLISION",
+    "ttc": 0.0,
+    "reason": "No cooperation \u2014 physical collision",
+    "timestamp": 1772274764.3521824
+  },
+  {
+    "time": "12:32:44",
+    "agent": "B",
+    "action": "BRAKE",
+    "ttc": 2.5,
+    "reason": "TTC=2.50s < 3.0s",
+    "timestamp": 1772274764.3858893
+  },
+  {
+    "time": "12:32:44",
+    "agent": "B",
+    "action": "YIELD",
+    "ttc": 1.28,
+    "reason": "TTC=1.28s < 1.5s",
+    "timestamp": 1772274764.4533248
+  },
+  {
+    "time": "12:34:21",
+    "agent": "A+B",
+    "action": "COLLISION",
+    "ttc": 0.0,
+    "reason": "No cooperation \u2014 physical collision",
+    "timestamp": 1772274861.570588
+  },
+  {
+    "time": "12:34:21",
+    "agent": "B",
+    "action": "BRAKE",
+    "ttc": 2.5,
+    "reason": "TTC=2.50s < 3.0s",
+    "timestamp": 1772274861.604454
+  },
+  {
+    "time": "12:34:21",
+    "agent": "B",
+    "action": "YIELD",
+    "ttc": 1.28,
+    "reason": "TTC=1.28s < 1.5s",
+    "timestamp": 1772274861.671287
   }
 ]
