@@ -63,13 +63,14 @@ class Agent:
             data = v2x_bus.get(self.vehicle.id) or {}
         return data
 
-    def _record_decision(self, action: str, ttc: float, reason: str) -> None:
+    def _record_decision(self, action: str, ttc: float, reason: str, target_id: str = None) -> None:
         """Adauga decizia curenta in memoria agentului."""
         entry = {
             "tick_time": time.strftime("%H:%M:%S"),
             "action":    action,
             "ttc":       round(ttc, 3),
             "reason":    reason,
+            "target_id": target_id,
             "timestamp": time.time(),
         }
         self.memory.append(entry)
@@ -128,11 +129,11 @@ class Agent:
         if not others:
             return "go"
 
-        action = self._evaluate(my_data, my_ttc, others)
-        self._apply(action, my_ttc)
+        action, target_id = self._evaluate(my_data, my_ttc, others)
+        self._apply(action, my_ttc, target_id=target_id)
         return action
 
-    def _evaluate(self, my_data: dict, my_ttc: float, others: dict) -> str:
+    def _evaluate(self, my_data: dict, my_ttc: float, others: dict) -> tuple:
         """Evalueaza actiunea pe baza datelor citite din V2X Bus."""
         my_priority = my_data.get("priority", "normal")
         for other_id, other_data in others.items():
@@ -142,26 +143,26 @@ class Agent:
 
             # Urgenta → cedez intotdeauna
             if other_data.get("priority") == "emergency" and my_priority != "emergency":
-                return "yield" if my_ttc < TTC_YIELD else "brake"
+                return ("yield" if my_ttc < TTC_YIELD else "brake", other_id)
 
             # Eu sunt urgenta → trec
             if my_priority == "emergency":
-                return "go"
+                return ("go", None)
 
             # Regula dreapta
             if is_right_of(my_data, other_data):
-                return "yield" if my_ttc < TTC_YIELD else "brake"
+                return ("yield" if my_ttc < TTC_YIELD else "brake", other_id)
 
             if is_right_of(other_data, my_data):
-                return "go"
+                return ("go", None)
 
             # Frontal: cel cu TTC mai mare frana primul
             if my_ttc >= other_ttc:
-                return "yield" if my_ttc < TTC_YIELD else "brake"
+                return ("yield" if my_ttc < TTC_YIELD else "brake", other_id)
 
-        return "go"
+        return ("go", None)
 
-    def _apply(self, action: str, ttc: float, reason: str = None) -> None:
+    def _apply(self, action: str, ttc: float, reason: str = None, target_id: str = None) -> None:
         v = self.vehicle
         prev = self.last_action
         if action == "brake":
@@ -179,7 +180,7 @@ class Agent:
         default_reason = reason or f"TTC={ttc:.2f}s < {'1.5' if action == 'yield' else '3.0'}s"
 
         # Salveaza decizia in memoria agentului (mereu, nu doar la schimbare)
-        self._record_decision(action.upper(), ttc, default_reason)
+        self._record_decision(action.upper(), ttc, default_reason, target_id=target_id)
 
         # Log doar la schimbare de actiune
         if action != prev and action != "go":

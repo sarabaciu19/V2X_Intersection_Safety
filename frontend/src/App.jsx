@@ -37,6 +37,7 @@ function App() {
   const customScenario = wsState?.custom_scenario || [];
   const liveCooperation = wsState?.cooperation ?? true;
   const livePaused = wsState?.paused ?? false;
+  const agentsMemory = wsState?.agents_memory ?? {};
 
   const handleToggleCooperation = async () => { await toggleCooperation(); };
 
@@ -88,6 +89,7 @@ function App() {
             vehicles={vehicles}
             semaphore={semaphore}
             risk={risk}
+            agentsMemory={agentsMemory}
             cooperation={liveCooperation}
             onGrantClearance={!liveCooperation ? grantClearance : null}
             dimensions={{ width: 800, height: 800 }}
