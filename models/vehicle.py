@@ -35,20 +35,24 @@ VELOCITY = {
 }
 
 # Directia de iesire dupa viraj: (entry_direction, intent) -> exit_direction
-# Trafic pe STANGA (UK): viraj stanga = pe dreapta geometric, viraj dreapta = pe stanga geometric
+# Trafic pe STANGA (UK):
+#   N (merge spre Sud↓): stanga=spre Est(V, x↑)  dreapta=spre Vest(E, x↓)
+#   S (merge spre Nord↑): stanga=spre Vest(E, x↓) dreapta=spre Est(V, x↑)
+#   E (merge spre Vest←): stanga=spre Sud(N, y↑)  dreapta=spre Nord(S, y↓)
+#   V (merge spre Est→): stanga=spre Nord(S, y↓)  dreapta=spre Sud(N, y↑)
 EXIT_DIRECTION = {
-    ('N', 'straight'): 'N',   # continua spre Sud
-    ('N', 'left'):     'E',   # vireaza spre Vest (stanga fata de sensul de mers)
-    ('N', 'right'):    'V',   # vireaza spre Est  (dreapta fata de sensul de mers)
+    ('N', 'straight'): 'N',
+    ('N', 'left'):     'V',   # stanga din N → spre Est (V, vx>0)
+    ('N', 'right'):    'E',   # dreapta din N → spre Vest (E, vx<0)
     ('S', 'straight'): 'S',
-    ('S', 'left'):     'V',   # stanga → spre Est
-    ('S', 'right'):    'E',   # dreapta → spre Vest
-    ('E', 'straight'): 'E',   # continua spre Vest
-    ('E', 'left'):     'S',   # stanga → spre Nord
-    ('E', 'right'):    'N',   # dreapta → spre Sud
-    ('V', 'straight'): 'V',   # continua spre Est
-    ('V', 'left'):     'N',   # stanga → spre Sud
-    ('V', 'right'):    'S',   # dreapta → spre Nord
+    ('S', 'left'):     'E',   # stanga din S → spre Vest (E, vx<0)
+    ('S', 'right'):    'V',   # dreapta din S → spre Est (V, vx>0)
+    ('E', 'straight'): 'E',
+    ('E', 'left'):     'N',   # stanga din E → spre Sud (N, vy>0)
+    ('E', 'right'):    'S',   # dreapta din E → spre Nord (S, vy<0)
+    ('V', 'straight'): 'V',
+    ('V', 'left'):     'S',   # stanga din V → spre Nord (S, vy<0)
+    ('V', 'right'):    'N',   # dreapta din V → spre Sud (N, vy>0)
 }
 
 # Conversie km/h ↔ speed_multiplier
@@ -109,14 +113,35 @@ class Vehicle:
         return (abs(self.x - INTERSECTION_X) <= ROAD_WIDTH / 2 + 5 and
                 abs(self.y - INTERSECTION_Y) <= ROAD_WIDTH / 2 + 5)
 
+    def _has_reached_turn_point(self) -> bool:
+        """
+        Vehiculul a ajuns in centrul intersectiei pe axa sa de intrare —
+        momentul optim pentru a aplica virajul.
+        """
+        if self.direction == 'N':   # merge spre Sud (y creste)
+            return self.y >= INTERSECTION_Y - 5
+        if self.direction == 'S':   # merge spre Nord (y scade)
+            return self.y <= INTERSECTION_Y + 5
+        if self.direction == 'E':   # merge spre Vest (x scade)
+            return self.x <= INTERSECTION_X + 5
+        if self.direction == 'V':   # merge spre Est (x creste)
+            return self.x >= INTERSECTION_X - 5
+        return False
+
     def _apply_turn(self) -> None:
-        """Aplica noul vector viteza corespunzator virajului si actualizeaza exit_dir."""
+        """Aplica noul vector viteza si snapuieste vehiculul pe banda corecta de iesire."""
         speed = math.sqrt(self._base_vx**2 + self._base_vy**2)
         vx_new, vy_new = VELOCITY[self._exit_dir]
-        # Normalizeaza la aceeasi magnitudine
         self._base_vx = vx_new / 3.0 * speed
         self._base_vy = vy_new / 3.0 * speed
-        self._turned  = True
+        # Snap pe axa perpendiculara sensului de iesire, pe banda IN a directiei de iesire
+        # Spawn[exit_dir] ne da pozitia corecta pe banda
+        sx, sy = SPAWN[self._exit_dir]
+        if self._exit_dir in ('V', 'E'):   # iesire orizontala → fixam y
+            self.y = float(sy)
+        else:                               # iesire verticala → fixam x
+            self.x = float(sx)
+        self._turned = True
 
     def dist_to_intersection(self) -> float:
         dx = INTERSECTION_X - self.x
@@ -186,8 +211,8 @@ class Vehicle:
 
         # 4. Miscare normala (moving sau crossing)
         if self.state in ('moving', 'crossing'):
-            # Aplica virajul o singura data cand vehiculul intra in intersectie
-            if not self._turned and self.intent != 'straight' and self._is_inside_intersection():
+            # Aplica virajul o singura data cand vehiculul ajunge in centrul intersectiei
+            if not self._turned and self.intent != 'straight' and self._has_reached_turn_point():
                 self._apply_turn()
 
             self.vx = self._base_vx
