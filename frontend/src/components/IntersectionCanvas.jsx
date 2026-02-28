@@ -8,13 +8,15 @@ const HALF = ROAD_W / 2; // 30px
 
 // Culori vehicule
 const STATE_COLOR = {
-  moving: '#3B82F6',   // albastru
-  waiting: '#F59E0B',   // portocaliu — asteapta la linia de stop
-  crossing: '#22C55E',   // verde — a primit clearance, traverseaza
-  done: '#6B7280',   // gri
+  moving: '#60A5FA',   // blue-400
+  waiting: '#FBBF24',  // amber-400
+  crossing: '#10B981', // emerald-500
+  done: '#9CA3AF',     // gray-400
+  braking: '#F87171',  // red-400 (glow)
+  yielding: '#F87171', // red-400 (glow)
 };
 
-const INTENT_ICON = { straight: '↑', left: '←', right: '→' };
+const INTENT_ICON = { straight: '↑', left: '↰', right: '↱' };
 const PRIORITY_COLOR = { emergency: '#EF4444', normal: null };
 
 // Heading (unghi radiani) per directie, pentru a roti vehiculul corect
@@ -38,6 +40,7 @@ const IntersectionCanvas = ({
   vehicles = [],
   semaphore = {},
   risk = { risk: false, pair: null, ttc: 999, ttc_per_vehicle: {} },
+  agentsMemory = {},
   cooperation = true,
   onGrantClearance = null,
   dimensions = { width: 800, height: 800 },
@@ -96,33 +99,31 @@ const IntersectionCanvas = ({
     drawSemaphore(ctx, semaphore);
 
     // 7. Vehicule
-    vehicles.forEach(v => drawVehicle(ctx, v, !!onGrantClearance));
+    vehicles.forEach(v => drawVehicle(ctx, v, !!onGrantClearance, now));
 
-    // 8. Risk zone (cerc + linie + label)
+    // 8. Decision Arrows (A franeaza din cauza lui B)
+    drawDecisionArrows(ctx, vehicles, agentsMemory, now);
+
+    // 9. Risk zone (cerc + linie + label)
     if (risk && risk.risk && risk.pair) {
       drawRiskZone(ctx, risk, vehicles, now);
     }
 
-    // 9. Legenda cooperation
+    // 10. Legenda cooperation
     drawLegend(ctx, cooperation, risk, W);
-  }, [vehicles, semaphore, cooperation, risk, onGrantClearance]);
+  }, [vehicles, semaphore, cooperation, risk, agentsMemory, onGrantClearance]);
 
   useEffect(() => {
-    // If risk is active, animate at 60fps for smooth pulsing
-    if (risk && risk.risk) {
-      const animate = () => {
-        draw(Date.now());
-        animFrameRef.current = requestAnimationFrame(animate);
-      };
-      animate();
-      return () => {
-        if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-      };
-    } else {
-      // No risk — draw once
+    // Animate at 60fps for smooth pulsing and arrows
+    const animate = () => {
       draw(Date.now());
-    }
-  }, [draw, risk]);
+      animFrameRef.current = requestAnimationFrame(animate);
+    };
+    animate();
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
+  }, [draw]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -141,11 +142,14 @@ const IntersectionCanvas = ({
       {onGrantClearance && (
         <div style={{
           position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)',
-          background: '#F59E0B22', border: '1px solid #F59E0B', borderRadius: 6,
-          padding: '4px 14px', color: '#FBBF24', fontSize: 12, fontWeight: 700,
-          fontFamily: 'monospace', pointerEvents: 'none',
+          background: 'rgba(245, 158, 11, 0.15)', border: '1px solid #F59E0B', borderRadius: 8,
+          padding: '6px 16px', color: '#FBBF24', fontSize: 13, fontWeight: 700,
+          fontFamily: "'Inter', sans-serif", pointerEvents: 'none',
+          backdropFilter: 'blur(4px)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+          display: 'flex', alignItems: 'center', gap: 8
         }}>
-          ✋ Click pe un vehicul portocaliu pentru a-i da clearance
+          <span style={{ fontSize: 18 }}>✋</span> Click pe un vehicul portocaliu pentru a-i da clearance
         </div>
       )}
     </div>
@@ -157,10 +161,20 @@ const IntersectionCanvas = ({
 // ─────────────────────────────────────────────────────────────────────
 
 function drawRoads(ctx, W, H) {
-  ctx.fillStyle = '#374151';
-  // Drum vertical
+  // Drum vertical cu gradient
+  const vGrad = ctx.createLinearGradient(CX - HALF, 0, CX + HALF, 0);
+  vGrad.addColorStop(0, '#1F2937');
+  vGrad.addColorStop(0.5, '#374151');
+  vGrad.addColorStop(1, '#1F2937');
+  ctx.fillStyle = vGrad;
   ctx.fillRect(CX - HALF, 0, ROAD_W, H);
-  // Drum orizontal
+
+  // Drum orizontal cu gradient
+  const hGrad = ctx.createLinearGradient(0, CY - HALF, 0, CY + HALF);
+  hGrad.addColorStop(0, '#1F2937');
+  hGrad.addColorStop(0.5, '#374151');
+  hGrad.addColorStop(1, '#1F2937');
+  ctx.fillStyle = hGrad;
   ctx.fillRect(0, CY - HALF, W, ROAD_W);
 }
 
@@ -304,22 +318,37 @@ function drawSemaphore(ctx, semaphore) {
   });
 }
 
-function drawVehicle(ctx, v, manualMode = false) {
+function drawVehicle(ctx, v, manualMode = false, now) {
   // Nu desena vehiculul daca a iesit complet din canvas (margine 60px)
   if (v.x < -60 || v.x > 860 || v.y < -60 || v.y > 860) return;
   const color = PRIORITY_COLOR[v.priority] || STATE_COLOR[v.state] || STATE_COLOR.moving;
   const isClickable = manualMode && v.state === 'waiting';
+  const isEmergency = v.priority === 'emergency';
+  const isBraking = v.state === 'braking' || v.state === 'yielding';
+
+  const pulse = 0.5 + 0.5 * Math.sin(now / 150);
+
+  // Glow / Aura per vehiculul in stare speciala
+  if (isEmergency || isBraking) {
+    ctx.save();
+    ctx.shadowBlur = isEmergency ? 15 + pulse * 10 : 8 + pulse * 6;
+    ctx.shadowColor = color;
+    ctx.beginPath();
+    ctx.arc(v.x, v.y, 22, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${isEmergency ? '239, 68, 68' : '248, 113, 113'}, ${0.1 + pulse * 0.1})`;
+    ctx.fill();
+    ctx.restore();
+  }
 
   // Pulsing ring per vehiculele clickabile (manual mode + waiting)
   if (isClickable) {
     ctx.save();
-    ctx.strokeStyle = '#F59E0B';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([5, 4]);
+    ctx.strokeStyle = '#FBBF24';
+    ctx.lineWidth = 2 + pulse;
+    ctx.setLineDash([6, 4]);
     ctx.beginPath();
     ctx.arc(v.x, v.y, 28, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.setLineDash([]);
     ctx.restore();
   }
 
@@ -327,49 +356,59 @@ function drawVehicle(ctx, v, manualMode = false) {
   ctx.translate(v.x, v.y);
   ctx.rotate(getVehicleHeading(v));
 
-  // Corp masina (18×30px, centrat)
+  // Corp masina
   const W2 = 14, H2 = 22;
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.roundRect(-W2, -H2, W2 * 2, H2 * 2, 4);
+  ctx.roundRect(-W2, -H2, W2 * 2, H2 * 2, 5);
+  ctx.fill();
+
+  // Highlight 3D subtil
+  const grad = ctx.createLinearGradient(-W2, 0, W2, 0);
+  grad.addColorStop(0, 'rgba(255,255,255,0.15)');
+  grad.addColorStop(0.5, 'rgba(255,255,255,0)');
+  grad.addColorStop(1, 'rgba(0,0,0,0.15)');
+  ctx.fillStyle = grad;
+  ctx.roundRect(-W2, -H2, W2 * 2, H2 * 2, 5);
   ctx.fill();
 
   // Contur
-  ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+  ctx.strokeStyle = 'rgba(0,0,0,0.7)';
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Fata masinii (bara alba)
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
-  ctx.fillRect(-W2 + 2, -H2, W2 * 2 - 4, 4);
+  // Fata masinii (parbriz / faruri)
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.fillRect(-W2 + 3, -H2, W2 * 2 - 6, 4);
 
-  // Clearance glow daca traverseaza
-  if (v.state === 'crossing' || v.clearance) {
-    ctx.shadowColor = '#22C55E';
-    ctx.shadowBlur = 14;
-    ctx.strokeStyle = '#22C55E';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.shadowBlur = 0;
+  // Emergency flashing lights
+  if (isEmergency && now % 500 < 250) {
+    ctx.fillStyle = '#EF4444';
+    ctx.fillRect(-W2 + 2, -18, 5, 3); // stanga
+    ctx.fillStyle = '#3B82F6';
+    ctx.fillRect(W2 - 7, -18, 5, 3); // dreapta
   }
 
   ctx.restore();
 
-  // ── Labels (in spatiul lumii, nu rotit) ──
+  // ── Labels ──
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  // ID + intent icon deasupra
+  // ID + intent icon
   const icon = INTENT_ICON[v.intent] || '?';
-  ctx.font = 'bold 11px monospace';
+  ctx.font = "bold 12px 'JetBrains Mono', 'Fira Code', monospace";
   ctx.fillStyle = '#FFFFFF';
-  ctx.fillText(`${v.id} ${icon}`, v.x, v.y - 30);
+  ctx.shadowBlur = 4;
+  ctx.shadowColor = 'black';
+  ctx.fillText(`${v.id} ${icon}`, v.x, v.y - 32);
 
-  // Stare sub masina
-  ctx.font = '9px monospace';
+  // Stare badge
+  const label = v.state.toUpperCase();
+  ctx.font = "bold 9px 'Inter', sans-serif";
   ctx.fillStyle = color;
-  ctx.fillText(v.state.toUpperCase(), v.x, v.y + 30);
+  ctx.fillText(label, v.x, v.y + 32);
 
   ctx.restore();
 }
@@ -378,39 +417,93 @@ function drawVehicle(ctx, v, manualMode = false) {
 // Risk zone drawing — cerc pulsant + linie de pericol + label TTC
 // ─────────────────────────────────────────────────────────────────────
 
+// ─────────────────────────────────────────────────────────────────────
+// Decision Arrows — Săgeți care arată cauzalitatea deciziilor
+// ─────────────────────────────────────────────────────────────────────
+
+function drawDecisionArrows(ctx, vehicles, agentsMemory, now) {
+  Object.keys(agentsMemory).forEach(vid => {
+    const memory = agentsMemory[vid];
+    if (!memory || memory.length === 0) return;
+
+    const last = memory[memory.length - 1];
+    if (!last.target_id || last.action === 'GO') return;
+
+    const vSource = vehicles.find(v => v.id === vid);
+    const vTarget = vehicles.find(v => v.id === last.target_id);
+
+    if (vSource && vTarget) {
+      const pulse = 0.5 + 0.5 * Math.sin(now / 150);
+      drawCurvedArrow(ctx, vSource.x, vSource.y, vTarget.x, vTarget.y, pulse, last.action);
+    }
+  });
+}
+
+function drawCurvedArrow(ctx, x1, y1, x2, y2, pulse, action) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+
+  // Offset-uri ca sa nu porneasca exact din centrul masinii
+  const ox = (dx / dist) * 25;
+  const oy = (dy / dist) * 25;
+
+  ctx.save();
+  ctx.strokeStyle = action === 'YIELDING' ? '#F87171' : '#FBBF24';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([5, 3]);
+  ctx.globalAlpha = 0.4 + pulse * 0.4;
+
+  // Desenam un arc usor curbat
+  const midX = (x1 + x2) / 2 + (dy / dist) * 30;
+  const midY = (y1 + y2) / 2 - (dx / dist) * 30;
+
+  ctx.beginPath();
+  ctx.moveTo(x1 + ox, y1 + oy);
+  ctx.quadraticCurveTo(midX, midY, x2 - ox, y2 - oy);
+  ctx.stroke();
+
+  // Capul săgeții
+  const angle = Math.atan2(y2 - midY, x2 - midX);
+  ctx.beginPath();
+  ctx.translate(x2 - ox, y2 - oy);
+  ctx.rotate(angle);
+  ctx.moveTo(0, 0);
+  ctx.lineTo(-10, -5);
+  ctx.lineTo(-10, 5);
+  ctx.closePath();
+  ctx.fillStyle = ctx.strokeStyle;
+  ctx.fill();
+
+  ctx.restore();
+}
+
 function drawRiskZone(ctx, risk, vehicles, now) {
   const ttc = risk.ttc ?? 999;
   const isCritical = ttc < TTC_CRITICAL;
-  const dangerColor = isCritical ? '#EF4444' : '#F97316'; // rosu / portocaliu
+  const dangerColor = isCritical ? '#EF4444' : '#F59E0B';
 
-  // Pulsing opacity (breathing effect 0.3 — 0.9)
-  const pulse = 0.3 + 0.3 * (1 + Math.sin(now / (isCritical ? 150 : 250)));
+  const pulse = 0.3 + 0.4 * (1 + Math.sin(now / (isCritical ? 150 : 250)));
 
-  // ── 1. Cerc pulsant in jurul centrului intersectiei ──
+  // ── 1. Cerc pulsant
   ctx.save();
-  ctx.globalAlpha = pulse;
+  ctx.globalAlpha = pulse * 0.6;
   ctx.strokeStyle = dangerColor;
-  ctx.lineWidth = isCritical ? 4 : 3;
+  ctx.lineWidth = isCritical ? 5 : 3;
   ctx.setLineDash([12, 6]);
   ctx.shadowColor = dangerColor;
   ctx.shadowBlur = isCritical ? 25 : 15;
   ctx.beginPath();
   ctx.arc(CX, CY, RISK_CIRCLE_RADIUS, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.shadowBlur = 0;
 
-  // Cerc interior mai subtil (fill transparent)
+  // Fill foarte transparent
   ctx.fillStyle = dangerColor;
-  ctx.globalAlpha = pulse * 0.08;
-  ctx.beginPath();
-  ctx.arc(CX, CY, RISK_CIRCLE_RADIUS, 0, Math.PI * 2);
+  ctx.globalAlpha = pulse * 0.05;
   ctx.fill();
-
-  ctx.setLineDash([]);
-  ctx.globalAlpha = 1;
   ctx.restore();
 
-  // ── 2. Linie de pericol între vehiculele aflate în risc ──
+  // ── 2. Linie de pericol
   const [id1, id2] = risk.pair || [];
   const v1 = vehicles.find(v => v.id === id1);
   const v2 = vehicles.find(v => v.id === id2);
@@ -419,63 +512,28 @@ function drawRiskZone(ctx, risk, vehicles, now) {
     ctx.save();
     ctx.globalAlpha = pulse;
     ctx.strokeStyle = dangerColor;
-    ctx.lineWidth = isCritical ? 3 : 2;
-    ctx.setLineDash([8, 5]);
-    ctx.shadowColor = dangerColor;
-    ctx.shadowBlur = 10;
-
+    ctx.lineWidth = 3;
+    ctx.setLineDash([8, 6]);
     ctx.beginPath();
     ctx.moveTo(v1.x, v1.y);
     ctx.lineTo(v2.x, v2.y);
     ctx.stroke();
 
-    ctx.shadowBlur = 0;
-    ctx.setLineDash([]);
-    ctx.globalAlpha = 1;
-    ctx.restore();
-
-    // ── 3. Label TTC la mijlocul liniei ──
+    // Label TTC
     const mx = (v1.x + v2.x) / 2;
     const my = (v1.y + v2.y) / 2;
+    ctx.font = "bold 14px 'Inter', sans-serif";
+    const txt = `⚠ TTC: ${ttc.toFixed(1)}s`;
+    const tw = ctx.measureText(txt).width;
 
-    ctx.save();
-    // Fundal label
-    const labelText = `⚠ TTC: ${ttc.toFixed(2)}s`;
-    ctx.font = 'bold 13px monospace';
-    const tw = ctx.measureText(labelText).width;
-    const pad = 6;
-    ctx.fillStyle = 'rgba(0,0,0,0.8)';
-    ctx.beginPath();
-    ctx.roundRect(mx - tw / 2 - pad, my - 10 - pad, tw + pad * 2, 20 + pad, 6);
+    ctx.fillStyle = 'rgba(17, 24, 39, 0.9)';
+    ctx.roundRect(mx - tw / 2 - 8, my - 12, tw + 16, 24, 6);
     ctx.fill();
-
-    // Border
-    ctx.strokeStyle = dangerColor;
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    // Text
     ctx.fillStyle = dangerColor;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(labelText, mx, my);
+    ctx.fillText(txt, mx, my);
     ctx.restore();
-
-    // ── 4. Marker ring pe fiecare vehicul aflat in risc ──
-    [v1, v2].forEach(v => {
-      ctx.save();
-      ctx.globalAlpha = pulse;
-      ctx.strokeStyle = dangerColor;
-      ctx.lineWidth = 2.5;
-      ctx.shadowColor = dangerColor;
-      ctx.shadowBlur = 12;
-      ctx.beginPath();
-      ctx.arc(v.x, v.y, 32, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-      ctx.globalAlpha = 1;
-      ctx.restore();
-    });
   }
 }
 
@@ -507,18 +565,17 @@ function drawLegend(ctx, cooperation, risk, W) {
   });
 
   // Cooperation status
-  ctx.font = 'bold 10px monospace';
-  ctx.fillStyle = cooperation ? '#22C55E' : '#EF4444';
-  ctx.fillText(`V2X: ${cooperation ? 'ON ✓' : 'OFF ✗'}`, W - 172, 106);
+  ctx.font = "bold 10px 'JetBrains Mono', monospace";
+  ctx.fillStyle = cooperation ? '#10B981' : '#F87171';
+  ctx.fillText(`V2X NETWORK: ${cooperation ? 'STABLE' : 'OFFLINE'}`, W - 172, 106);
 
   // Risk status in legend
   if (hasRisk) {
     const ttc = risk.ttc ?? 999;
-    const isCritical = ttc < TTC_CRITICAL;
-    const col = isCritical ? '#EF4444' : '#F97316';
+    const col = ttc < TTC_CRITICAL ? '#EF4444' : '#FBBF24';
     ctx.fillStyle = col;
-    ctx.font = 'bold 10px monospace';
-    ctx.fillText(`⚠ RISC TTC:${ttc.toFixed(1)}s`, W - 172, 121);
+    ctx.font = "bold 10px 'Inter', sans-serif";
+    ctx.fillText(`⚡ CONFLICT DETECTED (${ttc.toFixed(1)}s)`, W - 172, 121);
   }
 
   ctx.restore();

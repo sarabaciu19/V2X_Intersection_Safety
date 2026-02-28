@@ -2,21 +2,22 @@ import React, { useState } from 'react';
 import CustomScenarioEditor from './CustomScenarioEditor';
 
 const SCENARIOS = [
-  { id: 'perpendicular', icon: '⊥', name: 'Perpendicular',  desc: 'N vs V — conflict direct'        },
-  { id: 'multi',         icon: '✦', name: '4 Direcții',      desc: 'N, S, E, V simultan'              },
-  { id: 'emergency',     icon: '🚑', name: 'Urgență',        desc: 'Ambulanță cu prioritate'          },
-  { id: 'intents',       icon: '↰', name: 'Intenții mixte',  desc: 'Straight, stânga, dreapta'       },
-  { id: 'custom',        icon: '🛠', name: 'Custom',          desc: 'Configurează tu vehiculele'      },
+  { id: 'perpendicular', icon: '⊥', name: 'Perpendicular', desc: 'N vs V — conflict direct' },
+  { id: 'multi', icon: '✦', name: '4 Direcții', desc: 'N, S, E, V simultan' },
+  { id: 'emergency', icon: '🚑', name: 'Urgență', desc: 'Ambulanță cu prioritate' },
+  { id: 'intents', icon: '↰', name: 'Intenții mixte', desc: 'Straight, stânga, dreapta' },
+  { id: 'traffic_jam', icon: '🚧', name: 'Traffic Jam', desc: '6 vehicule — trafic intens' },
+  { id: 'custom', icon: '🛠', name: 'Custom', desc: 'Configurează tu vehiculele' },
 ];
 
 const TABS = ['control', 'scenarii', 'custom', 'legenda'];
 const TAB_LABELS = { control: '⚙ Control', scenarii: '📋 Scenarii', custom: '🛠 Custom', legenda: '🗺 Legendă' };
 
 const ControlPanel = ({
-  cooperation        = true,
-  paused             = false,
-  currentScenario    = 'perpendicular',
-  customScenario     = [],
+  cooperation = true,
+  paused = false,
+  currentScenario = 'perpendicular',
+  customScenario = [],
   onToggleCooperation,
   onScenarioChange,
   onReset,
@@ -40,9 +41,9 @@ const ControlPanel = ({
         {TABS.map(t => (
           <button key={t} onClick={() => setTab(t)} style={{
             ...s.tabBtn,
-            background:   tab === t ? '#e6ddd0' : 'transparent',
+            background: tab === t ? '#e6ddd0' : 'transparent',
             borderBottom: tab === t ? '2px solid #7c5c38' : '2px solid transparent',
-            color:        tab === t ? '#2c1e0f' : '#a08060',
+            color: tab === t ? '#2c1e0f' : '#a08060',
           }}>
             {TAB_LABELS[t]}
           </button>
@@ -61,24 +62,24 @@ const ControlPanel = ({
               <button onClick={onStart} disabled={!paused}
                 style={{
                   ...s.simBtn, flex: 1,
-                  background:  !paused ? '#d4e8d4' : '#c8e6c8',
+                  background: !paused ? '#d4e8d4' : '#c8e6c8',
                   borderColor: !paused ? '#6aaa6a' : '#3a8a3a',
-                  color:       !paused ? '#4a7a4a' : '#1a5a1a',
-                  opacity:     !paused ? 0.55 : 1,
-                  cursor:      !paused ? 'default' : 'pointer',
-                  boxShadow:   !paused ? 'none' : '0 0 10px rgba(58,138,58,0.3)',
+                  color: !paused ? '#4a7a4a' : '#1a5a1a',
+                  opacity: !paused ? 0.55 : 1,
+                  cursor: !paused ? 'default' : 'pointer',
+                  boxShadow: !paused ? 'none' : '0 0 10px rgba(58,138,58,0.3)',
                 }}>
                 ▶ START
               </button>
               <button onClick={onStop} disabled={paused}
                 style={{
                   ...s.simBtn, flex: 1,
-                  background:  paused ? '#f0d8d8' : '#f5c8c8',
+                  background: paused ? '#f0d8d8' : '#f5c8c8',
                   borderColor: paused ? '#cc8888' : '#aa4444',
-                  color:       paused ? '#885555' : '#6b1e1e',
-                  opacity:     paused ? 0.55 : 1,
-                  cursor:      paused ? 'default' : 'pointer',
-                  boxShadow:   paused ? 'none' : '0 0 10px rgba(185,28,28,0.2)',
+                  color: paused ? '#885555' : '#6b1e1e',
+                  opacity: paused ? 0.55 : 1,
+                  cursor: paused ? 'default' : 'pointer',
+                  boxShadow: paused ? 'none' : '0 0 10px rgba(185,28,28,0.2)',
                 }}>
                 ⏹ STOP
               </button>
@@ -93,10 +94,10 @@ const ControlPanel = ({
             <div style={s.label}>Mod dirijare intersecție</div>
             <button onClick={onToggleCooperation} style={{
               ...s.bigBtn,
-              background:  cooperation ? '#deeede' : '#f5e8d0',
+              background: cooperation ? '#deeede' : '#f5e8d0',
               borderColor: cooperation ? '#3a8a3a' : '#b45309',
-              boxShadow:   `0 0 12px ${cooperation ? 'rgba(58,138,58,0.2)' : 'rgba(180,83,9,0.2)'}`,
-              color:       cooperation ? '#1a5a1a' : '#7c3a00',
+              boxShadow: `0 0 12px ${cooperation ? 'rgba(58,138,58,0.2)' : 'rgba(180,83,9,0.2)'}`,
+              color: cooperation ? '#1a5a1a' : '#7c3a00',
             }}>
               {cooperation ? '🤖  AUTO — sistem central' : '✋  MANUAL — tu decizi'}
             </button>
@@ -128,9 +129,9 @@ const ControlPanel = ({
                 <div key={sc.id} onClick={() => onScenarioChange?.(sc.id)}
                   style={{
                     ...s.scenCard,
-                    background:  currentScenario === sc.id ? '#ddd0c0' : '#e6ddd0',
+                    background: currentScenario === sc.id ? '#ddd0c0' : '#e6ddd0',
                     borderColor: currentScenario === sc.id ? '#7c5c38' : '#c8b89a',
-                    boxShadow:   currentScenario === sc.id ? '0 0 8px rgba(124,92,56,0.25)' : 'none',
+                    boxShadow: currentScenario === sc.id ? '0 0 8px rgba(124,92,56,0.25)' : 'none',
                   }}>
                   <span style={{ fontSize: 24 }}>{sc.icon}</span>
                   <div>
@@ -162,10 +163,10 @@ const ControlPanel = ({
           <div style={s.section}>
             <div style={s.label}>Stări vehicule</div>
             {[
-              ['#2563eb', 'moving',   'Se apropie de intersecție'],
-              ['#b45309', 'waiting',  'Așteaptă la linia de stop'],
+              ['#2563eb', 'moving', 'Se apropie de intersecție'],
+              ['#b45309', 'waiting', 'Așteaptă la linia de stop'],
               ['#166534', 'crossing', 'A primit clearance, traversează'],
-              ['#b91c1c', 'urgență',  'Vehicul de urgență'],
+              ['#b91c1c', 'urgență', 'Vehicul de urgență'],
             ].map(([col, name, desc]) => (
               <div key={name} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', marginBottom: 6 }}>
                 <div style={{ width: 10, height: 10, borderRadius: 2, background: col, marginTop: 2, flexShrink: 0 }} />
@@ -229,8 +230,8 @@ const s = {
   body: { flex: 1, overflowY: 'auto', padding: 14 },
   section: { display: 'flex', flexDirection: 'column', gap: 10 },
   label: { fontSize: 10, color: '#a08060', letterSpacing: 2, textTransform: 'uppercase', fontFamily: "'Inter',sans-serif" },
-  sep:   { height: 1, background: '#c8b89a' },
-  hint:  { fontSize: 10, color: '#a08060', margin: 0, lineHeight: 1.5, fontFamily: "'Inter',sans-serif" },
+  sep: { height: 1, background: '#c8b89a' },
+  hint: { fontSize: 10, color: '#a08060', margin: 0, lineHeight: 1.5, fontFamily: "'Inter',sans-serif" },
   simBtn: {
     padding: '11px 0', border: '2px solid', borderRadius: 8,
     fontFamily: "'JetBrains Mono',monospace", fontWeight: 900, fontSize: 13, letterSpacing: 1,

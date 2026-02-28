@@ -36,6 +36,14 @@ SCENARIOS = {
         {'id': 'B', 'direction': 'V', 'intent': 'left'},
         {'id': 'C', 'direction': 'S', 'intent': 'right'},
     ],
+    'traffic_jam': [
+        {'id': 'A', 'direction': 'N', 'intent': 'straight'},
+        {'id': 'B', 'direction': 'V', 'intent': 'straight'},
+        {'id': 'C', 'direction': 'S', 'intent': 'left'},
+        {'id': 'D', 'direction': 'E', 'intent': 'right'},
+        {'id': 'E', 'direction': 'N', 'intent': 'right', 'speed_multiplier': 0.7},
+        {'id': 'AMB', 'direction': 'S', 'intent': 'straight', 'priority': 'emergency', 'speed_multiplier': 1.4},
+    ],
 }
 
 # Scenariul custom editabil de utilizator
