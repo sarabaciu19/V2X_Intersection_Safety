@@ -28,25 +28,7 @@ const Dashboard = ({ vehicles = [], semaphore = {}, cooperation = true, agentsMe
 
   return (
     <div style={s.container}>
-      <div style={s.title}>📊 Dashboard</div>
-
-      {/* Sistem central status */}
-      <section style={s.section}>
-        <div style={s.label}>Sistem Central</div>
-        <div style={{
-          ...s.badge,
-          background:  cooperation ? '#deeede' : '#f5e8d0',
-          borderColor: cooperation ? '#3a8a3a' : '#b45309',
-          color:       cooperation ? '#1a5a1a' : '#7c3a00',
-        }}>
-          {cooperation ? '✓ AUTO — sistemul central decide' : '✋ MANUAL — tu decizi cine trece'}
-        </div>
-        {!cooperation && (
-          <p style={{ color: '#6b4f35', fontSize: 11, margin: 0 }}>
-            Click pe un vehicul portocaliu din canvas, sau apasă butonul de mai jos.
-          </p>
-        )}
-      </section>
+      <div style={s.title}>Dashboard</div>
 
       {/* Semafor */}
       <section style={s.section}>
