@@ -30,12 +30,13 @@ function App() {
   const [currentScenario, setCurrentScenario] = useState('perpendicular');
 
   // Date live din backend
-  const vehicles        = wsState?.vehicles       || [];
-  const events          = wsState?.event_log       || [];
-  const semaphore       = wsState?.semaphore        || {};
-  const customScenario  = wsState?.custom_scenario  || [];
-  const liveCooperation = wsState?.cooperation      ?? true;
-  const livePaused      = wsState?.paused           ?? false;
+  const vehicles = wsState?.vehicles || [];
+  const events = wsState?.event_log || [];
+  const semaphore = wsState?.semaphore || {};
+  const risk = wsState?.risk || { risk: false, pair: null, ttc: 999, ttc_per_vehicle: {} };
+  const customScenario = wsState?.custom_scenario || [];
+  const liveCooperation = wsState?.cooperation ?? true;
+  const livePaused = wsState?.paused ?? false;
 
   const handleToggleCooperation = async () => { await toggleCooperation(); };
 
@@ -86,6 +87,7 @@ function App() {
           <IntersectionCanvas
             vehicles={vehicles}
             semaphore={semaphore}
+            risk={risk}
             cooperation={liveCooperation}
             onGrantClearance={!liveCooperation ? grantClearance : null}
             dimensions={{ width: 800, height: 800 }}

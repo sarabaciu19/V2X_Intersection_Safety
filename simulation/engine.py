@@ -6,6 +6,7 @@ import time
 from typing import List, Dict, Any
 from models.vehicle import Vehicle, SPAWN, VELOCITY
 from services import v2x_bus
+from services.collision import assess_risk
 from services.central_system import CentralSystem
 from services.infrastructure import InfrastructureAgent
 from utils import logger
@@ -250,7 +251,7 @@ class SimulationEngine:
             'vehicles':        [v.to_dict() for v in self.vehicles],
             'semaphore':       sem_state,
             'custom_scenario': self._custom_scenario,
-            'risk': {'risk': False, 'ttc': 999, 'action': 'go', 'pair': None, 'ttc_per_vehicle': {}},
+            'risk': assess_risk({v.id: v.to_dict() for v in self.vehicles}),
             'collisions':      [],
             'event_log':       list(self._event_log[-20:]),
         }
