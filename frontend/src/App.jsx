@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import IntersectionCanvas from './components/IntersectionCanvas';
 import Dashboard from './components/Dashboard';
 import ControlPanel from './components/ControlPanel';
@@ -16,33 +16,35 @@ function App() {
     state: wsState,
     isConnected,
     error,
+    startSimulation,
+    stopSimulation,
     resetSimulation,
     toggleCooperation,
     grantClearance,
+    customAddVehicle,
+    customRemoveVehicle,
+    customUpdateVehicle,
+    customClear,
   } = useSimulation('ws://localhost:8000/ws');
 
   const [currentScenario, setCurrentScenario] = useState('perpendicular');
-  const [cooperation,     setCooperation]     = useState(true);
 
   // Date live din backend
-  const vehicles   = wsState?.vehicles   || [];
-  const events     = wsState?.events     || [];
-  const semaphore  = wsState?.semaphore  || {};
-  const liveCooperation = wsState?.cooperation ?? cooperation;
+  const vehicles        = wsState?.vehicles        || [];
+  const events          = wsState?.event_log       || [];
+  const semaphore       = wsState?.semaphore        || {};
+  const customScenario  = wsState?.custom_scenario  || [];
+  const liveCooperation = wsState?.cooperation      ?? true;
+  const livePaused      = wsState?.paused           ?? false;
 
-  const handleToggleCooperation = async () => {
-    const result = await toggleCooperation();
-    if (result) setCooperation(result.cooperation);
+  const handleToggleCooperation = async () => { await toggleCooperation(); };
+
+  const handleScenarioChange = async (id) => {
+    setCurrentScenario(id);
+    await resetSimulation(id);
   };
 
-  const handleScenarioChange = async (scenarioId) => {
-    setCurrentScenario(scenarioId);
-    await resetSimulation(scenarioId);
-  };
-
-  const handleReset = async () => {
-    await resetSimulation(currentScenario);
-  };
+  const handleReset = () => resetSimulation(currentScenario);
 
   return (
     <div className="app">
@@ -51,10 +53,10 @@ function App() {
         <h1>🚗 V2X Intersection Safety</h1>
         <div className="connection-status">
           {isConnected
-            ? <span className="status-badge status-connected">🟢 Live Backend</span>
-            : <span className="status-badge status-disconnected">🔴 Reconectare…</span>
-          }
-          {error && <span style={{ color: '#F87171', fontSize: 12, marginLeft: 8 }}>{error}</span>}
+            ? <span className="status-badge status-connected">🟢 Live</span>
+            : <span className="status-badge status-disconnected">🔴 Reconectare…</span>}
+          {livePaused && <span style={{ color: '#F87171', fontSize: 12, marginLeft: 8, fontWeight: 700 }}>⏸ OPRIT</span>}
+          {error && <span style={{ color: '#F87171', fontSize: 11, marginLeft: 8 }}>{error}</span>}
         </div>
       </header>
 
@@ -64,10 +66,18 @@ function App() {
         <aside className="left-panel">
           <ControlPanel
             cooperation={liveCooperation}
+            paused={livePaused}
             currentScenario={currentScenario}
+            customScenario={customScenario}
             onToggleCooperation={handleToggleCooperation}
             onScenarioChange={handleScenarioChange}
             onReset={handleReset}
+            onStart={startSimulation}
+            onStop={stopSimulation}
+            onCustomAdd={customAddVehicle}
+            onCustomRemove={customRemoveVehicle}
+            onCustomUpdate={customUpdateVehicle}
+            onCustomClear={customClear}
           />
         </aside>
 
