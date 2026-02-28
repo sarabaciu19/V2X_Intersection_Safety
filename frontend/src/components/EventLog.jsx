@@ -7,16 +7,17 @@ const ACTION_STYLE = {
   STOP:      { color: '#dc2626', icon: '🔴' },
   HOLD:      { color: '#ca8a04', icon: '🟡' },
   INFO:      { color: '#2563eb', icon: 'ℹ' },
+  BRAKE:     { color: '#f59e0b', icon: '🟠' },
+  YIELD:     { color: '#ef4444', icon: '🛑' },
+  GO:        { color: '#22c55e', icon: '🟢' },
 };
 
 /**
- * EventLog - Log decizii agenți în timp real
- * Afișează evenimentele și deciziile agenților V2X
+ * EventLog - Log decizii agenți autonomi + sistem central în timp real
  */
 const EventLog = ({ events = [], maxEvents = 100 }) => {
   const bottomRef = useRef(null);
 
-  // Auto-scroll la ultimul eveniment
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [events]);
@@ -26,7 +27,7 @@ const EventLog = ({ events = [], maxEvents = 100 }) => {
   return (
     <div style={s.container}>
       <div style={s.header}>
-        <span style={s.title}>📋 Log decizii sistem central</span>
+        <span style={s.title}>📋 Log decizii agenți autonomi</span>
         <span style={{ color: '#a08060', fontSize: 11 }}>{shown.length} intrări</span>
       </div>
       <div style={s.log}>
@@ -41,7 +42,7 @@ const EventLog = ({ events = [], maxEvents = 100 }) => {
           return (
             <div key={i} style={s.row}>
               <span style={{ color: '#a08060', fontSize: 10, minWidth: 60 }}>
-                {evt.time || new Date(evt.timestamp).toLocaleTimeString('ro-RO')}
+                {evt.time || new Date(evt.timestamp * 1000).toLocaleTimeString('ro-RO')}
               </span>
               <span style={{ color: style.color, fontSize: 11, minWidth: 14 }}>{style.icon}</span>
               <span style={{ color: '#2c1e0f', fontWeight: 700, fontSize: 11, minWidth: 28 }}>
@@ -52,6 +53,7 @@ const EventLog = ({ events = [], maxEvents = 100 }) => {
               </span>
               <span style={{ color: '#6b4f35', fontSize: 10, flex: 1 }}>
                 {evt.reason || evt.message || ''}
+                {evt.ttc != null && evt.ttc < 999 ? ` [TTC=${evt.ttc}s]` : ''}
               </span>
             </div>
           );
