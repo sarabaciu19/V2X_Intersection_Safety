@@ -1,28 +1,38 @@
 """
 services/central_system.py — Sistemul central V2X
 Reguli prioritate (Codul Rutier Romania):
-  1. Vehicul de urgenta — prioritate absoluta
-  2. Regula dreptei — vehiculul din dreapta are prioritate
-  3. Viraj stanga cedeaza vehiculelor din fata si din dreapta
-  4. Straight > right > left ca ordine generala
+  1. Semafor rosu — vehiculul NU primeste clearance (obligatoriu)
+  2. Vehicul de urgenta — prioritate absoluta (trece si pe rosu)
+  3. Regula dreptei — vehiculul din dreapta are prioritate
+  4. Viraj stanga cedeaza vehiculelor din fata si din dreapta
 """
 import time
+from services import v2x_bus as _bus
 
 # Directia care vine din dreapta fata de fiecare directie
 RIGHT_OF = {
-    'N': 'V',   # N este la dreapta lui V? Nu — V vine din dreapta lui N
+    'N': 'V',
     'V': 'S',
     'S': 'E',
     'E': 'N',
 }
 
+
+def _get_semaphore_lights() -> dict:
+    """Citeste starea semaforului din V2X Bus. Returneaza dict {directie: culoare}."""
+    infra = _bus.get_all().get("INFRA", {})
+    return infra.get("lights", {})
+
+
 class CentralSystem:
     def __init__(self):
         self._decisions = []
-        self._crossing  = set()   # vehicule care traverseaza acum
+        self._crossing  = set()
 
     def decide(self, vehicles):
-        """Acorda clearance respectand regulile de prioritate."""
+        """Acorda clearance respectand regulile de prioritate si semaforul."""
+        lights = _get_semaphore_lights()
+
         waiting  = [v for v in vehicles if v.state == 'waiting']
         crossing = [v for v in vehicles if v.state == 'crossing']
 
@@ -31,7 +41,6 @@ class CentralSystem:
         if not waiting:
             return
 
-        # Sorteaza: urgenta primul, apoi cel care a asteptat mai mult
         urgency = [v for v in waiting if v.priority == 'emergency']
         normal  = [v for v in waiting if v.priority != 'emergency']
 
@@ -39,50 +48,61 @@ class CentralSystem:
             for v in urgency:
                 if not v.clearance:
                     v.clearance = True
-                    self._log(v.id, 'CLEARANCE', reason='urgenta — prioritate absoluta')
-            # Ceilalti asteapta
+                    self._log(v.id, 'CLEARANCE', reason='urgenta — prioritate absoluta (ignora semafor)')
             for v in normal:
                 if v.clearance:
                     v.clearance = False
             return
 
-        # Daca cineva traverseaza deja — ceilalti asteapta
+        # Blocheaza vehiculele pe rosu (retrage clearance daca a schimbat)
+        for v in normal:
+            light = lights.get(v.direction, 'green')
+            if light == 'red':
+                if v.clearance:
+                    v.clearance = False
+                    self._log(v.id, 'STOP', reason=f'semafor rosu pentru directia {v.direction}')
+            elif light == 'yellow':
+                # Pe galben: daca nu a primit deja clearance, nu i-l dam
+                if not v.clearance:
+                    self._log(v.id, 'HOLD', reason=f'semafor galben pentru directia {v.direction}')
+
+        # Vehicule eligibile = verde + nu traverseaza altcineva
+        eligible = [
+            v for v in normal
+            if lights.get(v.direction, 'green') == 'green'
+        ]
+
+        if not eligible:
+            return
+
         if crossing:
             return
 
-        # Niciun vehicul nu traverseaza — acorda clearance urmatorului
-        # Gaseste vehiculul cu cea mai mare prioritate
-        winner = self._pick_winner(normal)
+        winner = self._pick_winner(eligible)
         if winner and not winner.clearance:
             winner.clearance = True
-            self._log(winner.id, 'CLEARANCE', reason=f'prioritate acordata')
+            light_reason = f'semafor verde ({winner.direction})'
+            self._log(winner.id, 'CLEARANCE', reason=f'prioritate acordata, {light_reason}')
 
     def _pick_winner(self, waiting):
-        """Alege vehiculul care are prioritate conform regulilor."""
         if not waiting:
             return None
         if len(waiting) == 1:
             return waiting[0]
 
-        # Verifica regula dreptei
         dirs = {v.direction: v for v in waiting}
 
         for v in waiting:
             right_dir = RIGHT_OF.get(v.direction)
             right_vehicle = dirs.get(right_dir)
             if right_vehicle:
-                # v trebuie sa cedeze lui right_vehicle
                 continue
-            # v nu are nimeni la dreapta sa din cei care asteapta
-            # Verifica si virajul stanga
             if v.intent == 'left':
-                # Virajul stanga cedeaza tuturor
                 others = [o for o in waiting if o.id != v.id and o.intent != 'left']
                 if others:
                     continue
             return v
 
-        # Daca toti se blocheaza reciproc, primul din lista
         return waiting[0]
 
     def _log(self, vehicle_id, action, reason=''):

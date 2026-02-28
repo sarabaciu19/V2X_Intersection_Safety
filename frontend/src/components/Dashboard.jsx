@@ -50,24 +50,49 @@ const Dashboard = ({ vehicles = [], semaphore = {}, cooperation = true, onGrantC
 
       {/* Semafor */}
       <section style={s.section}>
-        <div style={s.label}>Semafor V2I</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 20, height: 20, borderRadius: '50%',
-            background: semaphore.light === 'green'  ? '#16a34a'
-                      : semaphore.light === 'yellow' ? '#ca8a04' : '#dc2626',
-            boxShadow: `0 0 10px ${semaphore.light === 'green'  ? 'rgba(22,163,74,0.5)'
-                                 : semaphore.light === 'yellow' ? 'rgba(202,138,4,0.5)'
-                                                                 : 'rgba(220,38,38,0.5)'}`,
-          }} />
-          <span style={{ color: '#2c1e0f', fontSize: 13 }}>
-            {semaphore.light === 'green'  ? 'Verde — liber'
-           : semaphore.light === 'yellow' ? 'Galben — atenție'
-                                          : 'Roșu — stop'}
-          </span>
+        <div style={s.label}>
+          Semafoare V2I
           {semaphore.emergency && (
-            <span style={{ color: '#b91c1c', fontSize: 11, fontWeight: 700 }}>🚑 URGENȚĂ</span>
+            <span style={{ marginLeft: 8, color: '#b91c1c', fontSize: 11, fontWeight: 700 }}>🚑 URGENȚĂ</span>
           )}
+        </div>
+
+        {/* Grid 2×2: N sus-stânga, V sus-dreapta, S jos-stânga, E jos-dreapta */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+          {[
+            { dir: 'N', label: '↓ Nord→Sud' },
+            { dir: 'V', label: '→ Vest→Est' },
+            { dir: 'S', label: '↑ Sud→Nord' },
+            { dir: 'E', label: '← Est→Vest' },
+          ].map(({ dir, label }) => {
+            const lights = semaphore.lights || {};
+            const lc = lights[dir] || 'red';
+            const bg   = lc === 'green' ? '#16a34a' : lc === 'yellow' ? '#ca8a04' : '#dc2626';
+            const glow = lc === 'green' ? 'rgba(22,163,74,0.4)'
+                       : lc === 'yellow' ? 'rgba(202,138,4,0.4)' : 'rgba(220,38,38,0.4)';
+            const txt  = lc === 'green' ? 'Verde' : lc === 'yellow' ? 'Galben' : 'Roșu';
+            return (
+              <div key={dir} style={{
+                display: 'flex', alignItems: 'center', gap: 7,
+                background: '#e6ddd0', borderRadius: 6, padding: '6px 8px',
+                border: `1px solid ${bg}44`,
+              }}>
+                <div style={{
+                  width: 14, height: 14, borderRadius: '50%', flexShrink: 0,
+                  background: bg, boxShadow: `0 0 7px ${glow}`,
+                }} />
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span style={{ fontSize: 9, color: '#a08060', fontWeight: 700 }}>{dir}</span>
+                  <span style={{ fontSize: 10, color: '#2c1e0f' }}>{txt}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Legenda faze */}
+        <div style={{ fontSize: 10, color: '#a08060', marginTop: 2 }}>
+          Faza A: N/S verde · Faza B: E/V verde · Galben = tranziție
         </div>
       </section>
 

@@ -223,6 +223,9 @@ class SimulationEngine:
                 self._load_scenario(self.scenario_name)
             return
 
+        # Semaforul se actualizeaza primul, ca central.decide() sa citeasca starea corecta
+        sem_state = self.semaphore.update()
+
         if self.cooperation:
             self.central.decide(self.vehicles)
 
@@ -232,7 +235,6 @@ class SimulationEngine:
         for v in self.vehicles:
             v2x_bus.publish(v.id, v.to_dict())
 
-        sem_state = self.semaphore.update()
 
         all_decisions = self.central.get_decisions()
         new_entries = all_decisions[self._last_decision_idx:]

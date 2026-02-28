@@ -4,6 +4,8 @@ const ACTION_STYLE = {
   CLEARANCE: { color: '#166534', icon: '✅' },
   ASTEAPTA:  { color: '#b45309', icon: '⏸' },
   WAIT:      { color: '#b45309', icon: '⏸' },
+  STOP:      { color: '#dc2626', icon: '🔴' },
+  HOLD:      { color: '#ca8a04', icon: '🟡' },
   INFO:      { color: '#2563eb', icon: 'ℹ' },
 };
 
