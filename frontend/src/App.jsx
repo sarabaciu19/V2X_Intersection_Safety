@@ -4,7 +4,7 @@ import Dashboard from './components/Dashboard';
 import ControlPanel from './components/ControlPanel';
 import EventLog from './components/EventLog';
 import useSimulation from './hooks/useSimulation';
-import { mockVehicles, mockEvents, mockSystemStatus, createMockSimulation, FAKE_STATE } from './data/fakeData';
+import { mockVehicles, mockEvents, mockSystemStatus, createMockSimulation, FAKE_STATE, SCENARIOS } from './data/fakeData';
 import './App.css';
 
 /**
@@ -22,165 +22,133 @@ function App() {
     toggleCooperation,
   } = useSimulation('ws://localhost:8000/ws');
 
-  // Auto-switch: dacă e conectat, folosim WebSocket, altfel mock
-  const [useMockData, setUseMockData] = useState(!isConnected);
-
-  // Update mock/websocket based on connection
+  // Când backend-ul se conectează → trece automat pe date live
+  const [useMockData, setUseMockData] = useState(true);
   useEffect(() => {
-    // Dacă e conectat la WebSocket, folosim date live
-    if (isConnected) {
-      setUseMockData(false);
-      console.log('✅ Switched to WebSocket data');
-    } else {
-      // Altfel, fallback la mock data
-      setUseMockData(true);
-      console.log('📊 Switched to Mock data (fallback)');
-    }
+    if (isConnected) setUseMockData(false);
+    else             setUseMockData(true);
   }, [isConnected]);
 
   // State local pentru date mock
   const [mockState, setMockState] = useState({
-    vehicles: mockVehicles,
-    events: mockEvents,
+    vehicles:     mockVehicles,
+    events:       mockEvents,
     systemStatus: mockSystemStatus,
-    risk: { danger: false, ttc: 5.0 },
-    cooperation: true,
+    risk:         { danger: false, ttc: 5.0 },
+    cooperation:  true,
   });
 
-  const [isRunning, setIsRunning] = useState(false);
-  const [currentScenario, setCurrentScenario] = useState('normal');
-  const [cooperation, setCooperation] = useState(true);
+  const [isRunning,        setIsRunning]        = useState(false);
+  const [currentScenario,  setCurrentScenario]  = useState('normal');
+  const [cooperation,      setCooperation]      = useState(true);
 
-  // Selectează sursa de date
-  const vehicles = useMockData ? mockState.vehicles : (wsState?.vehicles || []);
-  const events = useMockData ? mockState.events : (wsState?.events || []);
+  // Sursa de date — mock sau WebSocket
+  const vehicles     = useMockData ? mockState.vehicles     : (wsState?.vehicles  || []);
+  const events       = useMockData ? mockState.events       : (wsState?.events    || []);
   const systemStatus = useMockData ? mockState.systemStatus : (wsState?.systemStatus || {});
-  const risk = useMockData ? mockState.risk : (wsState?.risk || { danger: false, ttc: 5.0 });
+  const risk         = useMockData ? mockState.risk         : (wsState?.risk       || { danger: false, ttc: 5.0 });
+
+  // Cooperation vine din backend când e conectat
+  const liveCooperation = useMockData ? cooperation : (wsState?.cooperation ?? cooperation);
 
   // Handler pentru start/stop simulare
   const handleStart = () => {
-    if (useMockData) {
-      setIsRunning(true);
-      const cleanup = createMockSimulation((data) => {
-        setMockState({
-          ...data,
-          cooperation: cooperation,
-        });
-      }, 500, currentScenario);
-      window.mockSimulationCleanup = cleanup;
-    } else {
-      setIsRunning(true);
-      // Backend-ul va porni automat
-    }
+    if (!useMockData) { setIsRunning(true); return; }
+    setIsRunning(true);
+    const cleanup = createMockSimulation(
+      (data) => setMockState({ ...data, cooperation }),
+      500,
+      currentScenario,
+    );
+    window.mockSimulationCleanup = cleanup;
   };
 
   const handleStop = () => {
-    if (useMockData) {
-      setIsRunning(false);
-      if (window.mockSimulationCleanup) {
-        window.mockSimulationCleanup();
-        window.mockSimulationCleanup = null;
-      }
-    } else {
-      setIsRunning(false);
+    setIsRunning(false);
+    if (window.mockSimulationCleanup) {
+      window.mockSimulationCleanup();
+      window.mockSimulationCleanup = null;
     }
   };
 
   const handleReset = () => {
     if (useMockData) {
+      handleStop();
       setMockState({
-        vehicles: mockVehicles,
-        events: mockEvents,
+        vehicles:     mockVehicles,
+        events:       mockEvents,
         systemStatus: { ...mockSystemStatus, running: false },
-        risk: { danger: false, ttc: 5.0 },
-        cooperation: cooperation,
+        risk:         { danger: false, ttc: 5.0 },
+        cooperation,
       });
-      setIsRunning(false);
-      if (window.mockSimulationCleanup) {
-        window.mockSimulationCleanup();
-        window.mockSimulationCleanup = null;
-      }
     } else {
-      // Apelează backend API
-      resetSimulation().then(() => {
-        setIsRunning(false);
-      });
+      resetSimulation().then(() => setIsRunning(false));
     }
   };
 
   const handleScenarioChange = (scenarioId) => {
     setCurrentScenario(scenarioId);
     if (useMockData) {
-      if (isRunning && window.mockSimulationCleanup) {
-        window.mockSimulationCleanup();
-      }
+      if (window.mockSimulationCleanup) window.mockSimulationCleanup();
       if (isRunning) {
-        const cleanup = createMockSimulation((data) => {
-          setMockState({
-            ...data,
-            cooperation: cooperation,
-          });
-        }, 500, scenarioId);
+        const cleanup = createMockSimulation(
+          (data) => setMockState({ ...data, cooperation }),
+          500,
+          scenarioId,
+        );
         window.mockSimulationCleanup = cleanup;
       }
     } else {
-      // Apelează backend API pentru schimbare scenariu
-      resetSimulation(scenarioId).then(() => {
-        console.log('✅ Scenario changed to:', scenarioId);
-      });
+      // Map frontend scenario id → backend scenario name
+      const backendMap = {
+        normal:              'perpendicular',
+        collision_imminent:  'perpendicular',
+        emergency_vehicle:   'emergency',
+        speed_diff:          'speed_diff',
+        high_traffic:        'perpendicular',
+      };
+      resetSimulation(backendMap[scenarioId] || scenarioId);
     }
   };
 
   // TOGGLE COOPERATION - APELEAZĂ BACKEND
   const handleToggleCooperation = async () => {
     if (useMockData) {
-      const newCooperation = !cooperation;
-      setCooperation(newCooperation);
-      setMockState(prev => ({
-        ...prev,
-        cooperation: newCooperation,
-      }));
+      const next = !cooperation;
+      setCooperation(next);
+      setMockState(prev => ({ ...prev, cooperation: next }));
     } else {
-      // Apelează backend API
-      const result = await toggleCooperation();
-      if (result) {
-        console.log('✅ Cooperation toggled:', result);
-      }
+      await toggleCooperation();
     }
   };
 
   // RESET SCENARIO - Resetează pozițiile mașinilor
   const handleResetScenario = async () => {
     if (useMockData) {
-      if (window.mockSimulationCleanup) {
-        window.mockSimulationCleanup();
-        window.mockSimulationCleanup = null;
-      }
-
-      const { SCENARIOS } = require('./data/fakeData');
+      handleStop();
       const scenarioData = SCENARIOS[currentScenario] || SCENARIOS.normal;
-
       setMockState({
         vehicles: scenarioData.vehicles.map(v => ({
           ...v,
-          speed: Math.sqrt(v.vx * v.vx + v.vy * v.vy) * 10,
-          heading: Math.atan2(v.vy, v.vx),
-          status: v.state,
+          speed:   Math.sqrt((v.vx || 0) ** 2 + (v.vy || 0) ** 2) * 10,
+          heading: Math.atan2(v.vy || 0, v.vx || 0),
+          status:  v.state,
         })),
-        events: [],
+        events:       [],
         systemStatus: { ...mockSystemStatus, running: false },
-        risk: scenarioData.risk,
-        cooperation: cooperation,
+        risk:         scenarioData.risk || { danger: false, ttc: 5.0 },
+        cooperation,
       });
-
-      setIsRunning(false);
     } else {
-      // Apelează backend API
-      const result = await resetSimulation(currentScenario);
-      if (result) {
-        setIsRunning(false);
-        console.log('✅ Scenario reset:', result);
-      }
+      const backendMap = {
+        normal:             'perpendicular',
+        collision_imminent: 'perpendicular',
+        emergency_vehicle:  'emergency',
+        speed_diff:         'speed_diff',
+        high_traffic:       'perpendicular',
+      };
+      await resetSimulation(backendMap[currentScenario] || currentScenario);
+      setIsRunning(false);
     }
   };
 
@@ -193,14 +161,11 @@ function App() {
           {useMockData ? (
             <span className="status-badge status-mock">📊 Mock Data</span>
           ) : isConnected ? (
-            <span className="status-badge status-connected">🟢 Connected</span>
+            <span className="status-badge status-connected">🟢 Live (Backend)</span>
           ) : (
-            <span className="status-badge status-disconnected">🔴 Disconnected</span>
+            <span className="status-badge status-disconnected">🔴 Reconnecting…</span>
           )}
-          <button
-            className="toggle-mode-btn"
-            onClick={() => setUseMockData(!useMockData)}
-          >
+          <button className="toggle-mode-btn" onClick={() => setUseMockData(v => !v)}>
             {useMockData ? 'Switch to WebSocket' : 'Switch to Mock'}
           </button>
         </div>
@@ -208,9 +173,7 @@ function App() {
 
       {/* Error banner */}
       {error && !useMockData && (
-        <div className="error-banner">
-          ⚠️ {error}
-        </div>
+        <div className="error-banner">⚠️ {error}</div>
       )}
 
       {/* Main Layout */}
@@ -218,8 +181,8 @@ function App() {
         {/* Left Panel - Control Panel */}
         <aside className="left-panel">
           <ControlPanel
-            isRunning={isRunning || systemStatus.running}
-            cooperation={cooperation}
+            isRunning={isRunning || !!systemStatus?.running}
+            cooperation={liveCooperation}
             currentScenario={currentScenario}
             onStart={handleStart}
             onStop={handleStop}
@@ -234,7 +197,7 @@ function App() {
         <main className="main-content">
           <IntersectionCanvas
             vehicles={vehicles}
-            risk={useMockData ? mockState.risk : (wsSystemStatus.risk || { danger: false })}
+            risk={risk}
             dimensions={{ width: 800, height: 800 }}
           />
         </main>
@@ -245,10 +208,10 @@ function App() {
             vehicles={vehicles}
             systemStatus={{
               ...systemStatus,
-              running: isRunning || systemStatus.running,
-              cooperation: cooperation, // Folosește state-ul de cooperation
+              running:     isRunning || !!systemStatus?.running,
+              cooperation: liveCooperation,
             }}
-            risk={useMockData ? mockState.risk : (wsSystemStatus.risk || { danger: false, ttc: 5.0 })}
+            risk={risk}
           />
         </aside>
       </div>

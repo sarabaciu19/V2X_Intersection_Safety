@@ -78,5 +78,101 @@
     "ttc": 1.28,
     "reason": "TTC=1.28s < 1.5s",
     "timestamp": 1772274861.671287
+  },
+  {
+    "time": "13:49:28",
+    "agent": "A+B",
+    "action": "COLLISION",
+    "ttc": 0.0,
+    "reason": "No cooperation \u2014 physical collision",
+    "timestamp": 1772279368.252228
+  },
+  {
+    "time": "13:49:28",
+    "agent": "B",
+    "action": "BRAKE",
+    "ttc": 2.5,
+    "reason": "TTC=2.50s < 3.0s",
+    "timestamp": 1772279368.2858913
+  },
+  {
+    "time": "13:49:28",
+    "agent": "B",
+    "action": "YIELD",
+    "ttc": 1.28,
+    "reason": "TTC=1.28s < 1.5s",
+    "timestamp": 1772279368.3530617
+  },
+  {
+    "time": "13:57:24",
+    "agent": "A+B",
+    "action": "COLLISION",
+    "ttc": 0.0,
+    "reason": "No cooperation \u2014 physical collision",
+    "timestamp": 1772279844.9006126
+  },
+  {
+    "time": "13:57:24",
+    "agent": "B",
+    "action": "BRAKE",
+    "ttc": 2.5,
+    "reason": "TTC=2.50s < 3.0s",
+    "timestamp": 1772279844.934145
+  },
+  {
+    "time": "13:57:25",
+    "agent": "B",
+    "action": "YIELD",
+    "ttc": 1.28,
+    "reason": "TTC=1.28s < 1.5s",
+    "timestamp": 1772279845.0013506
+  },
+  {
+    "time": "13:59:52",
+    "agent": "A+B",
+    "action": "COLLISION",
+    "ttc": 0.0,
+    "reason": "No cooperation \u2014 physical collision",
+    "timestamp": 1772279992.396831
+  },
+  {
+    "time": "13:59:52",
+    "agent": "B",
+    "action": "BRAKE",
+    "ttc": 2.5,
+    "reason": "TTC=2.50s < 3.0s",
+    "timestamp": 1772279992.4309652
+  },
+  {
+    "time": "13:59:52",
+    "agent": "B",
+    "action": "YIELD",
+    "ttc": 1.28,
+    "reason": "TTC=1.28s < 1.5s",
+    "timestamp": 1772279992.4989357
+  },
+  {
+    "time": "14:00:15",
+    "agent": "A+B",
+    "action": "COLLISION",
+    "ttc": 0.0,
+    "reason": "No cooperation \u2014 physical collision",
+    "timestamp": 1772280015.6153886
+  },
+  {
+    "time": "14:00:15",
+    "agent": "B",
+    "action": "BRAKE",
+    "ttc": 2.5,
+    "reason": "TTC=2.50s < 3.0s",
+    "timestamp": 1772280015.6484475
+  },
+  {
+    "time": "14:00:15",
+    "agent": "B",
+    "action": "YIELD",
+    "ttc": 1.28,
+    "reason": "TTC=1.28s < 1.5s",
+    "timestamp": 1772280015.71697
   }
 ]

@@ -23,8 +23,13 @@ export function useSimulation(url = 'ws://localhost:8000/ws', apiUrl = 'http://l
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
 
-  useEffect(() => {
-    // Încearcă să conectezi la WebSocket
+  /**
+   * connect - funcție pentru a stabili conexiunea WebSocket
+   */
+  const connect = () => {
+    // Nu reconecta dacă deja e deschis
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
+
     const ws = new WebSocket(url);
     wsRef.current = ws;
 
@@ -39,49 +44,48 @@ export function useSimulation(url = 'ws://localhost:8000/ws', apiUrl = 'http://l
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log('📡 WebSocket message received:', data);
 
-        // Transformează date de la backend în format frontend
-        // Backend trimite: {tick, cooperation, scenario, vehicles, risk, semaphore, collisions, event_log}
-        // Frontend așteaptă: {vehicles, risk, cooperation, events}
-        const transformedState = {
-          vehicles: data.vehicles || [],
+        // Transformă formatul backend → format frontend
+        const transformed = {
+          // Vehiculele vin direct — formatul e compatibil
+          vehicles: (data.vehicles || []).map(v => ({
+            ...v,
+            status: v.state,           // alias pentru componente vechi
+            speed:  Math.sqrt((v.vx || 0) ** 2 + (v.vy || 0) ** 2) * 10,
+            heading: Math.atan2(v.vy || 0, v.vx || 0),
+          })),
           risk: {
             danger: data.risk?.risk === true,
-            ttc: data.risk?.ttc || 999,
-            action: data.risk?.action || 'go',
+            ttc:    data.risk?.ttc   ?? 999,
+            action: data.risk?.action ?? 'go',
+            pair:   data.risk?.pair   ?? null,
           },
-          cooperation: data.cooperation || true,
+          cooperation: data.cooperation ?? true,
+          scenario:    data.scenario    ?? 'perpendicular',
+          tick:        data.tick        ?? 0,
+          semaphore:   data.semaphore   ?? {},
+          collisions:  data.collisions  ?? [],
+          // event_log din backend → events pentru EventLog component
           events: (data.event_log || []).map(evt => ({
-            timestamp: evt.timestamp || new Date().toISOString(),
-            type: evt.action?.toLowerCase() || 'info',
-            message: `${evt.agent}: ${evt.action}`,
-            details: { ttc: evt.ttc },
+            timestamp: evt.timestamp ? new Date(evt.timestamp * 1000).toISOString() : new Date().toISOString(),
+            type:      (evt.action || 'info').toLowerCase(),
+            message:   `[${evt.time || ''}] Agent ${evt.agent}: ${evt.action}${evt.ttc ? ` — TTC=${evt.ttc}s` : ''}`,
             vehicleId: evt.agent,
+            details:   { ttc: evt.ttc, reason: evt.reason },
           })),
-          semaphore: data.semaphore || {},
-          collisions: data.collisions || [],
-          tick: data.tick || 0,
         };
 
-        // Update state cu datele transformate
-        setState(transformedState);
+        setState(transformed);
       } catch (err) {
         console.error('❌ Error parsing WebSocket message:', err);
-        // Fallback la FAKE_STATE dacă parse failed
-        setState(FAKE_STATE);
       }
     };
 
     // Handler pentru erori - FALLBACK la FAKE_STATE
-    ws.onerror = (error) => {
-      console.error('❌ WebSocket error:', error);
-      console.log('🔄 Fallback to FAKE_STATE');
-
+    ws.onerror = () => {
+      console.error('❌ WebSocket error');
       setIsConnected(false);
-      setError('WebSocket connection failed');
-
-      // FALLBACK: folosește fakeData automat
+      setError('WebSocket connection failed — folosind date Mock');
       setState(FAKE_STATE);
     };
 
@@ -89,45 +93,32 @@ export function useSimulation(url = 'ws://localhost:8000/ws', apiUrl = 'http://l
     ws.onclose = () => {
       console.log('🔌 WebSocket disconnected');
       setIsConnected(false);
-
-      // FALLBACK: folosește fakeData automat
-      setState(FAKE_STATE);
-
-      // Optional: Auto-reconnect după 3 secunde
-      reconnectTimeoutRef.current = setTimeout(() => {
-        console.log('🔄 Attempting to reconnect...');
-      }, 3000);
+      // Reconectare automată după 3s
+      reconnectTimeoutRef.current = setTimeout(connect, 3000);
     };
+  };
 
-    // Cleanup function - închide WebSocket la unmount
+  useEffect(() => {
+    connect();
     return () => {
-      console.log('🧹 Cleaning up WebSocket connection');
-
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-
-      if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
-        ws.close();
-      }
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      if (wsRef.current) wsRef.current.close();
     };
-  }, [url]);
+  }, [url]); // eslint-disable-line
 
-  // ===== METODE DE CONTROL =====
+  // ===== METODE CONTROL BACKEND =====
 
   /**
    * Reset simulation - resets to initial state
    */
   const resetSimulation = async (scenario = null) => {
     try {
-      const response = await fetch(`${apiUrl}/reset`, {
-        method: 'POST',
+      const res = await fetch(`${apiUrl}/reset`, {
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ scenario }),
+        body:    JSON.stringify({ scenario }),
       });
-      const data = await response.json();
-      console.log('✅ Reset successful:', data);
-      return data;
+      return await res.json();
     } catch (err) {
       console.error('❌ Reset failed:', err);
       return null;
@@ -139,13 +130,8 @@ export function useSimulation(url = 'ws://localhost:8000/ws', apiUrl = 'http://l
    */
   const toggleCooperation = async () => {
     try {
-      const response = await fetch(`${apiUrl}/toggle-cooperation`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const data = await response.json();
-      console.log('✅ Cooperation toggled:', data);
-      return data;
+      const res = await fetch(`${apiUrl}/toggle-cooperation`, { method: 'POST' });
+      return await res.json();
     } catch (err) {
       console.error('❌ Toggle cooperation failed:', err);
       return null;
@@ -157,10 +143,8 @@ export function useSimulation(url = 'ws://localhost:8000/ws', apiUrl = 'http://l
    */
   const getScenarios = async () => {
     try {
-      const response = await fetch(`${apiUrl}/scenarios`);
-      const data = await response.json();
-      console.log('✅ Scenarios loaded:', data);
-      return data;
+      const res = await fetch(`${apiUrl}/scenarios`);
+      return await res.json();
     } catch (err) {
       console.error('❌ Get scenarios failed:', err);
       return null;
@@ -168,14 +152,7 @@ export function useSimulation(url = 'ws://localhost:8000/ws', apiUrl = 'http://l
   };
 
   // Return state și metode
-  return {
-    state,           // Date simulare (fie de la WebSocket, fie FAKE_STATE)
-    isConnected,     // Boolean: WebSocket conectat?
-    error,           // Error message (dacă există)
-    resetSimulation, // Metoda: reset
-    toggleCooperation, // Metoda: toggle cooperation
-    getScenarios,    // Metoda: get scenarios
-  };
+  return { state, isConnected, error, resetSimulation, toggleCooperation, getScenarios };
 }
 
 /**

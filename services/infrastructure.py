@@ -1,189 +1,102 @@
 """
-infrastructure.py — Agentul Infrastructura (Semafor Inteligent V2I)
---------------------------------------------------------------------
-
-DE CE EXISTA:
-  Comunicarea V2I (Vehicle-to-Infrastructure) e o parte din cerinta.
-  Semaforul nu e un element pasiv — e un AGENT care:
-    1. Citeste starea tuturor vehiculelor din V2X Bus
-    2. Calculeaza riscuri la nivel de intersectie
-    3. Publica recomandari (culoare semafor, alerte) in V2X Bus
-    4. Reactioneaza la vehicule de urgenta
-
-DIFERENTA FATA DE UN SEMAFOR NORMAL:
-  Un semafor normal schimba culoarea dupa un timer fix.
-  Semaforul nostru INTELLIGENT vede ca un vehicul de urgenta se apropie
-  si da verde imediat, indiferent de timer — asta e V2I real.
-
-CUM SE INTEGREAZA:
-  Persoana 1 apeleaza infra_agent.update(v2x_bus) la fiecare tick,
-  dupa ce vehiculele si-au publicat starea.
-  Semaforul adauga in v2x_bus['INFRA'] recomandarea sa.
-  Vehiculele citesc 'INFRA' si respecta semaforul daca cooperation=True.
+services/infrastructure.py — Agentul semafor inteligent V2I
 """
-
 import math
-
-# ─── Durate semafor (in tick-uri, 1 tick = 100ms) ────────────────────────────
-GREEN_DURATION = 150  # 15 secunde verde
-YELLOW_DURATION = 30  # 3 secunde galben
-RED_DURATION = 150  # 15 secunde rosu
-
-
+import time as _time
+from services import v2x_bus as _bus
+from utils import logger
+GREEN_TICKS  = 150   # 5s la 30 FPS
+YELLOW_TICKS = 30    # 1s
+RED_TICKS    = 150   # 5s
 class InfrastructureAgent:
-    """
-    Agentul infrastructura — semaforul inteligent.
-
-    Publicata in V2X Bus sub cheia 'INFRA'.
-    """
-
     def __init__(self, intersection_x=400, intersection_y=400):
-        self.intersection_x = intersection_x  # centrul intersectiei pe canvas
-        self.intersection_y = intersection_y
-
-        # Starea semaforului
-        self.light = "green"
-        self.timer = 0
-
-        # Istoricul recomandarilor (pentru logging)
-        self.last_recommendation = None
-        self.emergency_override = False  # True daca urgenta a preluat controlul
-
-    def update(self, v2x_bus: dict) -> dict:
-        """
-        Apelat la fiecare tick.
-
-        1. Citeste vehiculele din V2X Bus
-        2. Detecteaza urgente
-        3. Calculeaza riscuri la nivel de intersectie
-        4. Actualizeaza culoarea semaforului
-        5. Publica recomandarea in V2X Bus
-
-        Returneaza starea agentului (pentru logging si frontend).
-        """
+        self.intersection_x   = intersection_x
+        self.intersection_y   = intersection_y
+        self.light            = "green"
+        self.timer            = 0
+        self.emergency_active = False
+        self.emergency_id     = None
+        self._last_light      = ""
+    # ------------------------------------------------------------------
+    # Apelat de engine la fiecare tick (fara argumente)
+    # ------------------------------------------------------------------
+    def update(self) -> dict:
         vehicles = {
-            k: v for k, v in v2x_bus.items()
-            if k not in ("INFRA",) and isinstance(v, dict) and "x" in v
+            k: v for k, v in _bus.get_all().items()
+            if k != "INFRA" and isinstance(v, dict) and "x" in v
         }
-
-        # ── 1. Detectie vehicul de urgenta ───────────────────────────────────
-        emergency_detected = self._detect_emergency(vehicles)
-
-        if emergency_detected:
-            # Override: da verde imediat vehiculului de urgenta
-            self.light = "green"
-            self.emergency_override = True
-            self.timer = 0  # Reseteaza timer-ul
+        emergency = self._detect_emergency(vehicles)
+        if emergency:
+            self.light            = "green"
+            self.emergency_active = True
+            self.emergency_id     = emergency["id"]
+            self.timer            = 0
         else:
-            self.emergency_override = False
-            # ── 2. Ciclu normal semafor ───────────────────────────────────────
-            self._tick_light_cycle()
-
-        # ── 3. Calculeaza recomandari de viteza ───────────────────────────────
-        speed_recommendations = self._calc_speed_recommendations(vehicles)
-
-        # ── 4. Detecteaza vehicule care se apropie de intersectie ─────────────
+            self.emergency_active = False
+            self.emergency_id     = None
+            self._tick_cycle()
         approaching = self._detect_approaching(vehicles)
-
-        # ── 5. Construieste recomandarea si o publica in V2X Bus ──────────────
-        recommendation = {
-            "type": "INFRA",
-            "light": self.light,
-            "emergency_override": self.emergency_override,
-            "approaching_vehicles": approaching,
-            "speed_recommendations": speed_recommendations,
-            "risk_alert": len(approaching) >= 2,  # Atentie daca 2+ vehicule se apropie
+        state = {
+            "light":             self.light,
+            "emergency":         self.emergency_active,
+            "emergency_vehicle": self.emergency_id,
+            "approaching":       approaching,
+            "risk_alert":        len(approaching) >= 2,
+            "recommendation":    f"light={self.light}",
+            "green_for":         [],
+            "red_for":           [],
         }
-
-        v2x_bus["INFRA"] = recommendation
-        self.last_recommendation = recommendation
-        return recommendation
-
-    # ── Metode interne ────────────────────────────────────────────────────────
-
-    def _tick_light_cycle(self):
-        """Ciclul normal al semaforului bazat pe timer."""
+        _bus.publish("INFRA", {
+            "id": "INFRA",
+            **state,
+            "x": self.intersection_x,
+            "y": self.intersection_y,
+            "vx": 0, "vy": 0,
+            "state": "normal",
+            "priority": "infrastructure",
+            "timestamp": _time.time(),
+        })
+        return state
+    # ------------------------------------------------------------------
+    def _tick_cycle(self):
         self.timer += 1
-
-        if self.light == "green" and self.timer >= GREEN_DURATION:
-            self.light = "yellow"
-            self.timer = 0
-        elif self.light == "yellow" and self.timer >= YELLOW_DURATION:
-            self.light = "red"
-            self.timer = 0
-        elif self.light == "red" and self.timer >= RED_DURATION:
+        total = GREEN_TICKS + YELLOW_TICKS + RED_TICKS
+        pos   = self.timer % total
+        if pos < GREEN_TICKS:
             self.light = "green"
-            self.timer = 0
-
-    def _detect_emergency(self, vehicles: dict) -> bool:
-        """
-        Verifica daca vreun vehicul din V2X Bus are flag 'emergency': True.
-        Returneaza True daca se apropie de intersectie.
-        """
-        for vid, vdata in vehicles.items():
-            if vdata.get("emergency", False) or vdata.get("priority") == "emergency":
-                # Verifica daca e aproape de intersectie
-                dist = self._distance_to_intersection(vdata)
-                if dist < 200:  # In raza de 200px de intersectie
-                    return True
-        return False
-
-    def _distance_to_intersection(self, vdata: dict) -> float:
-        """Distanta euclidiana de la vehicul la centrul intersectiei."""
-        dx = vdata["x"] - self.intersection_x
-        dy = vdata["y"] - self.intersection_y
-        return math.sqrt(dx ** 2 + dy ** 2)
-
+        elif pos < GREEN_TICKS + YELLOW_TICKS:
+            self.light = "yellow"
+        else:
+            self.light = "red"
+        if self.light != self._last_light:
+            logger.log_info(f"SEMAFOR: {self._last_light or '?'} → {self.light}")
+            self._last_light = self.light
+    def _detect_emergency(self, vehicles: dict):
+        for vid, v in vehicles.items():
+            if v.get("priority") == "emergency":
+                dist = self._dist(v)
+                if dist < 250:
+                    return v
+        return None
     def _detect_approaching(self, vehicles: dict) -> list:
-        """
-        Returneaza lista vehiculelor care se indreapta spre intersectie
-        (distanta < 250px si se apropie, nu se departeaza).
-        """
-        approaching = []
-        for vid, vdata in vehicles.items():
-            dist = self._distance_to_intersection(vdata)
-            if dist < 250:
-                # Verifica daca se apropie (produsul scalar negativ = se indreapta spre centru)
-                dx = vdata["x"] - self.intersection_x
-                dy = vdata["y"] - self.intersection_y
-                dot = dx * vdata.get("vx", 0) + dy * vdata.get("vy", 0)
-                if dot < 0:  # Se indreapta spre intersectie
-                    approaching.append({"id": vid, "distance": round(dist, 1)})
-        return approaching
-
-    def _calc_speed_recommendations(self, vehicles: dict) -> dict:
-        """
-        Calculeaza viteza recomandata pentru fiecare vehicul bazat pe semafor.
-
-        Logica simpla:
-          - Verde: mentine viteza
-          - Galben: incetineste
-          - Rosu: opreste inainte de intersectie
-
-        In realitate asta e "Green Wave" sau "GLOSA" (Green Light Optimal Speed Advisory).
-        """
-        recommendations = {}
-        for vid, vdata in vehicles.items():
-            dist = self._distance_to_intersection(vdata)
-            speed = vdata.get("speed", 0)
-
-            if self.light == "green":
-                recommendations[vid] = {"action": "maintain", "reason": "green_light"}
-            elif self.light == "yellow":
-                recommendations[vid] = {"action": "slow_down", "reason": "yellow_light"}
-            elif self.light == "red":
-                if dist < 100 and speed > 0:
-                    recommendations[vid] = {"action": "stop", "reason": "red_light"}
-                else:
-                    recommendations[vid] = {"action": "slow_down", "reason": "red_approaching"}
-
-        return recommendations
-
+        out = []
+        for vid, v in vehicles.items():
+            dist = self._dist(v)
+            if dist < 300:
+                dx  = v["x"] - self.intersection_x
+                dy  = v["y"] - self.intersection_y
+                dot = dx * v.get("vx", 0) + dy * v.get("vy", 0)
+                if dot < 0:
+                    out.append({"id": vid, "distance": round(dist, 1)})
+        return out
+    def _dist(self, v: dict) -> float:
+        dx = v["x"] - self.intersection_x
+        dy = v["y"] - self.intersection_y
+        return math.sqrt(dx**2 + dy**2)
     def get_state(self) -> dict:
-        """Starea curenta a agentului (pentru dashboard frontend)."""
         return {
-            "light": self.light,
-            "timer": self.timer,
-            "emergency_override": self.emergency_override,
-            "last_recommendation": self.last_recommendation
+            "light":             self.light,
+            "timer":             self.timer,
+            "emergency_active":  self.emergency_active,
+            "emergency_id":      self.emergency_id,
         }
