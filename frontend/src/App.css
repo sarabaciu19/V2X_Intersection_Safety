@@ -1,0 +1,257 @@
+/* App.css - Stiluri pentru aplicația V2X Intersection Safety */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Arial', 'Helvetica', sans-serif;
+  background-color: #1a1a1a;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Header */
+.app-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 15px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.app-header h1 {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.connection-status {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.status-badge {
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.status-connected {
+  background-color: rgba(0, 255, 0, 0.2);
+  border: 1px solid #00ff00;
+}
+
+.status-disconnected {
+  background-color: rgba(255, 0, 0, 0.2);
+  border: 1px solid #ff0000;
+}
+
+.status-mock {
+  background-color: rgba(255, 165, 0, 0.2);
+  border: 1px solid #ffa500;
+}
+
+.toggle-mode-btn {
+  padding: 8px 16px;
+  background-color: #444;
+  color: #fff;
+  border: 1px solid #666;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.3s;
+}
+
+.toggle-mode-btn:hover {
+  background-color: #555;
+  border-color: #888;
+}
+
+/* Error Banner */
+.error-banner {
+  background-color: #ff4444;
+  color: #fff;
+  padding: 10px 30px;
+  text-align: center;
+  font-weight: bold;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Main Layout */
+.app-layout {
+  display: grid;
+  grid-template-columns: 280px 1fr 320px;
+  gap: 15px;
+  padding: 15px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.left-panel,
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.main-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #2a2a2a;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+/* Footer - Event Log */
+.app-footer {
+  height: 250px;
+  margin: 0 15px 15px 15px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #2a2a2a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* Responsive Design */
+@media (max-width: 1400px) {
+  .app-layout {
+    grid-template-columns: 250px 1fr 280px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .app-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .left-panel {
+    order: 1;
+  }
+
+  .main-content {
+    order: 2;
+    height: 400px;
+  }
+
+  .right-panel {
+    order: 3;
+  }
+
+  .app-footer {
+    height: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-header h1 {
+    font-size: 18px;
+  }
+
+  .app-layout {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .main-content {
+    padding: 10px;
+  }
+
+  .app-footer {
+    height: 150px;
+    margin: 0 10px 10px 10px;
+  }
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Button hover effects */
+button {
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Canvas container */
+.intersection-canvas-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Utility classes */
+.text-center {
+  text-align: center;
+}
+
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+
+.p-2 {
+  padding: 0.5rem;
+}
+

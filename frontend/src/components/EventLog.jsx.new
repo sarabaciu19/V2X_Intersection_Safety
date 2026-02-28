@@ -1,0 +1,433 @@
+import React, { useRef, useEffect, useState } from 'react';
+
+/**
+ * EventLog - Log decizii în timp real
+ *
+ * Specificații:
+ * - Lista ultimelor 10 decizii ale agenților
+ * - Scroll automat
+ * - Format: '[12:34:05] Agent B: FRÂNEAZĂ — TTC = 1.8s'
+ * - Colorează logul:
+ *   - Roșu pentru frânare
+ *   - Galben pentru cedare
+ *   - Verde pentru normal
+ * - Asta dovedește juriului că sistemul rulează live, nu e o animație
+ */
+const EventLog = ({ events = [], maxEvents = 10 }) => {
+  const logEndRef = useRef(null);
+  const [autoScroll, setAutoScroll] = useState(true);
+
+  // Scroll automat la ultimul eveniment
+  useEffect(() => {
+    if (autoScroll && logEndRef.current) {
+      logEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [events, autoScroll]);
+
+  // Păstrează doar ultimele maxEvents evenimente
+  const recentEvents = events.slice(-maxEvents);
+
+  /**
+   * Formatează timestamp în format [HH:MM:SS]
+   */
+  const formatTimestamp = (timestamp) => {
+    try {
+      const date = new Date(timestamp);
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      return `[${hours}:${minutes}:${seconds}]`;
+    } catch (error) {
+      return '[--:--:--]';
+    }
+  };
+
+  /**
+   * Determină culoarea evenimentului
+   * - Roșu: frânare, danger, collision
+   * - Galben: warning, cedare, yielding
+   * - Verde: normal, success, collision_avoided
+   * - Albastru: v2x_message, decision
+   */
+  const getEventColor = (event) => {
+    const type = event.type?.toLowerCase() || '';
+    const message = event.message?.toLowerCase() || '';
+
+    // ROȘU - Frânare, Pericol
+    if (
+      type.includes('braking') ||
+      type.includes('danger') ||
+      type.includes('collision') ||
+      message.includes('frânează') ||
+      message.includes('franează') ||
+      message.includes('pericol')
+    ) {
+      return '#EF4444'; // Roșu
+    }
+
+    // GALBEN - Cedare, Avertizare
+    if (
+      type.includes('warning') ||
+      type.includes('yielding') ||
+      message.includes('cedează') ||
+      message.includes('cedeaza') ||
+      message.includes('avertiz')
+    ) {
+      return '#FBBF24'; // Galben
+    }
+
+    // VERDE - Normal, Success
+    if (
+      type.includes('normal') ||
+      type.includes('success') ||
+      type.includes('avoided') ||
+      message.includes('evitat') ||
+      message.includes('success')
+    ) {
+      return '#22C55E'; // Verde
+    }
+
+    // ALBASTRU - V2X, Decizii
+    if (
+      type.includes('v2x') ||
+      type.includes('message') ||
+      type.includes('decision')
+    ) {
+      return '#3B82F6'; // Albastru
+    }
+
+    // Default: Gri
+    return '#9CA3AF';
+  };
+
+  /**
+   * Obține icon pentru tip eveniment
+   */
+  const getEventIcon = (event) => {
+    const type = event.type?.toLowerCase() || '';
+
+    if (type.includes('braking') || type.includes('danger')) return '🚨';
+    if (type.includes('warning') || type.includes('yielding')) return '⚠️';
+    if (type.includes('avoided') || type.includes('success')) return '✅';
+    if (type.includes('v2x') || type.includes('message')) return '📡';
+    if (type.includes('decision')) return '🤖';
+    if (type.includes('collision')) return '💥';
+
+    return '📋';
+  };
+
+  /**
+   * Formatează mesajul evenimentului în format cerut
+   * Format: '[12:34:05] Agent B: FRÂNEAZĂ — TTC = 1.8s'
+   */
+  const formatEventMessage = (event) => {
+    const vehicleId = event.vehicleId || event.details?.vehicleId || '';
+    const message = event.message || '';
+    const ttc = event.details?.ttc || event.ttc;
+
+    // Construiește mesajul
+    let formattedMessage = message;
+
+    // Adaugă Agent ID dacă există
+    if (vehicleId && !message.includes('Agent') && !message.includes('Vehicul')) {
+      formattedMessage = `Agent ${vehicleId}: ${message}`;
+    }
+
+    // Adaugă TTC dacă există
+    if (ttc && !message.includes('TTC')) {
+      formattedMessage += ` — TTC = ${typeof ttc === 'number' ? ttc.toFixed(1) : ttc}s`;
+    }
+
+    return formattedMessage;
+  };
+
+  return (
+    <div style={styles.container}>
+      {/* Header */}
+      <div style={styles.header}>
+        <h3 style={styles.title}>📋 Event Log - Decizii Timp Real</h3>
+        <div style={styles.headerControls}>
+          <span style={styles.eventCount}>
+            {recentEvents.length} / {maxEvents} evenimente
+          </span>
+          <button
+            onClick={() => setAutoScroll(!autoScroll)}
+            style={{
+              ...styles.autoScrollButton,
+              backgroundColor: autoScroll ? '#22C55E' : '#6B7280',
+            }}
+            title={autoScroll ? 'Auto-scroll ON' : 'Auto-scroll OFF'}
+          >
+            {autoScroll ? '🔽 Auto' : '⏸️ Manual'}
+          </button>
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div style={styles.legend}>
+        <div style={styles.legendItem}>
+          <span style={{...styles.legendDot, backgroundColor: '#EF4444'}}></span>
+          <span style={styles.legendText}>Frânare</span>
+        </div>
+        <div style={styles.legendItem}>
+          <span style={{...styles.legendDot, backgroundColor: '#FBBF24'}}></span>
+          <span style={styles.legendText}>Cedare</span>
+        </div>
+        <div style={styles.legendItem}>
+          <span style={{...styles.legendDot, backgroundColor: '#22C55E'}}></span>
+          <span style={styles.legendText}>Normal</span>
+        </div>
+        <div style={styles.legendItem}>
+          <span style={{...styles.legendDot, backgroundColor: '#3B82F6'}}></span>
+          <span style={styles.legendText}>V2X</span>
+        </div>
+      </div>
+
+      {/* Event List */}
+      <div style={styles.eventList}>
+        {recentEvents.length === 0 ? (
+          <div style={styles.emptyState}>
+            <p style={styles.emptyText}>📭 Nu există evenimente încă</p>
+            <p style={styles.emptySubtext}>
+              Apasă START pentru a începe simularea
+            </p>
+          </div>
+        ) : (
+          <>
+            {recentEvents.map((event, index) => {
+              const color = getEventColor(event);
+              const icon = getEventIcon(event);
+              const timestamp = formatTimestamp(event.timestamp);
+              const message = formatEventMessage(event);
+
+              return (
+                <div
+                  key={`${event.timestamp}-${index}`}
+                  style={{
+                    ...styles.eventItem,
+                    borderLeftColor: color,
+                    animation: 'slideIn 0.3s ease-out',
+                  }}
+                >
+                  {/* Timestamp */}
+                  <span style={styles.timestamp}>{timestamp}</span>
+
+                  {/* Icon */}
+                  <span style={styles.icon}>{icon}</span>
+
+                  {/* Message */}
+                  <span style={{...styles.message, color: color}}>
+                    {message}
+                  </span>
+                </div>
+              );
+            })}
+
+            {/* Scroll anchor */}
+            <div ref={logEndRef} />
+          </>
+        )}
+      </div>
+
+      {/* Live Indicator */}
+      <div style={styles.liveIndicator}>
+        <div style={styles.liveDot}></div>
+        <span style={styles.liveText}>
+          LIVE - Sistem rulează în timp real
+        </span>
+      </div>
+    </div>
+  );
+};
+
+// ===== STYLES =====
+const styles = {
+  container: {
+    display: 'flex',
+    flexDirection: 'column',
+    backgroundColor: '#1F2937',
+    color: '#FFFFFF',
+    borderRadius: '8px',
+    height: '100%',
+    fontFamily: 'monospace',
+    overflow: 'hidden',
+  },
+
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '15px 20px',
+    borderBottom: '2px solid #374151',
+    backgroundColor: '#111827',
+  },
+
+  title: {
+    margin: 0,
+    fontSize: '16px',
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+
+  headerControls: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
+
+  eventCount: {
+    fontSize: '12px',
+    color: '#9CA3AF',
+    fontFamily: 'Arial, sans-serif',
+  },
+
+  autoScrollButton: {
+    padding: '4px 10px',
+    fontSize: '11px',
+    border: 'none',
+    borderRadius: '4px',
+    color: '#FFFFFF',
+    cursor: 'pointer',
+    fontWeight: 'bold',
+    transition: 'all 0.2s',
+  },
+
+  legend: {
+    display: 'flex',
+    gap: '15px',
+    padding: '10px 20px',
+    backgroundColor: '#111827',
+    borderBottom: '1px solid #374151',
+  },
+
+  legendItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+  },
+
+  legendDot: {
+    width: '10px',
+    height: '10px',
+    borderRadius: '50%',
+    display: 'inline-block',
+  },
+
+  legendText: {
+    fontSize: '11px',
+    color: '#9CA3AF',
+    fontFamily: 'Arial, sans-serif',
+  },
+
+  eventList: {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '15px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+
+  emptyState: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+    color: '#6B7280',
+  },
+
+  emptyText: {
+    fontSize: '16px',
+    margin: '0 0 8px 0',
+  },
+
+  emptySubtext: {
+    fontSize: '13px',
+    margin: 0,
+    color: '#4B5563',
+  },
+
+  eventItem: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '10px',
+    padding: '10px 12px',
+    backgroundColor: '#111827',
+    borderRadius: '6px',
+    borderLeft: '4px solid',
+    fontSize: '13px',
+    lineHeight: '1.5',
+    transition: 'all 0.2s',
+  },
+
+  timestamp: {
+    color: '#6B7280',
+    fontSize: '12px',
+    flexShrink: 0,
+    fontWeight: 'bold',
+  },
+
+  icon: {
+    fontSize: '16px',
+    flexShrink: 0',
+  },
+
+  message: {
+    flex: 1,
+    fontWeight: '500',
+    wordBreak: 'break-word',
+  },
+
+  liveIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 20px',
+    backgroundColor: '#111827',
+    borderTop: '2px solid #374151',
+  },
+
+  liveDot: {
+    width: '10px',
+    height: '10px',
+    borderRadius: '50%',
+    backgroundColor: '#EF4444',
+    animation: 'pulse 2s infinite',
+  },
+
+  liveText: {
+    fontSize: '12px',
+    color: '#9CA3AF',
+    fontWeight: 'bold',
+    fontFamily: 'Arial, sans-serif',
+  },
+};
+
+// Add CSS animation
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+`;
+document.head.appendChild(styleSheet);
+
+export default EventLog;
+
