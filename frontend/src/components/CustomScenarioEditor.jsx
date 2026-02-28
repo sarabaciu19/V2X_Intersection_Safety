@@ -337,7 +337,7 @@ const CustomScenarioEditor = ({
         <button onClick={handleClear}
           disabled={customScenario.length === 0 || busy}
           style={{ ...s.clearBtn, opacity: (customScenario.length === 0 || busy) ? 0.4 : 1 }}>
-          🗑 Golește scenariul
+          Golește scenariul
         </button>
       </div>
     </div>

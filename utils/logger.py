@@ -56,6 +56,25 @@ def log_collision(id1: str, id2: str) -> None:
     _save_to_file(entry)
 def log_info(msg: str) -> None:
     _log.info(msg)
+
+def log_v2i(vehicle_id: str, rec_type: str, reason: str, advisory_speed=None) -> dict:
+    """Inregistreaza o recomandare V2I (Infrastructura → Vehicul)."""
+    action_map = {"stop": "V2I_STOP", "reduce_speed": "V2I_REDUCE", "proceed": "V2I_GO"}
+    action = action_map.get(rec_type, "V2I")
+    detail = f"{reason} → {advisory_speed:.1f} px/tick" if advisory_speed is not None and rec_type == "reduce_speed" else reason
+    entry = {
+        "time":      datetime.now().strftime("%H:%M:%S"),
+        "agent":     vehicle_id,
+        "action":    action,
+        "ttc":       0.0,
+        "reason":    detail,
+        "timestamp": time.time(),
+    }
+    _buffer.append(entry)
+    if len(_buffer) > 100:
+        _buffer.pop(0)
+    _save_to_file(entry)
+    return entry
 def get_recent(n: int = 10) -> list[dict]:
     """Returneaza ultimele n decizii — pentru frontend EventLog."""
     return list(_buffer[-n:])
