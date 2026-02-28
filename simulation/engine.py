@@ -64,7 +64,6 @@ class SimulationEngine:
         self.paused              = False
         self._last_state         = {}
         self._event_log: list    = []
-        self._last_decision_idx  = 0
         self._custom_scenario: List[Dict[str, Any]] = []
         self._load_scenario('perpendicular')
 
@@ -82,7 +81,6 @@ class SimulationEngine:
         self.tick_count          = 0
         self.scenario_name       = name
         self._event_log          = []
-        self._last_decision_idx  = 0
         self.vehicles = [
             Vehicle(
                 id=d['id'],
@@ -263,41 +261,8 @@ class SimulationEngine:
                     if vid != 'INFRA'}
         risk_zones = _compute_risk_zones(bus_data)
 
-        # ── Event log ────────────────────────────────────────────────────
-        all_decisions = self.central.get_decisions()
-        new_entries = all_decisions[self._last_decision_idx:]
-        if new_entries:
-            self._last_decision_idx = len(all_decisions)
-            self._event_log.extend(new_entries)
-            if len(self._event_log) > 100:
-                self._event_log = self._event_log[-100:]
-
-        # Adauga si deciziile agentilor autonomi (din memoria lor)
-        for agent in self.agents:
-            mem = agent.get_memory()
-            if mem:
-                last = mem[-1]
-                # Adauga in event_log doar daca nu e 'go' (reduce noise)
-                if last.get('action') not in ('GO', None):
-                    log_entry = {
-                        'time':   last['tick_time'],
-                        'agent':  agent.vehicle_id,
-                        'action': last['action'],
-                        'reason': last['reason'],
-                        'ttc':    last['ttc'],
-                    }
-                    # Evita duplicate (verifica ultimele 5 intrari)
-                    recent = self._event_log[-5:] if self._event_log else []
-                    is_dup = any(
-                        e.get('agent') == log_entry['agent'] and
-                        e.get('action') == log_entry['action'] and
-                        abs(e.get('ttc', 0) - log_entry['ttc']) < 0.1
-                        for e in recent
-                    )
-                    if not is_dup:
-                        self._event_log.append(log_entry)
-                        if len(self._event_log) > 100:
-                            self._event_log = self._event_log[-100:]
+        # ── Event log — sursa unica: logger buffer (V2I + V2V + central) ──
+        self._event_log = logger.get_all()
 
         # Colecteaza memoria agentilor pentru state
         agents_memory = {
