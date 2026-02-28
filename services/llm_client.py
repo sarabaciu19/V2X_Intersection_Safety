@@ -42,8 +42,8 @@ def get_llm_decision(vehicle_id: str, context: dict) -> dict:
     }
     
     try:
-        # Timeout mai relaxat pentru situatii cu multi agenti
-        response = requests.post(OLLAMA_URL, json=payload, timeout=5.0)
+        # Timeout robust pentru situatii cu multi agenti
+        response = requests.post(OLLAMA_URL, json=payload, timeout=15.0)
         if response.status_code == 200:
             result = response.json()
             response_text = result.get("response", "{}")
