@@ -8,6 +8,7 @@ Reguli prioritate (Codul Rutier Romania):
 """
 import time
 from services import v2x_bus as _bus
+from utils import logger
 
 # Directia care vine din dreapta fata de fiecare directie
 RIGHT_OF = {
@@ -147,13 +148,15 @@ class CentralSystem:
 
     def _log(self, vehicle_id, action, reason=''):
         entry = {
-            'time':    time.strftime('%H:%M:%S'),
-            'agent':   vehicle_id,
-            'action':  action,
-            'reason':  reason,
-            'ttc':     0.0,
+            'time':   time.strftime('%H:%M:%S'),
+            'agent':  vehicle_id,
+            'action': action,
+            'reason': reason,
+            'ttc':    0.0,
         }
         self._decisions.append(entry)
+        # Scrie si in buffer-ul logger — vizibil in EventLog frontend
+        logger.log_decision(vehicle_id, action, 0.0, reason)
 
     def reset(self):
         self._decisions = []

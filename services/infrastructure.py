@@ -58,6 +58,7 @@ class InfrastructureAgent:
         self._last_phase      = ""
         self.light            = "green"
         self.lights: dict     = {d: "red" for d in ("N", "S", "E", "V")}
+        self._last_v2i_rec: dict = {}
         self._update_lights_from_phase(_phase_at(0))
 
     def _update_lights_from_phase(self, phase: str):
@@ -95,16 +96,18 @@ class InfrastructureAgent:
         red_for   = [d for d, l in self.lights.items() if l == "red"]
 
         approaching = self._detect_approaching(vehicles)
+        speed_rec   = self._compute_speed_recommendations(vehicles)
         state = {
-            "light":             self.light,
-            "lights":            dict(self.lights),
-            "emergency":         self.emergency_active,
-            "emergency_vehicle": self.emergency_id,
-            "approaching":       approaching,
-            "risk_alert":        len(approaching) >= 2,
-            "recommendation":    f"light={self.light}",
-            "green_for":         green_for,
-            "red_for":           red_for,
+            "light":                 self.light,
+            "lights":                dict(self.lights),
+            "emergency":             self.emergency_active,
+            "emergency_vehicle":     self.emergency_id,
+            "approaching":           approaching,
+            "risk_alert":            len(approaching) >= 2,
+            "recommendation":        f"light={self.light}",
+            "speed_recommendations": speed_rec,
+            "green_for":             green_for,
+            "red_for":               red_for,
         }
         _bus.publish("INFRA", {
             "id": "INFRA",
@@ -117,6 +120,58 @@ class InfrastructureAgent:
             "timestamp": _time.time(),
         })
         return state
+
+    # ------------------------------------------------------------------
+    def _compute_speed_recommendations(self, vehicles: dict) -> dict:
+        """Recomandari V2I per vehicul. Urgentele sunt excluse."""
+        ADVISORY_CAUTION  = 1.5
+        ADVISORY_APPROACH = 2.5
+        DIST_NEAR  = 150
+        DIST_FAR   = 300
+        recs = {}
+        for vid, v in vehicles.items():
+            if v.get("priority") == "emergency":
+                recs[vid] = {"type": "proceed", "advisory_speed": None, "reason": "urgenta"}
+                self._last_v2i_rec.pop(vid, None)
+                continue
+            dist      = self._dist(v)
+            direction = v.get("direction", "")
+            light     = self.lights.get(direction, "green")
+            if dist >= DIST_FAR:
+                recs[vid] = {"type": "proceed", "advisory_speed": None, "reason": "departe"}
+                self._last_v2i_rec.pop(vid, None)
+                continue
+            # verifica daca se apropie (dot < 0)
+            dx  = v["x"] - self.intersection_x
+            dy  = v["y"] - self.intersection_y
+            dot = dx * v.get("vx", 0) + dy * v.get("vy", 0)
+            if dot >= 0:
+                recs[vid] = {"type": "proceed", "advisory_speed": None, "reason": "se indeparteaza"}
+                self._last_v2i_rec.pop(vid, None)
+                continue
+            if light == "red":
+                recs[vid] = {"type": "stop", "advisory_speed": 0.0, "reason": "semafor rosu"}
+                if self._last_v2i_rec.get(vid) != "stop":
+                    logger.log_v2i(vid, "stop", "semafor rosu - opreste")
+                    self._last_v2i_rec[vid] = "stop"
+            elif light == "yellow":
+                recs[vid] = {"type": "reduce_speed", "advisory_speed": ADVISORY_CAUTION,
+                             "reason": "semafor galben"}
+                if self._last_v2i_rec.get(vid) != "yellow":
+                    logger.log_v2i(vid, "reduce_speed", "semafor galben", ADVISORY_CAUTION)
+                    self._last_v2i_rec[vid] = "yellow"
+            else:
+                speed = math.sqrt(v.get("vx", 0)**2 + v.get("vy", 0)**2)
+                if dist < DIST_NEAR and speed > ADVISORY_APPROACH:
+                    recs[vid] = {"type": "reduce_speed", "advisory_speed": ADVISORY_APPROACH,
+                                 "reason": "viteza prea mare la intersectie"}
+                    if self._last_v2i_rec.get(vid) != "zone":
+                        logger.log_v2i(vid, "reduce_speed", "viteza prea mare", ADVISORY_APPROACH)
+                        self._last_v2i_rec[vid] = "zone"
+                else:
+                    recs[vid] = {"type": "proceed", "advisory_speed": None, "reason": "verde OK"}
+                    self._last_v2i_rec.pop(vid, None)
+        return recs
 
     # ------------------------------------------------------------------
     def _tick_cycle(self):
