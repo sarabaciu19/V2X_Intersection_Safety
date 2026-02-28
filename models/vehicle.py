@@ -264,6 +264,8 @@ class Vehicle:
             elif dist_stop <= BRAKE_ZONE_DIST:
                 t = dist_stop / BRAKE_ZONE_DIST
                 factor = min(factor, MIN_SPEED_FACTOR + (1.0 - MIN_SPEED_FACTOR) * t)
+        # Daca are clearance acordat devreme (V2V fara semafor) → nu franeaza la linie,
+        # trece direct cu viteza plina
 
         return factor
 
@@ -303,19 +305,26 @@ class Vehicle:
         factor = self._desired_speed_factor(vehicles_same_dir or [])
 
         if factor <= 0.0:
-            # Trebuie sa se opreasca
             self.vx = 0.0
             self.vy = 0.0
             # Daca e fix la linia de stop si n-are clearance → waiting
             if not self.clearance and self._dist_to_wait_line() <= 1.0:
                 self.state = 'waiting'
+            elif self.clearance:
+                # Are clearance dar following l-a oprit — reporni imediat
+                self.state = 'moving'
             else:
                 self.state = 'braking'
             return
 
         self.vx = self._base_vx * factor
         self.vy = self._base_vy * factor
-        self.state = 'moving' if factor > 0.9 else 'braking'
+
+        # Daca are clearance acordat devreme si ajunge la linia de stop → trece direct
+        if self.clearance and self._dist_to_wait_line() <= 0:
+            self.state = 'crossing'
+        else:
+            self.state = 'moving' if factor > 0.9 else 'braking'
 
         # Aplica virajul la centrul intersectiei
         if not self._turned and self.intent != 'straight' and self._has_reached_turn_point():
