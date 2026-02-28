@@ -17,6 +17,11 @@ RIGHT_OF = {
     'E': 'N',
 }
 
+# Perechi de directii pe aceeasi strada (sens opus).
+# Vehiculele din pereche folosesc benzi separate si pot traversa simultan
+# (N↔S = strada verticala, E↔V = strada orizontala).
+SAME_ROAD = {frozenset({'N', 'S'}), frozenset({'E', 'V'})}
+
 
 def _get_semaphore_lights() -> dict:
     """Citeste starea semaforului din V2X Bus. Returneaza dict {directie: culoare}."""
@@ -28,6 +33,20 @@ class CentralSystem:
     def __init__(self):
         self._decisions = []
         self._crossing  = set()
+
+    def _paths_conflict(self, v1, v2) -> bool:
+        """
+        True daca traiectoriile v1 si v2 se pot intersecta fizic in cutia intersectiei.
+        Vehiculele pe aceeasi strada (N↔S sau E↔V), mergand drept in sensuri opuse,
+        folosesc benzi paralele separate → fara conflict.
+        Orice alta combinatie (strazi diferite) → conflict potential.
+        """
+        dirs = frozenset({v1.direction, v2.direction})
+        if dirs in SAME_ROAD:
+            # Aceeasi strada, benzi opuse — pot trece simultan
+            return False
+        # Strazi diferite — traiectoriile se intersecteaza in centrul intersectiei
+        return True
 
     def decide(self, vehicles):
         """Acorda clearance respectand regulile de prioritate si semaforul."""
@@ -66,7 +85,7 @@ class CentralSystem:
                 if not v.clearance:
                     self._log(v.id, 'HOLD', reason=f'semafor galben pentru directia {v.direction}')
 
-        # Vehicule eligibile = verde + nu traverseaza altcineva
+        # Vehicule eligibile = verde
         eligible = [
             v for v in normal
             if lights.get(v.direction, 'green') == 'green'
@@ -75,14 +94,35 @@ class CentralSystem:
         if not eligible:
             return
 
-        if crossing:
+        # Filtreaza vehiculele blocate de cei care traverseaza deja:
+        # un vehicul poate merge daca NU are conflict de traiectorie cu niciunul din cei care traverseaza.
+        can_go = [
+            v for v in eligible
+            if not any(self._paths_conflict(v, c) for c in crossing)
+        ]
+
+        if not can_go:
             return
 
-        winner = self._pick_winner(eligible)
+        # Alege castigatorul principal pe baza regulilor de prioritate
+        winner = self._pick_winner(can_go)
         if winner and not winner.clearance:
             winner.clearance = True
             light_reason = f'semafor verde ({winner.direction})'
             self._log(winner.id, 'CLEARANCE', reason=f'prioritate acordata, {light_reason}')
+
+        # Acorda clearance si celorlalte vehicule care nu au conflict cu nimeni
+        # (nici cu cei care traverseaza, nici cu cei care tocmai au primit clearance)
+        for v in can_go:
+            if v.clearance:
+                continue
+            already_going = [c for c in crossing] + [w for w in can_go if w.clearance]
+            if not any(self._paths_conflict(v, g) for g in already_going):
+                v.clearance = True
+                self._log(
+                    v.id, 'CLEARANCE',
+                    reason=f'semafor verde ({v.direction}), benzi paralele — traversare simultana permisa'
+                )
 
     def _pick_winner(self, waiting):
         if not waiting:
