@@ -1,0 +1,34 @@
+[
+  {
+    "time": "12:25:44",
+    "agent": "A+B",
+    "action": "COLLISION",
+    "ttc": 0.0,
+    "reason": "No cooperation \u2014 physical collision",
+    "timestamp": 1772274344.3485696
+  },
+  {
+    "time": "12:25:44",
+    "agent": "B",
+    "action": "BRAKE",
+    "ttc": 2.5,
+    "reason": "TTC=2.50s < 3.0s",
+    "timestamp": 1772274344.348782
+  },
+  {
+    "time": "12:25:44",
+    "agent": "B",
+    "action": "YIELD",
+    "ttc": 1.28,
+    "reason": "TTC=1.28s < 1.5s",
+    "timestamp": 1772274344.3491497
+  },
+  {
+    "time": "12:25:44",
+    "agent": "A+B",
+    "action": "COLLISION",
+    "ttc": 0.0,
+    "reason": "No cooperation \u2014 physical collision",
+    "timestamp": 1772274344.352656
+  }
+]
