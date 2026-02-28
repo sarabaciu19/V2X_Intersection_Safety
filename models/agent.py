@@ -12,6 +12,7 @@ cooperation=False → ignora V2X Bus si semaforul (demo coliziune)
 import math
 from collections import deque
 from services import v2x_bus
+from services import llm_client
 from services.collision import time_to_intersection, TTC_BRAKE, TTC_YIELD, is_right_of
 from utils import logger
 
@@ -111,7 +112,7 @@ class Agent:
             self._record("GO", my_ttc, "liber")
             return "go"
 
-        # ── 4. Negociere V2V ────────────────────────────────────────────
+        # ── 4. Decizie V2V via LLM (Ollama) ────────────────────────────
         others = {
             k: val for k, val in v2x_bus.get_others(v.id).items()
             if val.get("priority") != "infrastructure"
@@ -120,8 +121,30 @@ class Agent:
             self._record("GO", my_ttc, "niciun alt vehicul")
             return "go"
 
-        action = self._evaluate(my_data, my_ttc, others)
-        self._apply(action, my_ttc)
+        others_list = [
+            {
+                "id":       oid,
+                "ttc":      time_to_intersection(od),
+                "priority": od.get("priority", "normal"),
+            }
+            for oid, od in others.items()
+        ]
+        llm_context = {
+            "my_state": {
+                "ttc":       round(my_ttc, 3),
+                "priority":  v.priority,
+                "direction": v.direction,
+                "speed":     math.sqrt(v.vx ** 2 + v.vy ** 2),
+            },
+            "others": others_list,
+        }
+        llm_result = llm_client.request_llm_decision(v.id, llm_context)
+        action     = llm_result.get("action", "GO").lower()
+        reason     = llm_result.get("reason", "decizie LLM")
+        if action not in ("go", "yield", "brake"):
+            action = "go"
+
+        self._apply(action, my_ttc, reason=f"LLM: {reason}")
         return action
 
     def _evaluate(self, my_data: dict, my_ttc: float, others: dict) -> str:

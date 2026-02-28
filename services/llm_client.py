@@ -1,7 +1,9 @@
 import requests
 import json
 import logging
-from concurrent.futures import ThreadPoolExecutor
+import time as _time
+from concurrent.futures import ThreadPoolExecutor, Future
+from typing import Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("llm_client")
@@ -10,7 +12,13 @@ OLLAMA_URL  = "http://localhost:11434/api/generate"
 OLLAMA_PING = "http://localhost:11434/api/tags"
 MODEL_NAME  = "llama3.2:1b"
 
-executor = ThreadPoolExecutor(max_workers=2)
+executor = ThreadPoolExecutor(max_workers=4)
+
+# ── Cache decizii LLM per vehicul (async) ─────────────────────────────
+# Structura: { vid: {"action": str, "reason": str, "ts": float} }
+_llm_cache: dict = {}
+_pending:   dict = {}   # { vid: Future }
+_CACHE_TTL  = 1.8       # secunde — reutilizeaza decizia LLM pana la urmatorul raspuns
 
 # ── Disponibilitate Ollama ─────────────────────────────────────────────
 _ollama_available: bool = False
@@ -73,8 +81,20 @@ def _repair_json(raw: str) -> str:
         return "{}"
 
 
-# ── Prompt per vehicul ────────────────────────────────────────────────
+# ── Prompturi ────────────────────────────────────────────────────────
 
+# Prompt pentru decizia principala (GO/YIELD/BRAKE) — in engleza pt acuratete
+SINGLE_SYSTEM = (
+    'You are a V2X intersection safety agent. Decide what a vehicle should do.\n'
+    'Rules (in priority order):\n'
+    '  1. If any other vehicle has EMERGENCY priority → YIELD\n'
+    '  2. If your TTC is significantly higher than another vehicle (>0.3s diff) → YIELD\n'
+    '  3. If your TTC is lower than all others → GO\n'
+    '  4. If no conflict → GO\n'
+    'Respond ONLY with JSON: {"action": "GO"|"YIELD"|"BRAKE", "reason": "short reason in Romanian (max 8 words)"}\n'
+)
+
+# Prompt pentru explicatie text (motiv in romana)
 REASON_PROMPT = (
     'Esti un sistem V2X. Explica pe scurt IN ROMANA (max 8 cuvinte) decizia unui vehicul la intersectie.\n'
     'Raspunde DOAR cu JSON: {"reason":"explicatie scurta in romana"}\n'
@@ -82,7 +102,8 @@ REASON_PROMPT = (
 
 
 def _get_ai_reason(vid: str, action: str, my_ttc: float, others_summary: str) -> str:
-    """Foloseste Ollama DOAR pentru a genera o explicatie in romana. Decizia e determinista."""
+    """Foloseste Ollama DOAR pentru a genera o explicatie in romana."""
+    global _ollama_available
     prompt = (
         f'{REASON_PROMPT}'
         f'Vehicul {vid} decide {action}. TTC={my_ttc:.1f}s. Conflicte: [{others_summary if others_summary else "niciunul"}].\n'
@@ -105,10 +126,8 @@ def _get_ai_reason(vid: str, action: str, my_ttc: float, others_summary: str) ->
             if reason and len(reason) > 3:
                 return reason
     except requests.exceptions.ConnectionError:
-        global _ollama_available
         _ollama_available = False
     except requests.exceptions.Timeout:
-        global _ollama_available
         _ollama_available = False
     except Exception:
         pass
@@ -116,28 +135,45 @@ def _get_ai_reason(vid: str, action: str, my_ttc: float, others_summary: str) ->
 
 
 def _get_single_decision(v: dict) -> tuple:
-    """Apeleaza Ollama pentru un singur vehicul. Returneaza (vid, decizie|None)."""
+    """
+    Apeleaza Ollama sincron pentru un singur vehicul.
+    Returneaza (vid, {action, reason}) sau (vid, None) la eroare.
+    Ruleaza in thread-pool — nu blocheaza simularea.
+    """
     global _ollama_available
-    vid = v["id"]
-    ms  = v.get("my_state", {})
+    vid     = v["id"]
+    ms      = v.get("my_state", {})
+    others  = v.get("others", [])
+
     others_summary = ", ".join(
-        f'{o["id"]}(ttc={o.get("ttc", 999):.1f},prio={o.get("priority","normal")})'
-        for o in v.get("others", [])
-    )
+        f'{o["id"]}(ttc={o.get("ttc", 999):.1f}s, prio={o.get("priority","normal")})'
+        for o in others
+    ) or "none"
+
+    has_emergency = any(o.get("priority") == "emergency" for o in others)
+    my_ttc        = ms.get("ttc", 999.0)
+    ttc_conflict  = any(o.get("ttc", 999) < my_ttc - 0.3 for o in others)
+
+    hint = ""
+    if has_emergency:
+        hint = "Emergency vehicle nearby — rule 1 applies.\n"
+    elif ttc_conflict:
+        hint = "Your TTC is higher — you should yield (rule 2).\n"
+
     prompt = (
-        f'{SINGLE_SYSTEM}'
-        f'My id={vid}, my ttc={ms.get("ttc", 999):.1f}s, priority={ms.get("priority","normal")}.\n'
-        f'Nearby vehicles: [{others_summary if others_summary else "none"}].\n'
-        f'{"YIELD because emergency vehicle nearby." if any(o.get("priority")=="emergency" for o in v.get("others",[])) else ""}'
-        f'{"YIELD because my ttc is higher." if any(o.get("ttc",999) < ms.get("ttc",999)-0.3 for o in v.get("others",[])) else ""}'
-        f'JSON:'
+        f"{SINGLE_SYSTEM}"
+        f"Vehicle {vid}: ttc={my_ttc:.1f}s, priority={ms.get('priority','normal')}, "
+        f"direction={ms.get('direction','?')}, speed={ms.get('speed',0):.1f}px/tick.\n"
+        f"Nearby: [{others_summary}].\n"
+        f"{hint}"
+        f"JSON:"
     )
     payload = {
         "model":   MODEL_NAME,
         "prompt":  prompt,
         "stream":  False,
         "format":  "json",
-        "options": {"temperature": 0.0, "num_predict": 80},
+        "options": {"temperature": 0.0, "num_predict": 60},
     }
     try:
         response = requests.post(OLLAMA_URL, json=payload, timeout=8.0)
@@ -146,10 +182,10 @@ def _get_single_decision(v: dict) -> tuple:
             repaired = _repair_json(raw)
             data     = json.loads(repaired)
             action   = data.get("action", "GO").upper().strip()
-            reason   = data.get("reason", "decizie AI")
-            if action not in ("GO", "YIELD"):
+            reason   = data.get("reason", "decizie AI").strip()
+            if action not in ("GO", "YIELD", "BRAKE"):
                 action = "GO"
-            logger.debug(f"Ollama {vid}: {action} — {reason}")
+            logger.info(f"[LLM] {vid}: {action} — {reason}")
             return vid, {"action": action, "reason": reason}
     except requests.exceptions.ConnectionError:
         _ollama_available = False
@@ -158,73 +194,78 @@ def _get_single_decision(v: dict) -> tuple:
         _ollama_available = False
         logger.warning(f"Ollama timeout pentru {vid}")
     except Exception as e:
-        # Eroare de parsare — NU dezactivam Ollama, doar folosim fallback pt acest vehicul
         logger.warning(f"Ollama parse eroare pentru {vid}: {e}")
     return vid, None
 
 
-def get_batch_decisions(vehicles_context: list) -> dict:
+def request_llm_decision(vid: str, context: dict) -> dict:
     """
-    Decizii pentru toate vehiculele:
-    - Actiunea (GO/YIELD) e determinata DETERMINIST (corect 100%)
-    - Motivul e generat de Ollama in romana (daca disponibil)
-    - Semaforul e gestionat de vehicle.update() + CentralSystem, NU aici
+    Interfata PRINCIPALA pentru Agent — returneaza decizia LLM pentru un vehicul.
+
+    Functionare async cu cache:
+    - Daca exista o decizie recenta in cache (<_CACHE_TTL sec) → o returneaza imediat
+    - Trimite simultan o cerere noua catre Ollama in background (thread-pool)
+    - Cat timp Ollama calculeaza, agentul foloseste cache-ul sau fallback-ul determinist
+    - Cand raspunsul Ollama soseste, il stocheaza in cache
+
+    context: { "my_state": {ttc, priority, direction, speed}, "others": [{id, ttc, priority}] }
     """
     global _ollama_available, _call_count
-    _call_count += 1
 
+    now = _time.time()
+
+    _call_count += 1
     if _call_count % _RECHECK_INTERVAL == 0:
         prev = _ollama_available
         _ollama_available = _check_ollama()
         if _ollama_available and not prev:
-            logger.info("Ollama a revenit online.")
+            logger.info("Ollama a revenit online — decizii LLM reactivate.")
 
+    # Returneaza cache daca e proaspat
+    cached = _llm_cache.get(vid)
+    if cached and (now - cached.get("ts", 0)) < _CACHE_TTL:
+        return cached
+
+    # Fara Ollama → fallback imediat
+    if not _ollama_available:
+        return _deterministic_fallback(context)
+
+    # Lanseaza cerere noua in background daca nu exista deja una in zbor
+    fut = _pending.get(vid)
+    if fut is None or fut.done():
+        v_ctx = {"id": vid, **context}
+        _pending[vid] = executor.submit(_get_single_decision, v_ctx)
+        fut = _pending[vid]
+
+    # Verifica daca cererea curenta e gata
+    if fut.done():
+        _, result = fut.result()
+        _pending.pop(vid, None)
+        if result:
+            _llm_cache[vid] = {**result, "ts": now}
+            return _llm_cache[vid]
+
+    # Inca in asteptare → returneaza cache vechi sau fallback
+    if cached:
+        return cached
+    return _deterministic_fallback(context)
+
+
+def get_batch_decisions(vehicles_context: list) -> dict:
+    """
+    Decizii batch pentru toate vehiculele via LLM (async cu cache).
+    Folosit de CentralSystem sau alte componente care lucreaza cu lista de vehicule.
+    Pentru decizii per-vehicul din Agent, foloseste request_llm_decision().
+    """
     result = {}
     for v in vehicles_context:
         vid     = v["id"]
-        ms      = v.get("my_state", {})
-        others  = v.get("others", [])
-        prio    = ms.get("priority", "normal")
-        my_ttc  = ms.get("ttc", 999.0)
-
-        # ── Decizie determinista (actiunea corecta garantata) ───────────
-        has_emerg_other = any(o.get("priority") == "emergency" for o in others)
-
-        if prio == "emergency":
-            action       = "GO"
-            default_reason = "urgenta — prioritate absoluta"
-        elif has_emerg_other:
-            action       = "YIELD"
-            emerg_id     = next(o["id"] for o in others if o.get("priority") == "emergency")
-            default_reason = f"urgenta {emerg_id} are prioritate"
-        else:
-            # Regula TTC: vehiculul cu TTC mai mare cedeaza
-            conflict = next(
-                (o for o in others if o.get("ttc", 999) < my_ttc - 0.3),
-                None
-            )
-            if conflict:
-                action         = "YIELD"
-                default_reason = f"conflict cu {conflict['id']}, TTC mai mic"
-            else:
-                action         = "GO"
-                default_reason = "drum liber"
-
-        # ── Motiv generat de Ollama in romana (optional) ─────────────────
-        if _ollama_available:
-            others_summary = ", ".join(
-                f'{o["id"]}(ttc={o.get("ttc",999):.1f})'
-                for o in others
-            )
-            ai_reason = _get_ai_reason(vid, action, my_ttc, others_summary)
-            reason = ai_reason if ai_reason else default_reason
-        else:
-            reason = default_reason
-
-        result[vid] = {"action": action, "reason": reason}
+        context = {k: val for k, val in v.items() if k != "id"}
+        decision = request_llm_decision(vid, context)
+        result[vid] = decision
 
     if result:
-        logger.info(f"Decizii V2X: { {k: v['action'] for k, v in result.items()} }")
+        logger.info(f"Decizii LLM batch: { {k: v['action'] for k, v in result.items()} }")
     return result
 
 
