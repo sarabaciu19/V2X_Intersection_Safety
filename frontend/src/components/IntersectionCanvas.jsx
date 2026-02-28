@@ -18,7 +18,12 @@ const INTENT_ICON = { straight: '↑', left: '←', right: '→' };
 const PRIORITY_COLOR = { emergency: '#EF4444', normal: null };
 
 // Heading (unghi radiani) per directie, pentru a roti vehiculul corect
-const HEADING = { N: Math.PI / 2, S: -Math.PI / 2, E: Math.PI, V: 0 };
+// Fata masinii (bara alba) este la -H2 (sus) la unghi=0 → masina priveste in sus
+// N vine din Nord → merge spre Sud (jos)    → Math.PI
+// S vine din Sud  → merge spre Nord (sus)   → 0
+// V vine din Vest → merge spre Est (dreapta) → Math.PI / 2
+// E vine din Est  → merge spre Vest (stanga) → -Math.PI / 2
+const HEADING = { N: Math.PI, S: 0, V: Math.PI / 2, E: -Math.PI / 2 };
 
 const IntersectionCanvas = ({
   vehicles     = [],
