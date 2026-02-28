@@ -1,178 +1,4003 @@
 [
   {
-    "time": "12:25:44",
-    "agent": "A+B",
-    "action": "COLLISION",
-    "ttc": 0.0,
-    "reason": "No cooperation \u2014 physical collision",
-    "timestamp": 1772274344.3485696
+    "time": "14:15:55",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.1s",
+    "timestamp": 1772280955.8283315
   },
   {
-    "time": "12:25:44",
+    "time": "14:15:55",
     "agent": "B",
-    "action": "BRAKE",
-    "ttc": 2.5,
-    "reason": "TTC=2.50s < 3.0s",
-    "timestamp": 1772274344.348782
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.1s",
+    "timestamp": 1772280955.831783
   },
   {
-    "time": "12:25:44",
+    "time": "14:15:55",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.2s",
+    "timestamp": 1772280955.86279
+  },
+  {
+    "time": "14:15:55",
     "agent": "B",
-    "action": "YIELD",
-    "ttc": 1.28,
-    "reason": "TTC=1.28s < 1.5s",
-    "timestamp": 1772274344.3491497
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.2s",
+    "timestamp": 1772280955.8665562
   },
   {
-    "time": "12:25:44",
-    "agent": "A+B",
-    "action": "COLLISION",
-    "ttc": 0.0,
-    "reason": "No cooperation \u2014 physical collision",
-    "timestamp": 1772274344.352656
+    "time": "14:15:55",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.2s",
+    "timestamp": 1772280955.8955956
   },
   {
-    "time": "12:32:44",
-    "agent": "A+B",
-    "action": "COLLISION",
-    "ttc": 0.0,
-    "reason": "No cooperation \u2014 physical collision",
-    "timestamp": 1772274764.3521824
-  },
-  {
-    "time": "12:32:44",
+    "time": "14:15:55",
     "agent": "B",
-    "action": "BRAKE",
-    "ttc": 2.5,
-    "reason": "TTC=2.50s < 3.0s",
-    "timestamp": 1772274764.3858893
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.2s",
+    "timestamp": 1772280955.8995464
   },
   {
-    "time": "12:32:44",
+    "time": "14:15:55",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.2s",
+    "timestamp": 1772280955.928005
+  },
+  {
+    "time": "14:15:55",
     "agent": "B",
-    "action": "YIELD",
-    "ttc": 1.28,
-    "reason": "TTC=1.28s < 1.5s",
-    "timestamp": 1772274764.4533248
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.2s",
+    "timestamp": 1772280955.9317474
   },
   {
-    "time": "12:34:21",
-    "agent": "A+B",
-    "action": "COLLISION",
-    "ttc": 0.0,
-    "reason": "No cooperation \u2014 physical collision",
-    "timestamp": 1772274861.570588
+    "time": "14:15:55",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.3s",
+    "timestamp": 1772280955.9618378
   },
   {
-    "time": "12:34:21",
+    "time": "14:15:55",
     "agent": "B",
-    "action": "BRAKE",
-    "ttc": 2.5,
-    "reason": "TTC=2.50s < 3.0s",
-    "timestamp": 1772274861.604454
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.3s",
+    "timestamp": 1772280955.965729
   },
   {
-    "time": "12:34:21",
+    "time": "14:15:55",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.3s",
+    "timestamp": 1772280955.9960332
+  },
+  {
+    "time": "14:15:55",
     "agent": "B",
-    "action": "YIELD",
-    "ttc": 1.28,
-    "reason": "TTC=1.28s < 1.5s",
-    "timestamp": 1772274861.671287
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.3s",
+    "timestamp": 1772280955.9996138
   },
   {
-    "time": "13:49:28",
-    "agent": "A+B",
-    "action": "COLLISION",
-    "ttc": 0.0,
-    "reason": "No cooperation \u2014 physical collision",
-    "timestamp": 1772279368.252228
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.3s",
+    "timestamp": 1772280956.0303185
   },
   {
-    "time": "13:49:28",
+    "time": "14:15:56",
     "agent": "B",
-    "action": "BRAKE",
-    "ttc": 2.5,
-    "reason": "TTC=2.50s < 3.0s",
-    "timestamp": 1772279368.2858913
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.3s",
+    "timestamp": 1772280956.0340176
   },
   {
-    "time": "13:49:28",
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.4s",
+    "timestamp": 1772280956.0639915
+  },
+  {
+    "time": "14:15:56",
     "agent": "B",
-    "action": "YIELD",
-    "ttc": 1.28,
-    "reason": "TTC=1.28s < 1.5s",
-    "timestamp": 1772279368.3530617
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.4s",
+    "timestamp": 1772280956.0681179
   },
   {
-    "time": "13:57:24",
-    "agent": "A+B",
-    "action": "COLLISION",
-    "ttc": 0.0,
-    "reason": "No cooperation \u2014 physical collision",
-    "timestamp": 1772279844.9006126
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.4s",
+    "timestamp": 1772280956.0991898
   },
   {
-    "time": "13:57:24",
+    "time": "14:15:56",
     "agent": "B",
-    "action": "BRAKE",
-    "ttc": 2.5,
-    "reason": "TTC=2.50s < 3.0s",
-    "timestamp": 1772279844.934145
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.4s",
+    "timestamp": 1772280956.1028578
   },
   {
-    "time": "13:57:25",
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.4s",
+    "timestamp": 1772280956.132721
+  },
+  {
+    "time": "14:15:56",
     "agent": "B",
-    "action": "YIELD",
-    "ttc": 1.28,
-    "reason": "TTC=1.28s < 1.5s",
-    "timestamp": 1772279845.0013506
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.4s",
+    "timestamp": 1772280956.1363623
   },
   {
-    "time": "13:59:52",
-    "agent": "A+B",
-    "action": "COLLISION",
-    "ttc": 0.0,
-    "reason": "No cooperation \u2014 physical collision",
-    "timestamp": 1772279992.396831
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.5s",
+    "timestamp": 1772280956.1674838
   },
   {
-    "time": "13:59:52",
+    "time": "14:15:56",
     "agent": "B",
-    "action": "BRAKE",
-    "ttc": 2.5,
-    "reason": "TTC=2.50s < 3.0s",
-    "timestamp": 1772279992.4309652
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.5s",
+    "timestamp": 1772280956.1711113
   },
   {
-    "time": "13:59:52",
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.5s",
+    "timestamp": 1772280956.200883
+  },
+  {
+    "time": "14:15:56",
     "agent": "B",
-    "action": "YIELD",
-    "ttc": 1.28,
-    "reason": "TTC=1.28s < 1.5s",
-    "timestamp": 1772279992.4989357
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.5s",
+    "timestamp": 1772280956.2044349
   },
   {
-    "time": "14:00:15",
-    "agent": "A+B",
-    "action": "COLLISION",
-    "ttc": 0.0,
-    "reason": "No cooperation \u2014 physical collision",
-    "timestamp": 1772280015.6153886
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.5s",
+    "timestamp": 1772280956.236026
   },
   {
-    "time": "14:00:15",
+    "time": "14:15:56",
     "agent": "B",
-    "action": "BRAKE",
-    "ttc": 2.5,
-    "reason": "TTC=2.50s < 3.0s",
-    "timestamp": 1772280015.6484475
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.5s",
+    "timestamp": 1772280956.2396288
   },
   {
-    "time": "14:00:15",
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.6s",
+    "timestamp": 1772280956.270554
+  },
+  {
+    "time": "14:15:56",
     "agent": "B",
-    "action": "YIELD",
-    "ttc": 1.28,
-    "reason": "TTC=1.28s < 1.5s",
-    "timestamp": 1772280015.71697
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.6s",
+    "timestamp": 1772280956.274105
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.6s",
+    "timestamp": 1772280956.3053446
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.6s",
+    "timestamp": 1772280956.309579
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.6s",
+    "timestamp": 1772280956.3394194
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.6s",
+    "timestamp": 1772280956.344454
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.7s",
+    "timestamp": 1772280956.3737
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.7s",
+    "timestamp": 1772280956.3773987
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.7s",
+    "timestamp": 1772280956.4073772
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.7s",
+    "timestamp": 1772280956.4115052
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.7s",
+    "timestamp": 1772280956.4407902
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.7s",
+    "timestamp": 1772280956.4443402
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.8s",
+    "timestamp": 1772280956.4739559
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.8s",
+    "timestamp": 1772280956.4778607
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.8s",
+    "timestamp": 1772280956.5084403
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.8s",
+    "timestamp": 1772280956.5123498
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.8s",
+    "timestamp": 1772280956.5412993
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.8s",
+    "timestamp": 1772280956.5449772
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.9s",
+    "timestamp": 1772280956.5742376
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.9s",
+    "timestamp": 1772280956.5776794
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.9s",
+    "timestamp": 1772280956.60883
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.9s",
+    "timestamp": 1772280956.612576
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.9s",
+    "timestamp": 1772280956.6422682
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 190.9s",
+    "timestamp": 1772280956.6463432
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.0s",
+    "timestamp": 1772280956.6754155
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.0s",
+    "timestamp": 1772280956.6792123
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.0s",
+    "timestamp": 1772280956.7093265
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.0s",
+    "timestamp": 1772280956.7129607
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.0s",
+    "timestamp": 1772280956.7426279
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.0s",
+    "timestamp": 1772280956.7462258
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.1s",
+    "timestamp": 1772280956.7760684
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.1s",
+    "timestamp": 1772280956.7800963
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.1s",
+    "timestamp": 1772280956.8098192
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.1s",
+    "timestamp": 1772280956.8140917
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.1s",
+    "timestamp": 1772280956.8429399
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.1s",
+    "timestamp": 1772280956.846859
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.2s",
+    "timestamp": 1772280956.8766074
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.2s",
+    "timestamp": 1772280956.8811257
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.2s",
+    "timestamp": 1772280956.9100955
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.2s",
+    "timestamp": 1772280956.9134912
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.2s",
+    "timestamp": 1772280956.9429157
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.2s",
+    "timestamp": 1772280956.9470396
+  },
+  {
+    "time": "14:15:56",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.3s",
+    "timestamp": 1772280956.9763336
+  },
+  {
+    "time": "14:15:56",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.3s",
+    "timestamp": 1772280956.979601
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.3s",
+    "timestamp": 1772280957.0109081
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.3s",
+    "timestamp": 1772280957.0152252
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.3s",
+    "timestamp": 1772280957.0448115
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.3s",
+    "timestamp": 1772280957.0487344
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.4s",
+    "timestamp": 1772280957.0775583
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.4s",
+    "timestamp": 1772280957.081876
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.4s",
+    "timestamp": 1772280957.111146
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.4s",
+    "timestamp": 1772280957.1154604
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.4s",
+    "timestamp": 1772280957.1455848
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.4s",
+    "timestamp": 1772280957.1500025
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.5s",
+    "timestamp": 1772280957.1798246
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.5s",
+    "timestamp": 1772280957.1840017
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.5s",
+    "timestamp": 1772280957.2130473
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.5s",
+    "timestamp": 1772280957.2174103
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.5s",
+    "timestamp": 1772280957.2462413
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.5s",
+    "timestamp": 1772280957.2503502
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.6s",
+    "timestamp": 1772280957.2795389
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.6s",
+    "timestamp": 1772280957.2831216
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.6s",
+    "timestamp": 1772280957.3133476
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.6s",
+    "timestamp": 1772280957.3169656
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.6s",
+    "timestamp": 1772280957.347004
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.6s",
+    "timestamp": 1772280957.3508754
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.7s",
+    "timestamp": 1772280957.3800302
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.7s",
+    "timestamp": 1772280957.384261
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.7s",
+    "timestamp": 1772280957.4134705
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.7s",
+    "timestamp": 1772280957.418025
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.7s",
+    "timestamp": 1772280957.4477732
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.7s",
+    "timestamp": 1772280957.4529438
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.8s",
+    "timestamp": 1772280957.4804974
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.8s",
+    "timestamp": 1772280957.4864006
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.8s",
+    "timestamp": 1772280957.5143113
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.8s",
+    "timestamp": 1772280957.5203776
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.8s",
+    "timestamp": 1772280957.5482855
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.8s",
+    "timestamp": 1772280957.5560124
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.9s",
+    "timestamp": 1772280957.5823202
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.9s",
+    "timestamp": 1772280957.5891874
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.9s",
+    "timestamp": 1772280957.6168609
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.9s",
+    "timestamp": 1772280957.6238835
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.9s",
+    "timestamp": 1772280957.6508913
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 191.9s",
+    "timestamp": 1772280957.657518
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.0s",
+    "timestamp": 1772280957.684305
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.0s",
+    "timestamp": 1772280957.6904993
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.0s",
+    "timestamp": 1772280957.7176847
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.0s",
+    "timestamp": 1772280957.724162
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.0s",
+    "timestamp": 1772280957.7514346
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.0s",
+    "timestamp": 1772280957.757644
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.1s",
+    "timestamp": 1772280957.7850876
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.1s",
+    "timestamp": 1772280957.7907615
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.1s",
+    "timestamp": 1772280957.8186934
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.1s",
+    "timestamp": 1772280957.8245723
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.1s",
+    "timestamp": 1772280957.8514209
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.1s",
+    "timestamp": 1772280957.8578093
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.2s",
+    "timestamp": 1772280957.885037
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.2s",
+    "timestamp": 1772280957.8908224
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.2s",
+    "timestamp": 1772280957.9196913
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.2s",
+    "timestamp": 1772280957.925968
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.2s",
+    "timestamp": 1772280957.9530554
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.2s",
+    "timestamp": 1772280957.9589062
+  },
+  {
+    "time": "14:15:57",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.3s",
+    "timestamp": 1772280957.98695
+  },
+  {
+    "time": "14:15:57",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.3s",
+    "timestamp": 1772280957.9921882
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.3s",
+    "timestamp": 1772280958.0204093
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.3s",
+    "timestamp": 1772280958.025875
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.3s",
+    "timestamp": 1772280958.0535085
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.3s",
+    "timestamp": 1772280958.0593019
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.4s",
+    "timestamp": 1772280958.0870667
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.4s",
+    "timestamp": 1772280958.0916584
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.4s",
+    "timestamp": 1772280958.1210508
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.4s",
+    "timestamp": 1772280958.1258683
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.4s",
+    "timestamp": 1772280958.154576
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.4s",
+    "timestamp": 1772280958.159176
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.5s",
+    "timestamp": 1772280958.188877
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.5s",
+    "timestamp": 1772280958.1927235
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.5s",
+    "timestamp": 1772280958.2235794
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.5s",
+    "timestamp": 1772280958.227217
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.5s",
+    "timestamp": 1772280958.2570946
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.5s",
+    "timestamp": 1772280958.2610946
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.6s",
+    "timestamp": 1772280958.290441
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.6s",
+    "timestamp": 1772280958.2950997
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.6s",
+    "timestamp": 1772280958.323535
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.6s",
+    "timestamp": 1772280958.3274453
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.6s",
+    "timestamp": 1772280958.3568194
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.6s",
+    "timestamp": 1772280958.3606827
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.7s",
+    "timestamp": 1772280958.3910859
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.7s",
+    "timestamp": 1772280958.3951316
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.7s",
+    "timestamp": 1772280958.423649
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.7s",
+    "timestamp": 1772280958.4275331
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.8s",
+    "timestamp": 1772280958.4575033
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.8s",
+    "timestamp": 1772280958.461407
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.8s",
+    "timestamp": 1772280958.490529
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.8s",
+    "timestamp": 1772280958.4941127
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.8s",
+    "timestamp": 1772280958.5235934
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.8s",
+    "timestamp": 1772280958.5274036
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.9s",
+    "timestamp": 1772280958.557728
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.9s",
+    "timestamp": 1772280958.5613048
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.9s",
+    "timestamp": 1772280958.5904582
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.9s",
+    "timestamp": 1772280958.594708
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.9s",
+    "timestamp": 1772280958.6244974
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 192.9s",
+    "timestamp": 1772280958.6285052
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.0s",
+    "timestamp": 1772280958.6578639
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.0s",
+    "timestamp": 1772280958.6616552
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.0s",
+    "timestamp": 1772280958.6917803
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.0s",
+    "timestamp": 1772280958.6961322
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.0s",
+    "timestamp": 1772280958.7259946
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.0s",
+    "timestamp": 1772280958.7300115
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.1s",
+    "timestamp": 1772280958.7598946
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.1s",
+    "timestamp": 1772280958.7637835
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.1s",
+    "timestamp": 1772280958.7923806
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.1s",
+    "timestamp": 1772280958.796272
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.1s",
+    "timestamp": 1772280958.8251638
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.1s",
+    "timestamp": 1772280958.829408
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.2s",
+    "timestamp": 1772280958.8583734
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.2s",
+    "timestamp": 1772280958.8620584
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.2s",
+    "timestamp": 1772280958.8920143
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.2s",
+    "timestamp": 1772280958.895948
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.2s",
+    "timestamp": 1772280958.9258955
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.2s",
+    "timestamp": 1772280958.929948
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.3s",
+    "timestamp": 1772280958.9597137
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.3s",
+    "timestamp": 1772280958.9636612
+  },
+  {
+    "time": "14:15:58",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.3s",
+    "timestamp": 1772280958.992305
+  },
+  {
+    "time": "14:15:58",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.3s",
+    "timestamp": 1772280958.9965827
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.3s",
+    "timestamp": 1772280959.0253692
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.3s",
+    "timestamp": 1772280959.0292215
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.4s",
+    "timestamp": 1772280959.0582638
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.4s",
+    "timestamp": 1772280959.0633075
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.4s",
+    "timestamp": 1772280959.091327
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.4s",
+    "timestamp": 1772280959.0952377
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.4s",
+    "timestamp": 1772280959.1245646
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.4s",
+    "timestamp": 1772280959.1282752
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.4s",
+    "timestamp": 1772280959.1569774
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.4s",
+    "timestamp": 1772280959.1621902
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.5s",
+    "timestamp": 1772280959.18902
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.5s",
+    "timestamp": 1772280959.1936378
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.5s",
+    "timestamp": 1772280959.2228389
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.5s",
+    "timestamp": 1772280959.2272096
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.5s",
+    "timestamp": 1772280959.255893
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.5s",
+    "timestamp": 1772280959.2602592
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.6s",
+    "timestamp": 1772280959.2885535
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.6s",
+    "timestamp": 1772280959.293292
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.6s",
+    "timestamp": 1772280959.322109
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.6s",
+    "timestamp": 1772280959.3264816
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.6s",
+    "timestamp": 1772280959.3552244
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.6s",
+    "timestamp": 1772280959.359609
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.7s",
+    "timestamp": 1772280959.3881843
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.7s",
+    "timestamp": 1772280959.3927054
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.7s",
+    "timestamp": 1772280959.4214199
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.7s",
+    "timestamp": 1772280959.4260685
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.7s",
+    "timestamp": 1772280959.4546227
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.7s",
+    "timestamp": 1772280959.4593763
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.8s",
+    "timestamp": 1772280959.4891067
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.8s",
+    "timestamp": 1772280959.4943166
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.8s",
+    "timestamp": 1772280959.522912
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.8s",
+    "timestamp": 1772280959.5275097
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.8s",
+    "timestamp": 1772280959.556394
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.8s",
+    "timestamp": 1772280959.5607944
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.9s",
+    "timestamp": 1772280959.5899134
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.9s",
+    "timestamp": 1772280959.595447
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.9s",
+    "timestamp": 1772280959.6237934
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.9s",
+    "timestamp": 1772280959.6272984
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.9s",
+    "timestamp": 1772280959.6563735
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 193.9s",
+    "timestamp": 1772280959.6599813
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.0s",
+    "timestamp": 1772280959.6901784
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.0s",
+    "timestamp": 1772280959.6944892
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.0s",
+    "timestamp": 1772280959.723514
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.0s",
+    "timestamp": 1772280959.7278
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.1s",
+    "timestamp": 1772280959.7580204
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.1s",
+    "timestamp": 1772280959.7618687
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.1s",
+    "timestamp": 1772280959.7911336
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.1s",
+    "timestamp": 1772280959.7948315
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.1s",
+    "timestamp": 1772280959.8249714
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.1s",
+    "timestamp": 1772280959.8292208
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.2s",
+    "timestamp": 1772280959.8582695
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.2s",
+    "timestamp": 1772280959.8626695
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.2s",
+    "timestamp": 1772280959.8928142
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.2s",
+    "timestamp": 1772280959.8969288
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.2s",
+    "timestamp": 1772280959.9263046
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.2s",
+    "timestamp": 1772280959.9301414
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.3s",
+    "timestamp": 1772280959.9602597
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.3s",
+    "timestamp": 1772280959.9638567
+  },
+  {
+    "time": "14:15:59",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.3s",
+    "timestamp": 1772280959.9932942
+  },
+  {
+    "time": "14:15:59",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.3s",
+    "timestamp": 1772280959.9973638
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.3s",
+    "timestamp": 1772280960.026552
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.3s",
+    "timestamp": 1772280960.0305705
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.4s",
+    "timestamp": 1772280960.0607915
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.4s",
+    "timestamp": 1772280960.0648315
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.4s",
+    "timestamp": 1772280960.094199
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.4s",
+    "timestamp": 1772280960.0984333
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.4s",
+    "timestamp": 1772280960.1288204
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.4s",
+    "timestamp": 1772280960.1329186
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.5s",
+    "timestamp": 1772280960.16303
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.5s",
+    "timestamp": 1772280960.1666608
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.5s",
+    "timestamp": 1772280960.1965668
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.5s",
+    "timestamp": 1772280960.2009702
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.5s",
+    "timestamp": 1772280960.2314587
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.5s",
+    "timestamp": 1772280960.2358232
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.6s",
+    "timestamp": 1772280960.2660549
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.6s",
+    "timestamp": 1772280960.2697077
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.6s",
+    "timestamp": 1772280960.299219
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.6s",
+    "timestamp": 1772280960.3032737
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.6s",
+    "timestamp": 1772280960.3329563
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.6s",
+    "timestamp": 1772280960.33721
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.7s",
+    "timestamp": 1772280960.366396
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.7s",
+    "timestamp": 1772280960.3702605
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.7s",
+    "timestamp": 1772280960.398158
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.7s",
+    "timestamp": 1772280960.4018643
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.7s",
+    "timestamp": 1772280960.4319952
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.7s",
+    "timestamp": 1772280960.4358912
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.8s",
+    "timestamp": 1772280960.4646013
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.8s",
+    "timestamp": 1772280960.4686966
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.8s",
+    "timestamp": 1772280960.497432
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.8s",
+    "timestamp": 1772280960.5013342
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.8s",
+    "timestamp": 1772280960.5321014
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.8s",
+    "timestamp": 1772280960.5360258
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.9s",
+    "timestamp": 1772280960.5669389
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.9s",
+    "timestamp": 1772280960.5708048
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.9s",
+    "timestamp": 1772280960.6010125
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.9s",
+    "timestamp": 1772280960.605021
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.9s",
+    "timestamp": 1772280960.6343055
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 194.9s",
+    "timestamp": 1772280960.6383486
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.0s",
+    "timestamp": 1772280960.6670866
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.0s",
+    "timestamp": 1772280960.6708117
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.0s",
+    "timestamp": 1772280960.6999905
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.0s",
+    "timestamp": 1772280960.704191
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.0s",
+    "timestamp": 1772280960.7332973
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.0s",
+    "timestamp": 1772280960.7370992
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.1s",
+    "timestamp": 1772280960.7652693
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.1s",
+    "timestamp": 1772280960.7690072
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.1s",
+    "timestamp": 1772280960.7983067
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.1s",
+    "timestamp": 1772280960.8024223
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.1s",
+    "timestamp": 1772280960.8329089
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.1s",
+    "timestamp": 1772280960.8375754
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.2s",
+    "timestamp": 1772280960.865346
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.2s",
+    "timestamp": 1772280960.8694441
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.2s",
+    "timestamp": 1772280960.8999836
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.2s",
+    "timestamp": 1772280960.9041512
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.2s",
+    "timestamp": 1772280960.9323633
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.2s",
+    "timestamp": 1772280960.9371886
+  },
+  {
+    "time": "14:16:00",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.3s",
+    "timestamp": 1772280960.966776
+  },
+  {
+    "time": "14:16:00",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.3s",
+    "timestamp": 1772280960.971446
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.3s",
+    "timestamp": 1772280961.0017304
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.3s",
+    "timestamp": 1772280961.0068195
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.3s",
+    "timestamp": 1772280961.0345864
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.3s",
+    "timestamp": 1772280961.0397544
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.4s",
+    "timestamp": 1772280961.068454
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.4s",
+    "timestamp": 1772280961.0730805
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.4s",
+    "timestamp": 1772280961.1039686
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.4s",
+    "timestamp": 1772280961.1089876
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.4s",
+    "timestamp": 1772280961.138148
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.4s",
+    "timestamp": 1772280961.1420603
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.5s",
+    "timestamp": 1772280961.1712277
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.5s",
+    "timestamp": 1772280961.1753395
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.5s",
+    "timestamp": 1772280961.2065935
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.5s",
+    "timestamp": 1772280961.2104735
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.5s",
+    "timestamp": 1772280961.2398367
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.5s",
+    "timestamp": 1772280961.2451308
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.6s",
+    "timestamp": 1772280961.2726967
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.6s",
+    "timestamp": 1772280961.2779238
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.6s",
+    "timestamp": 1772280961.3062065
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.6s",
+    "timestamp": 1772280961.3111436
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.6s",
+    "timestamp": 1772280961.3398879
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.6s",
+    "timestamp": 1772280961.3448422
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.7s",
+    "timestamp": 1772280961.3734722
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.7s",
+    "timestamp": 1772280961.3784537
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.7s",
+    "timestamp": 1772280961.407919
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.7s",
+    "timestamp": 1772280961.412364
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.7s",
+    "timestamp": 1772280961.4415412
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.7s",
+    "timestamp": 1772280961.4458816
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.8s",
+    "timestamp": 1772280961.4754596
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.8s",
+    "timestamp": 1772280961.4806383
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.8s",
+    "timestamp": 1772280961.5082345
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.8s",
+    "timestamp": 1772280961.513698
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.8s",
+    "timestamp": 1772280961.5414371
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.8s",
+    "timestamp": 1772280961.5463116
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.9s",
+    "timestamp": 1772280961.5753095
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.9s",
+    "timestamp": 1772280961.5797763
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.9s",
+    "timestamp": 1772280961.6088908
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.9s",
+    "timestamp": 1772280961.6136951
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.9s",
+    "timestamp": 1772280961.6422486
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 195.9s",
+    "timestamp": 1772280961.6470668
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.0s",
+    "timestamp": 1772280961.676091
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.0s",
+    "timestamp": 1772280961.6797922
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.0s",
+    "timestamp": 1772280961.7093604
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.0s",
+    "timestamp": 1772280961.7138464
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.0s",
+    "timestamp": 1772280961.743541
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.0s",
+    "timestamp": 1772280961.7477844
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.1s",
+    "timestamp": 1772280961.7762258
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.1s",
+    "timestamp": 1772280961.7818463
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.1s",
+    "timestamp": 1772280961.809335
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.1s",
+    "timestamp": 1772280961.816208
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.1s",
+    "timestamp": 1772280961.8430023
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.1s",
+    "timestamp": 1772280961.8478851
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.2s",
+    "timestamp": 1772280961.876496
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.2s",
+    "timestamp": 1772280961.880377
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.2s",
+    "timestamp": 1772280961.9101906
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.2s",
+    "timestamp": 1772280961.9137976
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.2s",
+    "timestamp": 1772280961.9449298
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.2s",
+    "timestamp": 1772280961.9490376
+  },
+  {
+    "time": "14:16:01",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.3s",
+    "timestamp": 1772280961.97893
+  },
+  {
+    "time": "14:16:01",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.3s",
+    "timestamp": 1772280961.9829419
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.3s",
+    "timestamp": 1772280962.0123198
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.3s",
+    "timestamp": 1772280962.0167058
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.3s",
+    "timestamp": 1772280962.0451643
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.3s",
+    "timestamp": 1772280962.049193
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.4s",
+    "timestamp": 1772280962.079444
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.4s",
+    "timestamp": 1772280962.084598
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.4s",
+    "timestamp": 1772280962.1136916
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.4s",
+    "timestamp": 1772280962.1182196
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.4s",
+    "timestamp": 1772280962.1462138
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.4s",
+    "timestamp": 1772280962.1506495
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.5s",
+    "timestamp": 1772280962.180834
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.5s",
+    "timestamp": 1772280962.1848514
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.5s",
+    "timestamp": 1772280962.2134411
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.5s",
+    "timestamp": 1772280962.217299
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.5s",
+    "timestamp": 1772280962.2478871
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.5s",
+    "timestamp": 1772280962.2523258
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.6s",
+    "timestamp": 1772280962.2814822
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.6s",
+    "timestamp": 1772280962.2859464
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.6s",
+    "timestamp": 1772280962.314498
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.6s",
+    "timestamp": 1772280962.3182342
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.6s",
+    "timestamp": 1772280962.347688
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.6s",
+    "timestamp": 1772280962.3516505
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.7s",
+    "timestamp": 1772280962.3817613
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.7s",
+    "timestamp": 1772280962.38692
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.7s",
+    "timestamp": 1772280962.415642
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.7s",
+    "timestamp": 1772280962.4197905
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.7s",
+    "timestamp": 1772280962.4486008
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.7s",
+    "timestamp": 1772280962.452287
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.8s",
+    "timestamp": 1772280962.4811916
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.8s",
+    "timestamp": 1772280962.4863818
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.8s",
+    "timestamp": 1772280962.5142963
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.8s",
+    "timestamp": 1772280962.5187643
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.8s",
+    "timestamp": 1772280962.5473135
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.8s",
+    "timestamp": 1772280962.5513585
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.9s",
+    "timestamp": 1772280962.5815432
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.9s",
+    "timestamp": 1772280962.5854905
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.9s",
+    "timestamp": 1772280962.6151187
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.9s",
+    "timestamp": 1772280962.619297
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.9s",
+    "timestamp": 1772280962.649723
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 196.9s",
+    "timestamp": 1772280962.654106
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.0s",
+    "timestamp": 1772280962.6824198
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.0s",
+    "timestamp": 1772280962.686645
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.0s",
+    "timestamp": 1772280962.71695
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.0s",
+    "timestamp": 1772280962.7211835
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.0s",
+    "timestamp": 1772280962.750465
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.0s",
+    "timestamp": 1772280962.754702
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.1s",
+    "timestamp": 1772280962.7847936
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.1s",
+    "timestamp": 1772280962.7896123
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.1s",
+    "timestamp": 1772280962.8182104
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.1s",
+    "timestamp": 1772280962.822138
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.1s",
+    "timestamp": 1772280962.8513944
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.1s",
+    "timestamp": 1772280962.8568766
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.2s",
+    "timestamp": 1772280962.8856757
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.2s",
+    "timestamp": 1772280962.8908324
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.2s",
+    "timestamp": 1772280962.9191744
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.2s",
+    "timestamp": 1772280962.9248579
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.2s",
+    "timestamp": 1772280962.9522438
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.2s",
+    "timestamp": 1772280962.9600658
+  },
+  {
+    "time": "14:16:02",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.3s",
+    "timestamp": 1772280962.9853685
+  },
+  {
+    "time": "14:16:02",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.3s",
+    "timestamp": 1772280962.9931273
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.3s",
+    "timestamp": 1772280963.018348
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.3s",
+    "timestamp": 1772280963.0258887
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.3s",
+    "timestamp": 1772280963.0514061
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.3s",
+    "timestamp": 1772280963.0590901
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.4s",
+    "timestamp": 1772280963.085534
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.4s",
+    "timestamp": 1772280963.0922468
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.4s",
+    "timestamp": 1772280963.1182523
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.4s",
+    "timestamp": 1772280963.1259544
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.4s",
+    "timestamp": 1772280963.1518435
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.4s",
+    "timestamp": 1772280963.1580663
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.5s",
+    "timestamp": 1772280963.1853364
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.5s",
+    "timestamp": 1772280963.1931672
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.5s",
+    "timestamp": 1772280963.2182715
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.5s",
+    "timestamp": 1772280963.2256918
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.5s",
+    "timestamp": 1772280963.25189
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.5s",
+    "timestamp": 1772280963.258912
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.6s",
+    "timestamp": 1772280963.2842617
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.6s",
+    "timestamp": 1772280963.2910163
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.6s",
+    "timestamp": 1772280963.3172784
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.6s",
+    "timestamp": 1772280963.3236337
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.6s",
+    "timestamp": 1772280963.3499808
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.6s",
+    "timestamp": 1772280963.3569145
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.7s",
+    "timestamp": 1772280963.3832765
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.7s",
+    "timestamp": 1772280963.390065
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.7s",
+    "timestamp": 1772280963.4174795
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.7s",
+    "timestamp": 1772280963.4241998
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.7s",
+    "timestamp": 1772280963.4513774
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.7s",
+    "timestamp": 1772280963.458383
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.8s",
+    "timestamp": 1772280963.4858744
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.8s",
+    "timestamp": 1772280963.4943368
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.8s",
+    "timestamp": 1772280963.5197845
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.8s",
+    "timestamp": 1772280963.527273
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.8s",
+    "timestamp": 1772280963.5532584
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.8s",
+    "timestamp": 1772280963.5609565
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.9s",
+    "timestamp": 1772280963.5878983
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.9s",
+    "timestamp": 1772280963.595957
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.9s",
+    "timestamp": 1772280963.6216164
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.9s",
+    "timestamp": 1772280963.6298683
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.9s",
+    "timestamp": 1772280963.6547961
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 197.9s",
+    "timestamp": 1772280963.6630735
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.0s",
+    "timestamp": 1772280963.6890054
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.0s",
+    "timestamp": 1772280963.6969194
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.0s",
+    "timestamp": 1772280963.722598
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.0s",
+    "timestamp": 1772280963.7292547
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.0s",
+    "timestamp": 1772280963.7554605
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.0s",
+    "timestamp": 1772280963.7627342
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.1s",
+    "timestamp": 1772280963.7894936
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.1s",
+    "timestamp": 1772280963.7960517
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.1s",
+    "timestamp": 1772280963.8238811
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.1s",
+    "timestamp": 1772280963.8307927
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.2s",
+    "timestamp": 1772280963.8576539
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.2s",
+    "timestamp": 1772280963.8645716
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.2s",
+    "timestamp": 1772280963.890388
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.2s",
+    "timestamp": 1772280963.8978288
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.2s",
+    "timestamp": 1772280963.9234703
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.2s",
+    "timestamp": 1772280963.9301713
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.2s",
+    "timestamp": 1772280963.9565477
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.2s",
+    "timestamp": 1772280963.963663
+  },
+  {
+    "time": "14:16:03",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.3s",
+    "timestamp": 1772280963.9909008
+  },
+  {
+    "time": "14:16:03",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.3s",
+    "timestamp": 1772280963.9975471
+  },
+  {
+    "time": "14:16:04",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.3s",
+    "timestamp": 1772280964.0248516
+  },
+  {
+    "time": "14:16:04",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.3s",
+    "timestamp": 1772280964.0313044
+  },
+  {
+    "time": "14:16:04",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.4s",
+    "timestamp": 1772280964.0576267
+  },
+  {
+    "time": "14:16:04",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.4s",
+    "timestamp": 1772280964.065712
+  },
+  {
+    "time": "14:16:04",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.4s",
+    "timestamp": 1772280964.0919855
+  },
+  {
+    "time": "14:16:04",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.4s",
+    "timestamp": 1772280964.0966332
+  },
+  {
+    "time": "14:16:04",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.4s",
+    "timestamp": 1772280964.1253207
+  },
+  {
+    "time": "14:16:04",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.4s",
+    "timestamp": 1772280964.1315253
+  },
+  {
+    "time": "14:16:04",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.5s",
+    "timestamp": 1772280964.1582422
+  },
+  {
+    "time": "14:16:04",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.5s",
+    "timestamp": 1772280964.168703
+  },
+  {
+    "time": "14:16:04",
+    "agent": "A",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 198.5s",
+    "timestamp": 1772280964.1914144
+  },
+  {
+    "time": "14:16:04",
+    "agent": "B",
+    "action": "CLEARANCE",
+    "ttc": 0,
+    "reason": "no conflict, waited 0.0s",
+    "timestamp": 1772280964.1995914
   }
+]
 ]

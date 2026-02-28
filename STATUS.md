@@ -1,205 +1,139 @@
-# 🎯 STATUS FINAL - V2X Intersection Safety System
-
-## ✅ TOATE FIȘIERELE AU FOST CREATE CU SUCCES!
-
-### 📦 Total: 14 Fișiere
-
-```
-V2X_Intersection_Safety/
-├── 📄 index.html                    ✅ HTML template Vite
-├── 📄 package.json                  ✅ NPM dependencies & scripts
-├── 📄 vite.config.js               ✅ Vite configuration
-├── 📄 README.md                     ✅ Documentație completă
-├── 📄 QUICKSTART.md                 ✅ Ghid rapid
-├── 📄 pyproject.toml               ✅ (existent - Python)
-│
-└── src/
-    ├── 📄 main.jsx                  ✅ React entry point
-    ├── 📄 App.jsx                   ✅ Layout principal
-    ├── 📄 App.css                   ✅ Stiluri globale
-    │
-    ├── components/
-    │   ├── 📄 IntersectionCanvas.jsx ✅ Canvas 2D intersecție
-    │   ├── 📄 Dashboard.jsx          ✅ Panel lateral info
-    │   ├── 📄 ControlPanel.jsx       ✅ Butoane control
-    │   └── 📄 EventLog.jsx           ✅ Log evenimente
-    │
-    ├── hooks/
-    │   └── 📄 useSimulation.js       ✅ WebSocket hook
-    │
-    └── data/
-        └── 📄 fakeData.js            ✅ Date mock
-```
-
-## 🚀 URMĂTORII PAȘI
-
-### 1️⃣ Instalează Dependențele (OBLIGATORIU)
-
-```bash
-npm install
-```
-
-Aceasta va instala:
-- ✅ React 18.2.0
-- ✅ React DOM 18.2.0
-- ✅ Vite 5.0.0
-- ✅ @vitejs/plugin-react
-- ✅ ESLint + plugins
-
-### 2️⃣ Pornește Aplicația
-
-```bash
-npm run dev
-```
-
-Aplicația va porni pe: **http://localhost:3000**
-
-### 3️⃣ Testează Funcționalitatea
-
-1. ✅ Verifică că aplicația se încarcă
-2. ✅ Apasă **START** din Control Panel
-3. ✅ Observă vehiculele mișcându-se pe canvas
-4. ✅ Verifică Dashboard cu stări vehicule
-5. ✅ Monitorizează Event Log
-
-## 🎮 MODURI DE FUNCȚIONARE
-
-### Mode 1: Mock Data (IMPLICIT)
-- ✅ **Funcționează imediat** fără backend
-- ✅ Ideal pentru dezvoltare UI
-- ✅ Simulare automată cu date fake
-
-### Mode 2: WebSocket (PENTRU MAI TÂRZIU)
-- 📡 Necesită backend pe port 8000
-- 📡 Click "Switch to WebSocket" în header
-- 📡 Primește date reale de la simulator
-
-## 🔧 COMENZI DISPONIBILE
-
-```bash
-# Dezvoltare (cu hot reload)
-npm run dev
-
-# Build pentru producție
-npm run build
-
-# Preview build local
-npm run preview
-
-# Lint cod
-npm run lint
-```
-
-## 📊 CE AI LA DISPOZIȚIE
-
-### Componente UI (4)
-1. **IntersectionCanvas** - Vizualizare grafică intersecție
-2. **Dashboard** - Statistici și info vehicule
-3. **ControlPanel** - Controale simulare
-4. **EventLog** - Log evenimente timp real
-
-### Hooks (1)
-5. **useSimulation** - WebSocket + state management
-
-### Data (1)
-6. **fakeData** - Mock data + generators
-
-### Layout (2)
-7. **App** - Layout principal
-8. **main** - Entry point
-
-### Config (3)
-9. **package.json** - NPM config
-10. **vite.config.js** - Vite config
-11. **index.html** - HTML template
-
-### Docs (2)
-12. **README.md** - Documentație completă
-13. **QUICKSTART.md** - Ghid rapid
-
-## ✨ FEATURES IMPLEMENTATE
-
-### Frontend Complete
-- ✅ Canvas 2D cu intersecție realistă
-- ✅ Vehicule animate cu culori semantice
-- ✅ Dashboard cu statistici live
-- ✅ Control panel complet
-- ✅ Event log cu filtrare
-- ✅ Mock mode functional
-- ✅ WebSocket ready
-- ✅ Responsive design
-- ✅ Dark theme modern
-- ✅ Error handling
-
-### Technical
-- ✅ React 18 + Hooks
-- ✅ Vite build tool
-- ✅ WebSocket cu auto-reconnect
-- ✅ State management
-- ✅ Mock simulation
-- ✅ ESLint setup
-- ✅ Zero errors
-
-## 🎨 UI/UX
-- ✅ Dark theme (#1a1a1a, #2a2a2a)
-- ✅ Gradient header (purple)
-- ✅ Grid layout 3 coloane
-- ✅ Animații smooth
-- ✅ Hover effects
-- ✅ Status indicators
-- ✅ Emoji icons
-- ✅ Custom scrollbars
-
-## 🐛 TROUBLESHOOTING
-
-### Problema: `npm install` eșuează
-```bash
-# Șterge cache
-rm -rf node_modules package-lock.json
-npm cache clean --force
-npm install
-```
-
-### Problema: Port 3000 ocupat
-Modifică în `vite.config.js`:
-```javascript
-server: { port: 3001 }
-```
-
-### Problema: Aplicația nu pornește
-```bash
-# Verifică versiunea Node
-node --version  # Trebuie >= 18
-
-# Reinstalează
-npm install
-npm run dev
-```
-
-## 📚 RESURSE
-
-- **Vite Docs**: https://vitejs.dev
-- **React Docs**: https://react.dev
-- **WebSocket API**: https://developer.mozilla.org/en-US/docs/Web/API/WebSocket
-
-## 🎉 SUCCESS!
-
-Frontend-ul este **100% FUNCTIONAL** și gata de utilizare!
-
-Poți începe dezvoltarea imediat cu:
-```bash
-npm install && npm run dev
-```
-
-Apoi deschide: **http://localhost:3000**
+# V2X Intersection Safety — Ce s-a făcut până acum
 
 ---
 
-**Note:**
-- Mock mode funcționează COMPLET fără backend
-- WebSocket mode va fi conectat când backend-ul e gata
-- Toate componentele sunt independente și reutilizabile
-- Zero erori de compilare sau lint
+## Backend (Python / FastAPI)
 
-**Enjoy coding! 🚀**
+### `models/vehicle.py`
+Clasa `Vehicle` — unitatea de bază a simulării.
+- **Atribute:** `id`, `x`, `y`, `vx`, `vy`, `state` (`normal`/`braking`/`yielding`), `priority` (`normal`/`emergency`)
+- **`update()`** — mișcă vehiculul un tick: `x += vx`, `y += vy`
+- **`reset()`** — revine la poziția inițială (pentru butonul Reset)
+- **`to_dict()`** — returnează JSON-ul publicat pe V2X Bus și trimis la frontend
 
+---
+
+### `services/v2x_bus.py`
+Canal de comunicare partajat — dict global `{ vehicle_id: state_dict }`.
+- **`publish(id, data)`** — vehiculul își scrie starea
+- **`get_others(id)`** — agentul citește stările celorlalți
+- **`get_all()`** — toate stările (folosit de semafor și engine)
+- **`clear()`** — resetat la schimbare scenariu
+
+---
+
+### `services/collision.py`
+Calculul TTC și detecția riscului.
+- **`time_to_intersection(v)`** — `distanță față de (400,400) / viteză proprie`
+- **`assess_risk(vehicles)`** — evaluează toate perechile, returnează `{ risk, ttc, action, pair }`
+- **`is_right_of(v1, v2)`** — regula priorității din dreapta (produs vectorial)
+- **`check_physical_collision(vehicles)`** — detectează impact real (distanță < 20px)
+- Praguri: `TTC_BRAKE = 3.0s` → frânează, `TTC_YIELD = 1.5s` → stop complet
+
+---
+
+### `models/agent.py`
+Logica de decizie V2X per vehicul, apelată la fiecare tick.
+- Dacă `cooperation=False` → ignoră bus-ul complet (demo coliziune)
+- Dacă `cooperation=True` → citește V2X Bus, calculează TTC, aplică regula:
+  - Urgență în jur → `yield`/`brake`
+  - Eu sunt urgență → `go`
+  - Celălalt vine din dreapta → `yield`/`brake`
+  - Eu vin din dreapta → `go`
+  - TTC al meu mai mare → `yield`/`brake`
+- Aplică pe vehicul: `brake` → `vx/vy *= 0.85`, `yield` → `vx=vy=0`
+- Loghează automat la schimbare de acțiune
+
+---
+
+### `services/infrastructure.py`
+Agentul semafor V2I — citește bus-ul și publică recomandări.
+- Ciclu normal: `verde 5s → galben 1s → roșu 5s` (la 30 FPS = 150/30/150 tick-uri)
+- Dacă detectează vehicul cu `priority="emergency"` în raza de 200px → **comută imediat pe verde**
+- Calculează recomandări de viteză per vehicul (`maintain`/`slow_down`/`stop`)
+- Publică pe bus ca `v2x_bus["INFRA"]`
+
+---
+
+### `scenarios/`
+- **`scenario_base.py`** — `ScenarioBase` (dataclass cu `name`, `description`, `vehicles`) și `VehicleDef`
+- **`perpendicular.py`** — A (Nord, vy=+4) + B (Vest, vx=+4) → scenariu principal
+- **`emergency.py`** — URGENTA (Vest, vx=+6, priority=emergency) + A (Nord, vy=+3)
+- **`speed_diff.py`** — A (Nord, vy=+8 rapid) + B (Vest, vx=+2 lent)
+
+---
+
+### `simulation/engine.py`
+Loop-ul principal la 30 FPS — orchestrează totul.
+
+Ordinea per tick: `update()` → `publish()` → `decide()` → `semaphore.update()` → `check_collisions()` → `assess_risk()` → cachează snapshot
+
+Metode publice: `reset(scenario)`, `toggle_cooperation()`, `get_state()`, `get_scenarios()`
+
+Instanță globală `engine = SimulationEngine()` importată de server.
+
+---
+
+### `api/server.py`
+FastAPI — pornit ca task asyncio împreună cu engine-ul.
+
+| Endpoint | Ce face |
+|----------|---------|
+| `GET /state` | Snapshot JSON curent |
+| `GET /scenarios` | Lista + scenariul activ |
+| `POST /reset` | Body opțional: `{"scenario": "emergency"}` |
+| `POST /toggle-cooperation` | V2X ON/OFF |
+| `WS /ws` | Stream live 30 FPS |
+
+CORS activat pentru `*` — frontend-ul merge pe orice port.
+
+---
+
+### `utils/logger.py`
+- Loghează `BRAKE`/`YIELD`/`COLLISION` → consolă + `decisions.json`
+- `get_recent(10)` inclus în fiecare snapshot WebSocket ca `event_log[]`
+- `decisions.json` — păstrează ultimele 500 decizii, util de arătat juriului
+
+---
+
+## Frontend (React / Vite)
+
+### `frontend/src/hooks/useSimulation.js`
+Hook WebSocket cu fallback automat pe date fake.
+- Versiunea completă: `{ state, isConnected, error }`
+- La eroare/deconectare → cade automat pe `FAKE_STATE`
+
+### `frontend/src/components/IntersectionCanvas.jsx`
+Canvas 2D `800×800px`, intersecție la `(400, 400)`.
+- Drumuri gri, marcaje albe întrerupte, linii de oprire
+- Vehicule `30×50px`: `normal`→albastru, `braking`→portocaliu, `yielding`→roșu, `emergency`→violet
+- Cerc roșu semi-transparent `r=80` când `risk.danger === true`
+
+### `frontend/src/App.jsx`
+Layout principal — asamblează toate componentele.
+- Toggle între **Mock Data** și **WebSocket live**
+- Gestionează `cooperation`, `isRunning`, `currentScenario` ca state global
+- ⚠️ `POST /toggle-cooperation` și `POST /reset` spre backend **nu sunt încă conectate** (marcat TODO)
+
+---
+
+## Ce mai lipsește
+
+| Cine | Task |
+|------|------|
+| **P2** | Conectează butoanele `ControlPanel` la `POST /toggle-cooperation` și `POST /reset` |
+| **P2** | `Dashboard` + `EventLog` să consume `wsState` în loc de `mockState` |
+| **P3** | Verifică end-to-end scenariul `emergency` |
+| **P3** | Tunează pragurile TTC dacă e nevoie (`services/collision.py` liniile 17-18) |
+
+---
+
+## Pornire
+
+```bash
+# Backend
+uvicorn api.server:app --reload --port 8000
+
+# Frontend
+cd frontend && npm install && npm run dev
+```

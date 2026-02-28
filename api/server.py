@@ -51,6 +51,11 @@ async def reset(body: ResetRequest = ResetRequest()):
 async def toggle_cooperation():
     new_state = engine.toggle_cooperation()
     return {"cooperation": new_state}
+
+@app.post("/grant-clearance/{vehicle_id}")
+async def grant_clearance(vehicle_id: str):
+    result = engine.grant_clearance(vehicle_id)
+    return result
 # -----------------------------------------------------------------------
 # WebSocket
 # -----------------------------------------------------------------------

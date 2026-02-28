@@ -138,6 +138,16 @@ export function useSimulation(url = 'ws://localhost:8000/ws', apiUrl = 'http://l
     }
   };
 
+  const grantClearance = async (vehicleId) => {
+    try {
+      const res = await fetch(`${apiUrl}/grant-clearance/${vehicleId}`, { method: 'POST' });
+      return await res.json();
+    } catch (err) {
+      console.error('❌ Grant clearance failed:', err);
+      return null;
+    }
+  };
+
   /**
    * Get scenarios list
    */
@@ -152,7 +162,7 @@ export function useSimulation(url = 'ws://localhost:8000/ws', apiUrl = 'http://l
   };
 
   // Return state și metode
-  return { state, isConnected, error, resetSimulation, toggleCooperation, getScenarios };
+  return { state, isConnected, error, resetSimulation, toggleCooperation, getScenarios, grantClearance };
 }
 
 /**

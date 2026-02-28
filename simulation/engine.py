@@ -1,149 +1,177 @@
 """
-simulation/engine.py — Loop-ul principal al simularii
-Flux per tick (la ~30 FPS):
-  1. update()  — misca vehiculele
-  2. publish() — scrie pe V2X Bus
-  3. decide()  — agentii iau decizii
-  4. semafor   — emite stare
-  5. collisions — detecteaza coliziuni fizice
-  6. get_state() — snapshot complet pentru frontend/WebSocket
+simulation/engine.py — Loop principal 30 FPS
+Un tick:
+  1. update() vehicule
+  2. publish() pe V2X Bus
+  3. central_system.decide() — acorda clearances
+  4. semaphore.update()
+  5. cache snapshot → get_state()
 """
 import asyncio
 import time
-from typing import Dict, List
+from typing import List
 from models.vehicle import Vehicle
-from models.agent import Agent
 from services import v2x_bus
-from services.collision import assess_risk, check_physical_collision
+from services.central_system import CentralSystem
 from services.infrastructure import InfrastructureAgent
-from scenarios.perpendicular import SCENARIO as S_PERP
-from scenarios.emergency import SCENARIO as S_EMG
-from scenarios.speed_diff import SCENARIO as S_SPEED
 from utils import logger
-FPS = 30
+FPS           = 30
 TICK_INTERVAL = 1.0 / FPS
-# Scenarii disponibile
+# ── Scenarii ────────────────────────────────────────────────────────────
 SCENARIOS = {
-    "perpendicular": S_PERP,
-    "emergency":     S_EMG,
-    "speed_diff":    S_SPEED,
+    'perpendicular': [
+        {'id': 'A', 'direction': 'N', 'intent': 'straight'},
+        {'id': 'B', 'direction': 'V', 'intent': 'straight'},
+    ],
+    'multi': [
+        {'id': 'A', 'direction': 'N', 'intent': 'straight'},
+        {'id': 'B', 'direction': 'V', 'intent': 'straight'},
+        {'id': 'C', 'direction': 'S', 'intent': 'straight'},
+        {'id': 'D', 'direction': 'E', 'intent': 'straight'},
+    ],
+    'emergency': [
+        {'id': 'AMB', 'direction': 'N', 'intent': 'straight', 'priority': 'emergency', 'speed_multiplier': 1.5},
+        {'id': 'B',   'direction': 'V', 'intent': 'straight'},
+        {'id': 'C',   'direction': 'E', 'intent': 'straight'},
+    ],
+    'intents': [
+        {'id': 'A', 'direction': 'N', 'intent': 'straight'},
+        {'id': 'B', 'direction': 'V', 'intent': 'left'},
+        {'id': 'C', 'direction': 'S', 'intent': 'right'},
+    ],
 }
 class SimulationEngine:
     def __init__(self):
-        self.scenario_name: str = "perpendicular"
-        self.cooperation: bool = True
+        self.scenario_name  = 'perpendicular'
+        self.cooperation    = True   # False = manual mode (user grants clearances)
         self.vehicles: List[Vehicle] = []
-        self.agents: List[Agent] = []
-        self.semaphore = InfrastructureAgent()
-        self.tick_count: int = 0
-        self.running: bool = False
-        self._last_state: dict = {}
-        self._collision_events: list = []
-        self._load_scenario("perpendicular")
-    # ------------------------------------------------------------------
-    # Configurare
-    # ------------------------------------------------------------------
-    def _load_scenario(self, name: str) -> None:
-        scenario = SCENARIOS.get(name, S_PERP)
+        self.central        = CentralSystem()
+        self.semaphore      = InfrastructureAgent()
+        self.tick_count     = 0
+        self.running        = False
+        self._last_state    = {}
+        self._event_log: list = []
+        self._last_decision_idx = 0
+        self._load_scenario('perpendicular')
+    # ── Configurare ────────────────────────────────────────────────────
+    def _load_scenario(self, name: str):
+        defs = SCENARIOS.get(name, SCENARIOS['perpendicular'])
         v2x_bus.clear()
         logger.clear()
+        self.central.reset()
+        self.semaphore      = InfrastructureAgent()
+        self.tick_count          = 0
+        self.scenario_name       = name
+        self._event_log          = []
+        self._last_decision_idx  = 0
         self.vehicles = [
             Vehicle(
-                id=vd.id, x=vd.x, y=vd.y,
-                vx=vd.vx, vy=vd.vy,
-                priority=vd.priority,
+                id=d['id'],
+                direction=d['direction'],
+                intent=d.get('intent', 'straight'),
+                priority=d.get('priority', 'normal'),
+                speed_multiplier=d.get('speed_multiplier', 1.0),
             )
-            for vd in scenario.vehicles
+            for d in defs
         ]
-        self.agents = [Agent(v, cooperation=self.cooperation) for v in self.vehicles]
-        self.semaphore = InfrastructureAgent()
-        self._collision_events.clear()
-        self.tick_count = 0
-        self.scenario_name = name
-        logger.log_info(f"Scenariu incarcat: {name} | cooperation={self.cooperation}")
-    def reset(self, scenario: str = None) -> None:
+        logger.log_info(f'Scenariu: {name}  cooperation={self.cooperation}')
+    def reset(self, scenario: str = None):
         if scenario and scenario in SCENARIOS:
             self.scenario_name = scenario
         self._load_scenario(self.scenario_name)
     def toggle_cooperation(self) -> bool:
         self.cooperation = not self.cooperation
-        for agent in self.agents:
-            agent.cooperation = self.cooperation
-            if self.cooperation:
-                agent.vehicle.state = "normal"
-        logger.log_info(f"Cooperare {'ACTIVATA' if self.cooperation else 'DEZACTIVATA'}")
+        # Când se trece pe manual (cooperation=False), revocă toate clearance-urile
+        if not self.cooperation:
+            for v in self.vehicles:
+                if v.state == 'waiting':
+                    v.clearance = False
+        logger.log_info(f'Cooperation {"AUTO" if self.cooperation else "MANUAL"}')
         return self.cooperation
-    def set_scenario(self, name: str) -> None:
-        if name in SCENARIOS:
-            self.reset(scenario=name)
+
+    def grant_clearance(self, vehicle_id: str) -> dict:
+        """Utilizatorul acordă manual clearance unui vehicul care așteaptă."""
+        for v in self.vehicles:
+            if v.id == vehicle_id:
+                if v.state == 'waiting':
+                    v.clearance = True
+                    v.state = 'crossing'
+                    v.vx = v._base_vx
+                    v.vy = v._base_vy
+                    msg = f'Clearance manual acordat de utilizator'
+                    self.central._log(vehicle_id, 'CLEARANCE', reason=msg)
+                    logger.log_info(f'Manual clearance: {vehicle_id}')
+                    return {'ok': True, 'vehicle_id': vehicle_id, 'state': 'crossing'}
+                return {'ok': False, 'reason': f'Vehicle {vehicle_id} is {v.state}, not waiting'}
+        return {'ok': False, 'reason': f'Vehicle {vehicle_id} not found'}
     def get_scenarios(self) -> list:
         return list(SCENARIOS.keys())
-    # ------------------------------------------------------------------
-    # Loop principal
-    # ------------------------------------------------------------------
-    async def run(self) -> None:
+    # ── Loop ───────────────────────────────────────────────────────────
+    async def run(self):
         self.running = True
         while self.running:
             t0 = time.monotonic()
             self._tick()
             elapsed = time.monotonic() - t0
             await asyncio.sleep(max(0.0, TICK_INTERVAL - elapsed))
-    def stop(self) -> None:
+    def stop(self):
         self.running = False
-    # ------------------------------------------------------------------
-    # Un singur tick
-    # ------------------------------------------------------------------
-    def _tick(self) -> None:
+    # ── Tick ───────────────────────────────────────────────────────────
+    def _tick(self):
         self.tick_count += 1
-        # 1. Misca vehiculele
+        # Resetare automata cand toate vehiculele au terminat
+        all_done = self.vehicles and all(v.state == 'done' for v in self.vehicles)
+        if all_done:
+            self._load_scenario(self.scenario_name)
+            return
+        # 1. Clearance logic
+        if self.cooperation:
+            # AUTO: sistemul central decide
+            self.central.decide(self.vehicles)
+        # MANUAL (cooperation=False): nu acordăm nimic automat — utilizatorul decide
+        # 2. Misca vehiculele
         for v in self.vehicles:
             v.update()
-        # 2. Publica pe V2X Bus
+        # 3. Publica pe V2X Bus
         for v in self.vehicles:
             v2x_bus.publish(v.id, v.to_dict())
-        # 3. Agentii decid
-        for agent in self.agents:
-            agent.decide()
         # 4. Semafor
-        semaphore_state = self.semaphore.update()
-        # 5. Coliziuni fizice
-        current = v2x_bus.get_all()
-        collisions = check_physical_collision(
-            {k: v for k, v in current.items() if k != "INFRA"}
-        )
-        for pair in collisions:
-            if not self._collision_events or self._collision_events[-1].get("pair") != list(pair):
-                self._collision_events.append({
-                    "tick": self.tick_count,
-                    "pair": list(pair),
-                    "timestamp": time.time(),
-                })
-                logger.log_collision(pair[0], pair[1])
-        # 6. Risc global
-        vehicle_states = {k: v for k, v in current.items() if k != "INFRA"}
-        risk = assess_risk(vehicle_states)
-        # 7. Cache snapshot
+        sem_state = self.semaphore.update()
+        # 5. Colecteaza decizii noi din sistemul central
+        all_decisions = self.central.get_decisions()
+        if not hasattr(self, '_last_decision_idx'):
+            self._last_decision_idx = 0
+        new_entries = all_decisions[self._last_decision_idx:]
+        if new_entries:
+            self._last_decision_idx = len(all_decisions)
+            self._event_log.extend(new_entries)
+            if len(self._event_log) > 100:
+                self._event_log = self._event_log[-100:]
+        # 6. Snapshot
         self._last_state = {
-            "tick": self.tick_count,
-            "timestamp": time.time(),
-            "cooperation": self.cooperation,
-            "scenario": self.scenario_name,
-            "vehicles": [v.to_dict() for v in self.vehicles],
-            "risk": risk,
-            "semaphore": semaphore_state,
-            "collisions": self._collision_events[-5:],
-            "event_log": logger.get_recent(10),
+            'tick':        self.tick_count,
+            'timestamp':   time.time(),
+            'cooperation': self.cooperation,
+            'scenario':    self.scenario_name,
+            'vehicles':    [v.to_dict() for v in self.vehicles],
+            'semaphore':   sem_state,
+            'risk': {
+                'risk':   False,
+                'ttc':    999,
+                'action': 'go',
+                'pair':   None,
+                'ttc_per_vehicle': {},
+            },
+            'collisions':  [],
+            'event_log':   list(self._event_log[-10:]),
         }
     def get_state(self) -> dict:
         return self._last_state or {
-            "tick": 0, "timestamp": time.time(),
-            "cooperation": self.cooperation,
-            "scenario": self.scenario_name,
-            "vehicles": [], "risk": {"risk": False, "ttc": 999, "action": "go",
-                                     "pair": None, "ttc_per_vehicle": {}},
-            "semaphore": {"light": "green", "phase": "NS", "emergency": False,
-                          "recommendation": "starting", "green_for": [], "red_for": []},
-            "collisions": [], "event_log": [],
+            'tick': 0, 'timestamp': time.time(),
+            'cooperation': self.cooperation,
+            'scenario': self.scenario_name,
+            'vehicles': [], 'semaphore': {'light': 'green'},
+            'risk': {'risk': False, 'ttc': 999, 'action': 'go', 'pair': None, 'ttc_per_vehicle': {}},
+            'collisions': [], 'event_log': [],
         }
-# Instanta globala — importata de server.py
 engine = SimulationEngine()
