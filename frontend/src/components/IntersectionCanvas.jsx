@@ -16,7 +16,7 @@ const STATE_COLOR = {
   yielding: '#F87171', // red-400 (glow)
 };
 
-const INTENT_ICON = { straight: '↑', left: '↰', right: '↱' };
+const INTENT_ICON = { straight: '↑', left: '←', right: '→' };
 const PRIORITY_COLOR = { emergency: '#EF4444', normal: null };
 
 // Heading (unghi radiani) per directie, pentru a roti vehiculul corect
@@ -391,23 +391,37 @@ function drawVehicle(ctx, v, manualMode = false, now) {
 
   ctx.restore();
 
-  // ── Labels ──
+  // ── Intent icon in spatiul rotit al masinii (pe capota, deasupra parbrizului) ──
+  ctx.save();
+  ctx.translate(v.x, v.y);
+  ctx.rotate(getVehicleHeading(v));
+  ctx.font = 'bold 11px Arial';
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.shadowBlur = 2;
+  ctx.shadowColor = 'rgba(0,0,0,0.8)';
+  ctx.fillText(INTENT_ICON[v.intent] || '↑', 0, -14);
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
+  // ── Labels externe (in spatiul lumii, nu rotite) ──
   ctx.save();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  // ID + intent icon
-  const icon = INTENT_ICON[v.intent] || '?';
+  // ID deasupra
   ctx.font = "bold 12px 'JetBrains Mono', 'Fira Code', monospace";
   ctx.fillStyle = '#FFFFFF';
   ctx.shadowBlur = 4;
   ctx.shadowColor = 'black';
-  ctx.fillText(`${v.id} ${icon}`, v.x, v.y - 32);
+  ctx.fillText(v.id, v.x, v.y - 32);
 
-  // Stare badge
+  // Stare badge sub masina
   const label = v.state.toUpperCase();
   ctx.font = "bold 9px 'Inter', sans-serif";
   ctx.fillStyle = color;
+  ctx.shadowBlur = 0;
   ctx.fillText(label, v.x, v.y + 32);
 
   ctx.restore();
