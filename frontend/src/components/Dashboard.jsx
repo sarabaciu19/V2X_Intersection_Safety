@@ -22,7 +22,7 @@ const DIR_LABEL    = { N: '↓ Nord→Sud', S: '↑ Sud→Nord', E: '← Est→V
  * - Sumar intersecție: număr total vehicule, număr vehicule în așteptare, număr vehicule traversând
  * - Design: aspect întunecat, text alb, organizat pe secțiuni
  */
-const Dashboard = ({ vehicles = [], semaphore = {}, cooperation = true, onGrantClearance = null }) => {
+const Dashboard = ({ vehicles = [], semaphore = {}, cooperation = true, agentsMemory = {}, onGrantClearance = null }) => {
   const waiting  = vehicles.filter(v => v.state === 'waiting').length;
   const crossing = vehicles.filter(v => v.state === 'crossing').length;
 
@@ -168,6 +168,55 @@ const Dashboard = ({ vehicles = [], semaphore = {}, cooperation = true, onGrantC
           );
         })}
       </section>
+
+      {/* Memoria agentilor autonomi */}
+      {Object.keys(agentsMemory).length > 0 && (
+        <>
+          <div style={s.sep} />
+          <section style={s.section}>
+            <div style={s.label}>🧠 Memorie agenți (ultimele 10 decizii)</div>
+            {Object.entries(agentsMemory).map(([vid, mem]) => {
+              if (!mem || mem.length === 0) return null;
+              const last = mem[mem.length - 1];
+              const actionColor =
+                last.action === 'YIELD' ? '#b91c1c'
+                : last.action === 'BRAKE' ? '#b45309'
+                : '#166534';
+              return (
+                <div key={vid} style={{ ...s.card, borderColor: actionColor + '55', padding: '8px 10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span style={{ fontWeight: 700, fontSize: 13, color: '#2c1e0f' }}>{vid}</span>
+                    <span style={{ ...s.pill, background: actionColor + '22', color: actionColor }}>
+                      {last.action}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                    {mem.slice(-10).map((m, i) => {
+                      const c = m.action === 'YIELD' ? '#b91c1c'
+                              : m.action === 'BRAKE' ? '#b45309'
+                              : '#166534';
+                      return (
+                        <span key={i} title={`${m.action} TTC=${m.ttc}s ${m.reason}`}
+                          style={{
+                            width: 14, height: 14, borderRadius: 3,
+                            background: c + '33', border: `1px solid ${c}`,
+                            display: 'inline-block', cursor: 'default',
+                            fontSize: 8, color: c, textAlign: 'center', lineHeight: '14px',
+                          }}>
+                          {m.action[0]}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <div style={{ fontSize: 9, color: '#a08060', marginTop: 3 }}>
+                    {last.reason} · TTC={last.ttc}s
+                  </div>
+                </div>
+              );
+            })}
+          </section>
+        </>
+      )}
     </div>
   );
 };
