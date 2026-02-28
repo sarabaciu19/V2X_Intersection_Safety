@@ -1,36 +1,3 @@
-"""
-scenario_base.py
-----------------
-Clasa de baza pentru toate scenariile.
-
-DE CE EXISTA:
-  Toate cele 3 scenarii (perpendicular, urgenta, viteze) au nevoie
-  de aceleasi operatii: reset, update pozitii, calcul TTC, detectie coliziune.
-  In loc sa scriem acelasi cod de 3 ori, il scriem o data aici si
-  fiecare scenariu il mosteneste (principiul DRY - Don't Repeat Yourself).
-
-CE FACE:
-  - Tine lista de vehicule si starea lor
-  - Updateaza pozitiile la fiecare tick
-  - Calculeaza TTC (Time To Collision) intre orice 2 vehicule
-  - Detecteaza daca a avut loc o coliziune (overlap de pozitii)
-  - Ofera metoda reset() pentru butonul "Reset" din frontend
-"""
-
-import math
-import time
-from copy import deepcopy
-from backend.models.vehicle import Vehicle
-
-
-# ─── Constante de decizie ───────────────────────────────────────────────────
-# IMPORTANT: TTC e calculat in TICKS (1 tick = 100ms), NU in secunde.
-# 3 secunde = 30 ticks, 1.5 secunde = 15 ticks
-TTC_DANGER = 30.0  # 3 secunde (30 ticks) — sub acest prag: FRANEAZA
-TTC_CRITICAL = 15.0  # 1.5 secunde (15 ticks) — sub acest prag: STOP COMPLET
-BRAKE_FORCE = 0.85  # factor de reducere a vitezei la fiecare tick de franare
-COLLISION_RADIUS = 25  # pixeli — daca 2 vehicule sunt mai aproape → coliziune
-
 
 class ScenarioBase:
     """
