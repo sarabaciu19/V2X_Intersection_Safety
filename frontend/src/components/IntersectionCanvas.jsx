@@ -210,26 +210,65 @@ function drawIntersectionBox(ctx) {
   ctx.strokeRect(CX - HALF, CY - HALF, ROAD_W, ROAD_W);
 }
 
+// Pozitiile semafoarelor per directie
+// Fiecare semafor e plasat pe banda de intrare, langa linia de stop
+const LIGHT_POS = {
+  N: { x: CX + HALF + 16, y: CY - HALF - 30 },  // banda N (x=430+), deasupra liniei de stop
+  S: { x: CX - HALF - 16, y: CY + HALF + 30 },  // banda S (x=370-), sub linia de stop
+  E: { x: CX + HALF + 30, y: CY + HALF + 16 },  // banda E (y=430+), dreapta liniei de stop
+  V: { x: CX - HALF - 30, y: CY - HALF - 16 },  // banda V (y=370-), stanga liniei de stop
+};
+
 function drawSemaphore(ctx, semaphore) {
-  const light = semaphore?.light || 'green';
-  const colors = { green: '#22C55E', yellow: '#FBBF24', red: '#EF4444' };
-  const col = colors[light] || '#22C55E';
+  const lightsPerDir = semaphore?.lights || {};
+  const COLORS = { green: '#22C55E', yellow: '#FBBF24', red: '#EF4444' };
+  const BODY_W = 18, BODY_H = 50;  // dimensiuni carcasa semafor (3 globuri)
 
-  // Indicator mic in coltul stanga-sus al intersectiei
-  ctx.save();
-  ctx.fillStyle = '#111827';
-  ctx.fillRect(CX - HALF - 28, CY - HALF - 28, 24, 24);
-  ctx.fillStyle = col;
-  ctx.beginPath();
-  ctx.arc(CX - HALF - 16, CY - HALF - 16, 9, 0, Math.PI * 2);
-  ctx.fill();
+  ['N', 'S', 'E', 'V'].forEach(dir => {
+    const col = COLORS[lightsPerDir[dir] || 'red'];
+    const pos = LIGHT_POS[dir];
+    const bx = pos.x - BODY_W / 2;
+    const by = pos.y - BODY_H / 2;
 
-  // Glow
-  ctx.shadowColor = col;
-  ctx.shadowBlur = 12;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.restore();
+    ctx.save();
+
+    // Carcasa semaforului
+    ctx.fillStyle = '#1F2937';
+    ctx.strokeStyle = '#374151';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(bx, by, BODY_W, BODY_H, 3);
+    ctx.fill();
+    ctx.stroke();
+
+    // 3 globuri: rosu sus, galben mijloc, verde jos
+    const globY = [by + 9, by + 25, by + 41];
+    const globColors = ['#EF4444', '#FBBF24', '#22C55E'];
+    const activeLight = lightsPerDir[dir] || 'red';
+    const activeIdx = { red: 0, yellow: 1, green: 2 }[activeLight] ?? 0;
+
+    globColors.forEach((gc, i) => {
+      const lit = (i === activeIdx);
+      ctx.beginPath();
+      ctx.arc(pos.x, globY[i], 6, 0, Math.PI * 2);
+      ctx.fillStyle = lit ? gc : '#374151';
+      if (lit) {
+        ctx.shadowColor = gc;
+        ctx.shadowBlur = 10;
+      }
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    });
+
+    // Eticheta directie
+    ctx.font = 'bold 8px monospace';
+    ctx.fillStyle = '#9CA3AF';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(dir, pos.x, by + BODY_H + 7);
+
+    ctx.restore();
+  });
 }
 
 function drawVehicle(ctx, v, manualMode = false) {
