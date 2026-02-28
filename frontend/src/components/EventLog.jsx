@@ -1,64 +1,55 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
 
-const ACTION_STYLE = {
-  CLEARANCE: { color: '#166534', icon: '✅' },
-  ASTEAPTA:  { color: '#b45309', icon: '⏸' },
-  WAIT:      { color: '#b45309', icon: '⏸' },
-  STOP:      { color: '#dc2626', icon: '🔴' },
-  HOLD:      { color: '#ca8a04', icon: '🟡' },
-  INFO:      { color: '#2563eb', icon: 'ℹ' },
-  BRAKE:     { color: '#f59e0b', icon: '🟠' },
-  YIELD:     { color: '#ef4444', icon: '🛑' },
-  GO:        { color: '#22c55e', icon: '🟢' },
+const MEM_ACTION_STYLE = {
+  GO: { color: '#22c55e', icon: '🟢' },
+  YIELD: { color: '#ef4444', icon: '🛑' },
+  BRAKE: { color: '#f59e0b', icon: '🟠' }, WAIT: { color: '#b45309', icon: '⏸' },
 };
 
 /**
- * EventLog - Log decizii agenți autonomi + sistem central în timp real
+ * EventLog — Memorie decizii per agent (ultimele 10 per vehicul)
  */
-const EventLog = ({ events = [], maxEvents = 100 }) => {
-  const bottomRef = useRef(null);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [events]);
-
-  const shown = events.slice(-maxEvents);
+const EventLog = ({ agentsMemory = {} }) => {
+  const agents = Object.entries(agentsMemory);
 
   return (
     <div style={s.container}>
       <div style={s.header}>
-        <span style={s.title}>📋 Log decizii agenți autonomi</span>
-        <span style={{ color: '#a08060', fontSize: 11 }}>{shown.length} intrări</span>
+        <span style={s.title}>🧠 Memorie decizii agenți</span>
+        <span style={{ color: '#a08060', fontSize: 11 }}>live · ultimele 10 decizii per vehicul</span>
       </div>
-      <div style={s.log}>
-        {shown.length === 0 && (
-          <span style={{ color: '#c8b89a', fontSize: 12 }}>
+      <div style={s.body}>
+        {agents.length === 0 && (
+          <span style={{ color: '#c8b89a', fontSize: 12, padding: '8px 16px' }}>
             — Nicio decizie încă. Pornește simularea. —
           </span>
         )}
-        {shown.map((evt, i) => {
-          const action = (evt.action || evt.type || 'INFO').toUpperCase();
-          const style  = ACTION_STYLE[action] || ACTION_STYLE.INFO;
-          return (
-            <div key={i} style={s.row}>
-              <span style={{ color: '#a08060', fontSize: 10, minWidth: 60 }}>
-                {evt.time || new Date(evt.timestamp * 1000).toLocaleTimeString('ro-RO')}
-              </span>
-              <span style={{ color: style.color, fontSize: 11, minWidth: 14 }}>{style.icon}</span>
-              <span style={{ color: '#2c1e0f', fontWeight: 700, fontSize: 11, minWidth: 28 }}>
-                {evt.agent || evt.vehicle_id || '?'}
-              </span>
-              <span style={{ color: style.color, fontWeight: 700, fontSize: 11, minWidth: 80 }}>
-                {action}
-              </span>
-              <span style={{ color: '#6b4f35', fontSize: 10, flex: 1 }}>
-                {evt.reason || evt.message || ''}
-                {evt.ttc != null && evt.ttc < 999 ? ` [TTC=${evt.ttc}s]` : ''}
-              </span>
+        {agents.map(([vid, memory]) => (
+          <div key={vid} style={s.agentCol}>
+            <div style={s.agentHeader}>🚗 {vid}</div>
+            <div style={s.agentRows}>
+              {memory.length === 0 && (
+                <span style={{ color: '#c8b89a', fontSize: 10, padding: '4px 8px', display: 'block' }}>— fără decizii —</span>
+              )}
+              {[...memory].reverse().map((entry, i) => {
+                const st = MEM_ACTION_STYLE[entry.action] || { color: '#2563eb', icon: 'ℹ' };
+                return (
+                  <div key={i} style={s.memRow}>
+                    <span style={{ color: '#a08060', fontSize: 9, minWidth: 52 }}>{entry.tick_time}</span>
+                    <span style={{ fontSize: 10, minWidth: 14 }}>{st.icon}</span>
+                    <span style={{ color: st.color, fontWeight: 700, fontSize: 10, minWidth: 44 }}>{entry.action}</span>
+                    <span style={{ color: '#6b4f35', fontSize: 9, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {entry.reason}
+                    </span>
+                    {entry.ttc < 999 && (
+                      <span style={{ color: '#a08060', fontSize: 9, marginLeft: 4 }}>TTC={entry.ttc}s</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
-        <div ref={bottomRef} />
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -72,20 +63,28 @@ const s = {
   },
   header: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '6px 16px', borderBottom: '1px solid #c8b89a',
+    padding: '5px 16px', borderBottom: '1px solid #c8b89a',
     background: '#e6ddd0',
   },
   title: { color: '#6b4f35', fontSize: 12, fontWeight: 700, letterSpacing: 1 },
-  log: {
-    flex: 1, overflowY: 'auto', padding: '6px 16px',
-    display: 'flex', flexDirection: 'column', gap: 3,
-    maxHeight: 130,
+  body: {
+    flex: 1, display: 'flex', flexDirection: 'row', overflowY: 'auto',
   },
-  row: {
-    display: 'flex', gap: 8, alignItems: 'flex-start',
-    borderBottom: '1px solid #e6ddd0', paddingBottom: 2,
+  agentCol: {
+    flex: 1, borderRight: '1px solid #c8b89a', display: 'flex',
+    flexDirection: 'column', minWidth: 0,
+  },
+  agentHeader: {
+    background: '#e6ddd0', color: '#5c4028', fontSize: 11, fontWeight: 700,
+    padding: '3px 8px', borderBottom: '1px solid #c8b89a', letterSpacing: 0.5,
+  },
+  agentRows: {
+    flex: 1, overflowY: 'auto',
+  },
+  memRow: {
+    display: 'flex', alignItems: 'center', gap: 4,
+    padding: '2px 8px', borderBottom: '1px solid rgba(200,184,154,0.3)',
   },
 };
 
 export default EventLog;
-

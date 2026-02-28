@@ -75,6 +75,7 @@ class Agent:
         self.cooperation      = cooperation
         self.last_action: str = "go"
         self.memory: deque    = deque(maxlen=MEMORY_SIZE)
+        self._last_state: str = ""   # ultima stare inregistrata (pentru deduplicare)
 
     @property
     def vehicle_id(self) -> str:
@@ -92,6 +93,14 @@ class Agent:
             "reason":    reason,
         })
 
+    def _record_if_new(self, action: str, ttc: float, reason: str) -> None:
+        """Inregistreaza in memorie doar daca starea s-a schimbat fata de ultima inregistrare."""
+        key = f"{action}|{reason}"
+        if key == self._last_state:
+            return
+        self._last_state = key
+        self._record(action, ttc, reason)
+
     def decide(self) -> str:
         v = self.vehicle
 
@@ -100,22 +109,30 @@ class Agent:
             self.last_action = "go"
             return "go"
 
-        # Done sau crossing → nu interveni
-        if v.state in ("done", "crossing"):
-            return "go"
-
         my_data = v.to_dict()
         my_ttc  = time_to_intersection(my_data)
+
+        # ── Inregistreaza starea curenta a vehiculului ──────────────────
+        if v.state == "done":
+            self._record_if_new("GO", my_ttc, "vehicul iesit din intersectie")
+            return "go"
+
+        if v.state == "crossing":
+            self._record_if_new("GO", my_ttc, "traverseaza — clearance primit")
+            return "go"
+
+        if v.state == "waiting":
+            if v.clearance:
+                self._record_if_new("GO", my_ttc, "clearance primit — porneste")
+            else:
+                self._record_if_new("WAIT", my_ttc, "asteapta clearance de la sistemul central")
+            self.last_action = "go" if v.clearance else "yield"
+            return self.last_action
+
+        # ── Negociere V2V — vehicule in conflict la aceeasi intersectie ──
         my_dist = v.dist_to_intersection()
-
-        # ── 1. Semafor — DOAR langa intersectie (dist < APPROACH_DIST) ──
-        # update() se ocupa de oprirea fizica la wait_line
-        # Agentul intervine doar daca sistemul central nu i-a dat clearance
-        # si semaforul e rosu — deja handled de clearance=False in update()
-        # Nu mai setam vx/vy manual aici.
-
-        # ── 2. Negociere V2V — vehicule in conflict la aceeasi intersectie ──
         if my_dist >= APPROACH_DIST:
+            self._record_if_new("GO", my_ttc, "in tranzit — departe de intersectie")
             self.last_action = "go"
             return "go"
 
@@ -145,13 +162,14 @@ class Agent:
 
         if not relevant:
             self.last_action = "go"
+            self._record_if_new("GO", my_ttc, "aproape de intersectie — niciun conflict V2V")
             return "go"
 
         action = self._evaluate(my_data, my_ttc, relevant)
         self.last_action = action
+        reason = f"conflict V2V cu [{','.join(relevant.keys())}]"
+        self._record_if_new(action.upper(), my_ttc, reason)
         if action != "go":
-            self._record(action.upper(), my_ttc,
-                         f"V2V conflict cu [{','.join(relevant.keys())}]")
             logger.log_decision(v.id, action.upper(), my_ttc,
                                 f"conflict cu {list(relevant.keys())}")
         return action

@@ -98,7 +98,7 @@ function App() {
 
       {/* Bottom - Event Log */}
       <footer className="app-footer">
-        <EventLog events={events} maxEvents={50} />
+        <EventLog agentsMemory={agentsMemory} />
       </footer>
     </div>
   );
