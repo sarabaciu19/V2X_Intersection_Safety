@@ -203,63 +203,123 @@ class Vehicle:
         if self.direction == 'V':   return self.wait_line - self.x
         return 999.0
 
-    def update(self):
-        """Misca vehiculul un tick in functie de stare si clearance."""
+    # ── Following distance ───────────────────────────────────────────
+    FOLLOW_MIN_DIST   = 35   # opreste complet daca e mai aproape de atat (px)
+    FOLLOW_BRAKE_DIST = 80   # incepe franarea de la aceasta distanta (px)
 
-        # 1. Asteapta SI a primit clearance → incepe traversarea
+    def dist_ahead(self, other) -> float:
+        """
+        Distanta fata de un alt vehicul care e IN FATA pe aceeasi directie.
+        Returneaza float mare daca e in spate sau pe alta directie.
+        """
+        if other.direction != self.direction:
+            return 9999.0
+        if self.direction == 'N':
+            d = other.y - self.y
+        elif self.direction == 'S':
+            d = self.y - other.y
+        elif self.direction == 'E':
+            d = self.x - other.x
+        else:  # V
+            d = other.x - self.x
+        return d if d > 0 else 9999.0
+
+    def _desired_speed_factor(self, vehicles_same_dir: list) -> float:
+        """
+        Calculeaza factorul de viteza dorit (0..1) tinand cont de:
+        - distanta fata de vehiculul din fata (following)
+        - distanta fata de linia de stop (daca nu are clearance)
+        """
+        factor = 1.0
+
+        # Following: cauta cel mai aproape vehicul din fata
+        closest = 9999.0
+        for other in vehicles_same_dir:
+            if other.id == self.id:
+                continue
+            d = self.dist_ahead(other)
+            if d < closest:
+                closest = d
+
+        if closest <= self.FOLLOW_MIN_DIST:
+            return 0.0  # opreste complet
+        elif closest <= self.FOLLOW_BRAKE_DIST:
+            t = (closest - self.FOLLOW_MIN_DIST) / (self.FOLLOW_BRAKE_DIST - self.FOLLOW_MIN_DIST)
+            factor = min(factor, MIN_SPEED_FACTOR + (1.0 - MIN_SPEED_FACTOR) * t)
+
+        # Stop la linia de semafoare (numai daca nu are clearance)
+        if not self.clearance:
+            dist_stop = self._dist_to_wait_line()
+            if dist_stop <= 0:
+                return 0.0  # e deja la sau dupa linie — opreste
+            elif dist_stop <= BRAKE_ZONE_DIST:
+                t = dist_stop / BRAKE_ZONE_DIST
+                factor = min(factor, MIN_SPEED_FACTOR + (1.0 - MIN_SPEED_FACTOR) * t)
+
+        return factor
+
+    def update(self, vehicles_same_dir: list = None):
+        """
+        Misca vehiculul un tick.
+        vehicles_same_dir: lista cu celelalte vehicule pe aceeasi directie (pentru following).
+        """
+        if self.state == 'done':
+            return
+
+        # Primeste clearance → incepe traversarea
         if self.state == 'waiting' and self.clearance:
             self.state = 'crossing'
             self.vx = self._base_vx
             self.vy = self._base_vy
 
-        # 2. Asteapta fara clearance → sta pe loc
+        # Asteapta fara clearance → sta pe loc
         if self.state == 'waiting':
-            self.vx = 0
-            self.vy = 0
+            self.vx = 0.0
+            self.vy = 0.0
             return
 
-        # 3. Se misca si a ajuns exact la linia de stop fara clearance → opreste
-        if self.state in ('moving', 'braking') and self.is_at_wait_line() and not self.clearance:
-            self.state = 'waiting'
-            self.vx = 0
-            self.vy = 0
-            return
-
-        # 4. Miscare / traversare / franare
-        if self.state in ('moving', 'crossing', 'braking'):
-            if self.state == 'crossing':
-                # Traversare: viteza de baza intotdeauna
-                self.vx = self._base_vx
-                self.vy = self._base_vy
-            elif self.state == 'braking':
-                # Viteza setata de agent (V2I/V2V) — nu se suprascrie
-                pass
-            else:
-                # moving: franare graduala in zona de stop
-                dist_to_stop = self._dist_to_wait_line()
-                if 0 < dist_to_stop <= BRAKE_ZONE_DIST and not self.clearance:
-                    # Factor liniar: 1.0 la intrarea in zona → MIN_SPEED_FACTOR la linie
-                    t = dist_to_stop / BRAKE_ZONE_DIST
-                    factor = MIN_SPEED_FACTOR + (1.0 - MIN_SPEED_FACTOR) * t
-                    self.vx = self._base_vx * factor
-                    self.vy = self._base_vy * factor
-                else:
-                    self.vx = self._base_vx
-                    self.vy = self._base_vy
-
-            # Aplica virajul cand vehiculul ajunge in centrul intersectiei
+        # Traversare activa → viteza plina, nu mai verifica semaforul
+        if self.state == 'crossing':
+            self.vx = self._base_vx
+            self.vy = self._base_vy
             if not self._turned and self.intent != 'straight' and self._has_reached_turn_point():
                 self._apply_turn()
-
             self.x += self.vx
             self.y += self.vy
-
-            # Trece la crossing dupa centrul intersectiei
-            if self.state in ('moving', 'braking') and self.is_past_intersection():
-                self.state = 'crossing'
-            # Done cand iese din canvas
             if self.is_off_screen():
                 self.state = 'done'
+            return
+
+        # Moving / braking — calculeaza viteza dorita
+        factor = self._desired_speed_factor(vehicles_same_dir or [])
+
+        if factor <= 0.0:
+            # Trebuie sa se opreasca
+            self.vx = 0.0
+            self.vy = 0.0
+            # Daca e fix la linia de stop si n-are clearance → waiting
+            if not self.clearance and self._dist_to_wait_line() <= 1.0:
+                self.state = 'waiting'
+            else:
+                self.state = 'braking'
+            return
+
+        self.vx = self._base_vx * factor
+        self.vy = self._base_vy * factor
+        self.state = 'moving' if factor > 0.9 else 'braking'
+
+        # Aplica virajul la centrul intersectiei
+        if not self._turned and self.intent != 'straight' and self._has_reached_turn_point():
+            self._apply_turn()
+
+        self.x += self.vx
+        self.y += self.vy
+
+        # Trece la crossing odata ce a depasit intersectia
+        if self.is_past_intersection():
+            self.state = 'crossing'
+        if self.is_off_screen():
+            self.state = 'done'
 
     def reset(self):
         self.x, self.y, self.vx, self.vy = self._init

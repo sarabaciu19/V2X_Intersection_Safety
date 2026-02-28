@@ -1,33 +1,72 @@
 """
-models/agent.py — Logica de decizie a agentului V2V + V2I (semafor)
-La fiecare tick:
-  1. Citeste recomandarea de viteza V2I din bus (stop / reduce_speed / proceed)
-  2. Daca V2I zice stop → yield imediat
-  3. Daca V2I zice reduce_speed → aplica viteza recomandata
-  4. Verifica semaforul clasic (fallback)
-  5. Negociere V2V (TTC + regula dreptei)
-  6. Aplica si logheza decizia
-cooperation=False → ignora V2X Bus si semaforul (demo coliziune)
+models/agent.py — Logica de decizie V2V + V2I
+Filtrare stricta: deciziile sunt bazate DOAR pe vehicule care:
+  1. Se afla la aceeasi intersectie
+  2. Se apropie de intersectie (dist < APPROACH_DIST)
+  3. Sunt in conflict real (perpendiculare sau viraj stanga)
+  Nu se iau in calcul vehiculele din spate sau de pe alte drumuri.
 """
 import math
 from collections import deque
 from services import v2x_bus
-from services import llm_client
 from services.collision import time_to_intersection, TTC_BRAKE, TTC_YIELD, is_right_of
 from utils import logger
 
-BRAKE_FACTOR = 0.85
-MEMORY_SIZE  = 10
+BRAKE_FACTOR  = 0.85
+MEMORY_SIZE   = 10
+APPROACH_DIST = 150.0   # px — distanta maxima de la intersectie pentru a fi "relevant"
+
+# Axele de conflict: vehicule pe axe perpendiculare se pot ciocni in intersectie
+AXIS = {
+    'N': 'vertical', 'S': 'vertical',
+    'E': 'horizontal', 'V': 'horizontal',
+}
 
 
-def _get_my_light(direction: str) -> str:
-    infra = v2x_bus.get_all().get("INFRA", {})
-    return infra.get("lights", {}).get(direction, "green")
+def _get_my_light(vehicle) -> str:
+    """Citeste culoarea semaforului pentru vehiculul dat, la intersectia sa."""
+    ikey      = getattr(vehicle, 'intersection_key', 'NV')
+    direction = vehicle.direction
+    # Incearca INFRA_{key}
+    infra = v2x_bus.get_all().get(f"INFRA_{ikey}", {})
+    if infra:
+        return infra.get("lights", {}).get(direction, "green")
+    # Fallback INFRA global
+    infra_g = v2x_bus.get_all().get("INFRA", {})
+    all_l   = infra_g.get("all_lights", {})
+    if ikey in all_l:
+        return all_l[ikey].get(direction, "green")
+    return infra_g.get("lights", {}).get(direction, "green")
 
 
-def _get_v2i_recommendation(vehicle_id: str) -> dict | None:
-    infra = v2x_bus.get_all().get("INFRA", {})
-    return infra.get("speed_recommendations", {}).get(vehicle_id)
+def _are_conflicting(dir1: str, intent1: str, dir2: str, intent2: str) -> bool:
+    """
+    True daca doua vehicule cu directiile/intentiile date pot intra in conflict
+    in intersectie. Vehiculele pe aceeasi axa (N-S sau E-V) nu se ciocnesc
+    daca merg drept (sunt pe benzi separate). Conflicte reale:
+      - axe perpendiculare (N vs V, N vs E, S vs V, S vs E)
+      - viraj stanga vs oricare alt vehicul perpendicular
+    """
+    same_axis = AXIS.get(dir1) == AXIS.get(dir2)
+    if same_axis:
+        # Aceeasi axa: conflict doar daca un vehicul vireaza stanga spre celalalt
+        if intent1 == 'left' or intent2 == 'left':
+            return True
+        return False
+    # Axe diferite: conflict intotdeauna (daca amandoi se apropie)
+    return True
+
+
+def _is_ahead_on_same_lane(me: dict, other: dict) -> bool:
+    """True daca 'other' e IN FATA lui 'me' pe aceeasi banda (acelasi drum, aceeasi directie)."""
+    if me.get('direction') != other.get('direction'):
+        return False
+    d = me.get('direction', '')
+    if d == 'N':   return other['y'] > me['y']   # merge Sud, fata = y mai mare
+    if d == 'S':   return other['y'] < me['y']   # merge Nord, fata = y mai mic
+    if d == 'E':   return other['x'] < me['x']   # merge Vest, fata = x mai mic
+    if d == 'V':   return other['x'] > me['x']   # merge Est,  fata = x mai mare
+    return False
 
 
 class Agent:
@@ -36,7 +75,6 @@ class Agent:
         self.cooperation      = cooperation
         self.last_action: str = "go"
         self.memory: deque    = deque(maxlen=MEMORY_SIZE)
-        self.last_full_reason = "N/A"
 
     @property
     def vehicle_id(self) -> str:
@@ -59,110 +97,83 @@ class Agent:
 
         # Fara cooperare → merge fara restrictii
         if not self.cooperation:
-            v.state = "moving"
             self.last_action = "go"
+            return "go"
+
+        # Done sau crossing → nu interveni
+        if v.state in ("done", "crossing"):
             return "go"
 
         my_data = v.to_dict()
         my_ttc  = time_to_intersection(my_data)
+        my_dist = v.dist_to_intersection()
 
-        # ── 1. Recomandare V2I (infrastructura → vehicul) ──────────────
-        rec = _get_v2i_recommendation(v.id)
-        if rec is not None and rec["type"] != "proceed":
-            rec_type  = rec["type"]
-            adv_speed = rec.get("advisory_speed")
-            reason    = rec.get("reason", "recomandare V2I")
+        # ── 1. Semafor — DOAR langa intersectie (dist < APPROACH_DIST) ──
+        # update() se ocupa de oprirea fizica la wait_line
+        # Agentul intervine doar daca sistemul central nu i-a dat clearance
+        # si semaforul e rosu — deja handled de clearance=False in update()
+        # Nu mai setam vx/vy manual aici.
 
-            if rec_type == "stop":
-                self._apply("yield", my_ttc, reason=f"V2I: {reason}")
-                return "yield"
-
-            if rec_type == "reduce_speed" and adv_speed is not None:
-                current = math.sqrt(v.vx ** 2 + v.vy ** 2)
-                if current > adv_speed and current > 0:
-                    scale = adv_speed / current
-                    v.vx *= scale
-                    v.vy *= scale
-                    v.state = "braking"
-                    if self.last_action != "brake":
-                        logger.log_decision(v.id, "REDUCE_SPEED", my_ttc,
-                                            f"V2I: {reason} → {adv_speed:.1f} px/tick")
-                    self.last_action = "brake"
-                    self._record("BRAKE", my_ttc, f"V2I reduce_speed → {adv_speed:.1f}")
-                    return "brake"
-
-        # ── 2. Semafor clasic (fallback) ────────────────────────────────
-        if my_ttc < TTC_BRAKE:
-            light = _get_my_light(v.direction)
-            if light == "red":
-                self._apply("yield", my_ttc, reason="SEMAFOR ROSU")
-                return "yield"
-            if light == "yellow":
-                action = "yield" if my_ttc < TTC_YIELD else "brake"
-                self._apply(action, my_ttc, reason="SEMAFOR GALBEN")
-                return action
-
-        # ── 3. Departe de intersectie → revin la viteza normala ─────────
-        if my_ttc >= TTC_BRAKE:
-            if v.state == "braking":
-                v.vx    = v._base_vx
-                v.vy    = v._base_vy
-                v.state = "moving"
-                self.last_action = "go"
-            self._record("GO", my_ttc, "liber")
+        # ── 2. Negociere V2V — vehicule in conflict la aceeasi intersectie ──
+        if my_dist >= APPROACH_DIST:
+            self.last_action = "go"
             return "go"
 
-        # ── 4. Decizie V2V via LLM (Ollama) ────────────────────────────
-        others = {
-            k: val for k, val in v2x_bus.get_others(v.id).items()
-            if val.get("priority") != "infrastructure"
-        }
-        if not others:
-            self._record("GO", my_ttc, "niciun alt vehicul")
+        all_bus = v2x_bus.get_all()
+        ikey    = getattr(v, 'intersection_key', 'NV')
+
+        relevant = {}
+        for k, val in all_bus.items():
+            if k == v.id or k.startswith("INFRA"):
+                continue
+            if val.get("state") in ("done", "crossing", None):
+                continue
+            if val.get("intersection_key", ikey) != ikey:
+                continue
+            other_dist = val.get("dist_to_intersection", 9999)
+            if other_dist > APPROACH_DIST:
+                continue
+            # Exclude vehiculele de pe aceeasi banda (in fata sau in spate)
+            if val.get("direction") == v.direction:
+                continue
+            # Conflict real (axe perpendiculare sau viraj stanga)
+            if not _are_conflicting(v.direction, v.intent,
+                                    val.get("direction", ""),
+                                    val.get("intent", "straight")):
+                continue
+            relevant[k] = val
+
+        if not relevant:
+            self.last_action = "go"
             return "go"
 
-        others_list = [
-            {
-                "id":       oid,
-                "ttc":      time_to_intersection(od),
-                "priority": od.get("priority", "normal"),
-            }
-            for oid, od in others.items()
-        ]
-        llm_context = {
-            "my_state": {
-                "ttc":       round(my_ttc, 3),
-                "priority":  v.priority,
-                "direction": v.direction,
-                "speed":     math.sqrt(v.vx ** 2 + v.vy ** 2),
-            },
-            "others": others_list,
-        }
-        llm_result = llm_client.request_llm_decision(v.id, llm_context)
-        action     = llm_result.get("action", "GO").lower()
-        reason     = llm_result.get("reason", "decizie LLM")
-        if action not in ("go", "yield", "brake"):
-            action = "go"
-
-        self._apply(action, my_ttc, reason=f"LLM: {reason}")
+        action = self._evaluate(my_data, my_ttc, relevant)
+        self.last_action = action
+        if action != "go":
+            self._record(action.upper(), my_ttc,
+                         f"V2V conflict cu [{','.join(relevant.keys())}]")
+            logger.log_decision(v.id, action.upper(), my_ttc,
+                                f"conflict cu {list(relevant.keys())}")
         return action
 
     def _evaluate(self, my_data: dict, my_ttc: float, others: dict) -> str:
         v = self.vehicle
         for other_id, other_data in others.items():
             other_ttc = time_to_intersection(other_data)
-            if other_ttc >= TTC_BRAKE:
+            # Celelalalt nu e aproape → ignora
+            if other_ttc >= TTC_BRAKE * 2:
                 continue
+            # Urgenta are prioritate absoluta
             if other_data.get("priority") == "emergency" and v.priority != "emergency":
-                return "yield" if my_ttc < TTC_YIELD else "brake"
+                return "yield"
             if v.priority == "emergency":
                 return "go"
+            # Regula dreptei
             if is_right_of(my_data, other_data):
-                return "yield" if my_ttc < TTC_YIELD else "brake"
-            if is_right_of(other_data, my_data):
-                return "go"
-            if my_ttc >= other_ttc:
-                return "yield" if my_ttc < TTC_YIELD else "brake"
+                return "yield"
+            # Daca celalalt ajunge mult mai repede → cedeaza
+            if other_ttc < my_ttc - 0.5:
+                return "yield"
         return "go"
 
     def _apply(self, action: str, ttc: float, reason: str = None) -> None:
@@ -170,22 +181,20 @@ class Agent:
         prev = self.last_action
 
         if action == "brake":
-            v.vx   *= BRAKE_FACTOR
-            v.vy   *= BRAKE_FACTOR
-            v.state = "braking"
-        elif action == "yield":
-            v.vx    = 0.0
-            v.vy    = 0.0
-            v.state = "waiting"
-        else:
+            v.vx   *= BRAKE_FACTOR; v.vy *= BRAKE_FACTOR
+            if v.state not in ("waiting", "crossing"):
+                v.state = "braking"
+        elif action in ("yield", "stop"):
+            # Nu suprascrie waiting sau crossing
+            if v.state not in ("waiting", "crossing"):
+                v.vx = 0.0; v.vy = 0.0
+                v.state = "braking"   # braking vizual, oprire fizica
+        else:  # go
             if v.state == "braking":
-                v.vx = v._base_vx
-                v.vy = v._base_vy
-            v.state = "moving"
+                v.vx = v._base_vx; v.vy = v._base_vy
+                v.state = "moving"
 
         self.last_action = action
-        final_reason = reason or f"TTC={ttc:.2f}s"
-        self._record(action.upper(), ttc, final_reason)
-
-        if action != prev and action != "go":
-            logger.log_decision(v.id, action.upper(), ttc, final_reason)
+        self._record(action.upper(), ttc, reason or f"TTC={ttc:.2f}s")
+        if action != prev and action not in ("go",):
+            logger.log_decision(v.id, action.upper(), ttc, reason or "")

@@ -240,19 +240,26 @@ class SimulationEngine:
         # Semaforul se actualizeaza primul
         sem_state = self.semaphore.update()
 
-        # CentralSystem decide clearance (V2I / reguli prioritate) — ramane pentru clearance
+        # Publica starea curenta pe bus INAINTE de decizii
+        for v in self.vehicles:
+            v2x_bus.publish(v.id, v.to_dict())
+
+        # CentralSystem decide clearance (V2I / reguli prioritate)
         if self.cooperation:
             self.central.decide(self.vehicles)
 
-        # ── Agenti autonomi per vehicul ──────────────────────────────────
-        # Fiecare agent publica propria stare pe bus si decide autonom
+        # Agenti autonomi
         for agent in self.agents:
             agent.decide()
 
+        # Updateaza pozitiile — pasam vehiculele pe aceeasi directie pentru following
+        active = [v for v in self.vehicles if v.state != 'done']
         for v in self.vehicles:
-            v.update()
+            same_dir = [o for o in active
+                        if o.id != v.id and o.direction == v.direction]
+            v.update(same_dir)
 
-        # Publica starea finala pe bus dupa update
+        # Publica starea finala
         for v in self.vehicles:
             v2x_bus.publish(v.id, v.to_dict())
 
