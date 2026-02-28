@@ -2,9 +2,9 @@ import React, { useRef, useEffect, useCallback } from 'react';
 
 // ── Geometrie (trebuie sa fie identica cu backend models/vehicle.py) ──
 const CX = 400, CY = 400;   // centrul intersectiei
-const LANE_W = 30;         // latimea unei benzi px
-const ROAD_W = LANE_W * 2; // 60px — 2 benzi per directie
-const HALF = ROAD_W / 2; // 30px
+const LANE_W = 50;         // latimea unei benzi px
+const ROAD_W = LANE_W * 2; // 100px — 2 benzi per directie
+const HALF = ROAD_W / 2;   // 50px
 
 // Culori vehicule
 const STATE_COLOR = {
@@ -216,7 +216,7 @@ function drawStopLines(ctx) {
   ctx.save();
   ctx.strokeStyle = '#FFFFFF';
   ctx.lineWidth = 3;
-  const STOP = 8; // distanta extra inainte de intersectie
+  const STOP = 8; // pozitia liniei albe — nu se schimba
 
   // Nord — banda stanga (x=370..400)
   ctx.beginPath();
@@ -258,10 +258,10 @@ function drawIntersectionBox(ctx) {
 // Pozitiile semafoarelor per directie
 // Fiecare semafor e plasat pe banda de intrare, langa linia de stop
 const LIGHT_POS = {
-  N: { x: CX - HALF - 16, y: CY - HALF - 30 },  // banda N stanga (x=370-), deasupra liniei de stop
-  S: { x: CX + HALF + 16, y: CY + HALF + 30 },  // banda S stanga (x=430+), sub linia de stop
-  E: { x: CX + HALF + 30, y: CY - HALF - 16 },  // banda E stanga (y=370-), dreapta liniei de stop
-  V: { x: CX - HALF - 30, y: CY + HALF + 16 },  // banda V stanga (y=430+), stanga liniei de stop
+  N: { x: CX - HALF - 16, y: CY - HALF - 30 },
+  S: { x: CX + HALF + 16, y: CY + HALF + 30 },
+  E: { x: CX + HALF + 30, y: CY - HALF - 16 },
+  V: { x: CX - HALF - 30, y: CY + HALF + 16 },
 };
 
 function drawSemaphore(ctx, semaphore) {
