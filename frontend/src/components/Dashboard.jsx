@@ -10,27 +10,131 @@ const STATE_COLOR = {
 const INTENT_LABEL = { straight: '↑ Înainte', left: '← Stânga', right: '→ Dreapta' };
 const DIR_LABEL    = { N: '↓ Nord→Sud', S: '↑ Sud→Nord', E: '← Est→Vest', V: '→ Vest→Est' };
 
-/**
- * Dashboard - Panoul principal cu informații despre trafic și vehicule
- *
- * Specificații:
- * - Direcție vehicul: Nord, Sud, Est, Vest
- * - Intenție vehicul: Dreapta, Stânga, Înainte
- * - Stare vehicul: În mișcare, Așteptând, Traversând, Finalizat
- * - Status clearance: liber / stop
- * - Semafor: stare (verde, galben, roșu) și urgență
- * - Sumar intersecție: număr total vehicule, număr vehicule în așteptare, număr vehicule traversând
- * - Design: aspect întunecat, text alb, organizat pe secțiuni
- */
-const Dashboard = ({ vehicles = [], semaphore = {}, cooperation = true, agentsMemory = {}, onGrantClearance = null }) => {
+const Dashboard = ({ vehicles = [], semaphore = {}, risk = null, cooperation = true, agentsMemory = {}, onGrantClearance = null }) => {
   const waiting  = vehicles.filter(v => v.state === 'waiting').length;
   const crossing = vehicles.filter(v => v.state === 'crossing').length;
+
+  const hasRisk = risk?.risk === true;
+  const isCritical = hasRisk && (risk.ttc ?? 999) < 1.5;
+  const riskColor = isCritical ? '#dc2626' : '#d97706';
+  const riskBg    = isCritical ? 'rgba(220,38,38,0.12)' : 'rgba(217,119,6,0.12)';
+  const riskBorder= isCritical ? '#ef4444' : '#f59e0b';
 
   return (
     <div style={s.container}>
       <div style={s.title}>Dashboard</div>
 
-      {/* Semafor */}
+      {/* ── Zona de Risc (PERMANENT VIZIBILĂ) ── */}
+      <section style={{
+        ...s.section,
+        background: hasRisk ? riskBg : 'rgba(22,101,52,0.08)',
+        border: `2px solid ${hasRisk ? riskBorder : '#16a34a'}`,
+        borderRadius: 10,
+        padding: '12px 14px',
+        transition: 'all 0.3s ease',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <span style={{ fontSize: 20 }}>{hasRisk ? (isCritical ? '🚨' : '⚠️') : '✅'}</span>
+          <span style={{
+            fontSize: 13, fontWeight: 900, letterSpacing: 0.5,
+            color: hasRisk ? riskColor : '#166534',
+          }}>
+            {hasRisk
+              ? (isCritical ? 'RISC CRITIC DE COLIZIUNE' : 'AVERTISMENT COLIZIUNE')
+              : 'INTERSECȚIE SIGURĂ'}
+          </span>
+        </div>
+
+        {/* TTC Bar - mereu afișată */}
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+            <span style={{ fontSize: 10, color: '#a08060', fontWeight: 700 }}>TIME TO COLLISION</span>
+            <span style={{ fontSize: 13, fontWeight: 900, color: hasRisk ? riskColor : '#166534' }}>
+              {hasRisk ? (risk.ttc ?? 999).toFixed(2) : '∞'}s
+            </span>
+          </div>
+          <div style={{ height: 8, background: '#c8b89a', borderRadius: 4, overflow: 'hidden' }}>
+            <div style={{
+              height: '100%',
+              width: hasRisk ? `${Math.min(100, Math.max(0, (1 - (risk.ttc ?? 0) / 3.0) * 100))}%` : '0%',
+              background: isCritical
+                ? 'linear-gradient(90deg, #dc2626, #ef4444)'
+                : hasRisk
+                  ? 'linear-gradient(90deg, #d97706, #fbbf24)'
+                  : 'linear-gradient(90deg, #16a34a, #22c55e)',
+              borderRadius: 4,
+              transition: 'width 0.3s ease',
+            }} />
+          </div>
+        </div>
+
+        {/* Perechea de vehicule - mereu afișată */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+          <span style={{ fontSize: 10, color: '#a08060', fontWeight: 700 }}>VEHICULE ÎN RISC</span>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {hasRisk && risk.pair ? (
+              risk.pair.map(id => (
+                <span key={id} style={{
+                  padding: '2px 10px', borderRadius: 6,
+                  background: riskColor + '22', border: `1px solid ${riskColor}`,
+                  color: riskColor, fontWeight: 900, fontSize: 12,
+                }}>{id}</span>
+              ))
+            ) : (
+              <span style={{ fontSize: 11, color: '#a08060', fontStyle: 'italic' }}>
+                Niciun vehicul în risc momentan
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* TTC per vehicul - MEREU afișată */}
+        <div style={{ marginTop: 6 }}>
+          <div style={{ fontSize: 10, color: '#a08060', fontWeight: 700, marginBottom: 6 }}>
+            TTC INDIVIDUAL
+          </div>
+          {hasRisk && risk.ttc_per_vehicle && Object.keys(risk.ttc_per_vehicle).length > 0 ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {Object.entries(risk.ttc_per_vehicle).map(([vid, ttc]) => {
+                const vCrit = ttc < 1.5;
+                const vc = vCrit ? '#dc2626' : ttc < 3.0 ? '#d97706' : '#166534';
+                return (
+                  <div key={vid} style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    background: vc + '15', border: `1px solid ${vc}44`,
+                    borderRadius: 6, padding: '4px 10px', minWidth: 60,
+                  }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#2c1e0f' }}>{vid}</span>
+                    <span style={{ fontSize: 12, fontWeight: 900, color: vc }}>{ttc.toFixed(1)}s</span>
+                    <span style={{ fontSize: 9, color: '#a08060' }}>TTC</span>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{
+              fontSize: 11, color: '#a08060', fontStyle: 'italic',
+              padding: '8px 12px', background: '#e6ddd0', borderRadius: 6,
+              textAlign: 'center'
+            }}>
+              {vehicles.length === 0
+                ? 'Niciun vehicul activ'
+                : 'Calculare în curs...'}
+            </div>
+          )}
+        </div>
+
+        {/* Status general */}
+        <div style={{
+          marginTop: 8, paddingTop: 8, borderTop: '1px solid #c8b89a',
+          fontSize: 11, color: hasRisk ? riskColor : '#166534',
+          fontWeight: 600, textAlign: 'center'
+        }}>
+          {hasRisk
+            ? `⚠️ Risc activ detectat`
+            : '✓ Trafic normal · Niciun risc detectat'}
+        </div>
+      </section>
       <section style={s.section}>
         <div style={s.label}>
           Semafoare V2I

@@ -74,6 +74,30 @@ function App() {
 
         {/* Center - Canvas */}
         <main className="main-content">
+          {/* Risk Banner overlay */}
+          {risk?.risk && (
+            <div style={{
+              position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
+              zIndex: 100, pointerEvents: 'none',
+              background: risk.ttc < 1.5 ? 'rgba(220,38,38,0.92)' : 'rgba(202,138,4,0.92)',
+              border: `2px solid ${risk.ttc < 1.5 ? '#fca5a5' : '#fde68a'}`,
+              borderRadius: 10, padding: '8px 22px',
+              display: 'flex', alignItems: 'center', gap: 12,
+              boxShadow: `0 0 24px ${risk.ttc < 1.5 ? '#ef444488' : '#f59e0b88'}`,
+              animation: 'riskPulse 0.8s ease-in-out infinite alternate',
+            }}>
+              <span style={{ fontSize: 22 }}>{risk.ttc < 1.5 ? '🚨' : '⚠️'}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ color: '#fff', fontWeight: 900, fontSize: 14, letterSpacing: 1 }}>
+                  {risk.ttc < 1.5 ? 'RISC CRITIC DE COLIZIUNE' : 'AVERTISMENT COLIZIUNE'}
+                </span>
+                <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: 12 }}>
+                  TTC: <b>{risk.ttc?.toFixed(2)}s</b>
+                  {risk.pair && <> · Vehicule: <b>{risk.pair[0]}</b> ↔ <b>{risk.pair[1]}</b></>}
+                </span>
+              </div>
+            </div>
+          )}
           <IntersectionCanvas
             vehicles={vehicles}
             semaphore={semaphore}
@@ -90,7 +114,9 @@ function App() {
           <Dashboard
             vehicles={vehicles}
             semaphore={semaphore}
+            risk={risk}
             cooperation={liveCooperation}
+            agentsMemory={agentsMemory}
             onGrantClearance={!liveCooperation ? grantClearance : null}
           />
         </aside>
