@@ -121,38 +121,14 @@ const CustomScenarioEditor = ({
 
   return (
     <div style={s.container}>
-      <div style={s.title}>🛠 Scenariu Custom</div>
+      <div style={s.title}>Scenariu Custom</div>
 
-      {/* Harta benzi */}
-      <div style={s.laneMap}>
-        <div style={s.laneMapTitle}>Benzi disponibile (sens unic)</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
-          {Object.entries(DIRECTION_INFO).map(([dir, info]) => (
-            <div key={dir} style={{
-              ...s.laneCard,
-              borderColor: usedDirections.includes(dir) ? info.color : '#374151',
-              opacity: usedDirections.includes(dir) ? 1 : 0.5,
-            }}>
-              <span style={{ color: info.color, fontSize: 18 }}>{info.icon}</span>
-              <div>
-                <div style={{ color: '#F9FAFB', fontSize: 10, fontWeight: 700 }}>{info.label}</div>
-                <div style={{ color: '#6B7280', fontSize: 9 }}>{info.banda}</div>
-              </div>
-              {usedDirections.includes(dir) && (
-                <span style={{ color: info.color, fontSize: 9, fontWeight: 700 }}>✓ ocupat</span>
-              )}
-            </div>
-          ))}
-        </div>
-        <div style={{ color: '#4B5563', fontSize: 9, marginTop: 4 }}>
-          ⚠ Fiecare direcție are o singură bandă de intrare — sens unic.
-        </div>
-      </div>
+
 
       <div style={s.sep} />
 
       {/* Lista vehicule existente */}
-      <div style={s.label}>Vehicule în scenariu ({customScenario.length})</div>
+      <div style={s.label}>Vehicule în scenariu</div>
 
       {customScenario.length === 0 && (
         <div style={{ color: '#4B5563', fontSize: 11, textAlign: 'center', padding: '12px 0' }}>
@@ -211,7 +187,7 @@ const CustomScenarioEditor = ({
                       value={editData.priority ?? v.priority}
                       onChange={e => setEditData(d => ({ ...d, priority: e.target.value }))}>
                       <option value="normal">Normal</option>
-                      <option value="emergency">🚑 Urgență</option>
+                      <option value="emergency">Urgență</option>
                     </select>
                   </div>
                 </div>
@@ -221,9 +197,6 @@ const CustomScenarioEditor = ({
                     return (<>
                       <div style={s.fieldLabel}>
                         Viteză: <strong style={{ color: '#F9FAFB' }}>{currentKmh} km/h</strong>
-                        <span style={{ color: '#4B5563', marginLeft: 6 }}>
-                          {currentKmh >= 90 ? '🔴 rapid' : currentKmh <= 25 ? '🐢 lent' : '🟢 normal'}
-                        </span>
                       </div>
                       <input type="range" min="10" max="120" step="5"
                         style={{ width: '100%', accentColor: dInfo.color }}
@@ -247,7 +220,7 @@ const CustomScenarioEditor = ({
       <div style={s.sep} />
 
       {/* Formular adăugare */}
-      <div style={s.label}>➕ Adaugă vehicul nou</div>
+      <div style={s.label}>Adaugă vehicul nou</div>
 
       {err && (
         <div style={{ background: '#EF444422', border: '1px solid #EF4444', borderRadius: 6,
@@ -259,7 +232,7 @@ const CustomScenarioEditor = ({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {/* ID */}
         <div>
-          <div style={s.fieldLabel}>ID vehicul *</div>
+          <div style={s.fieldLabel}>Nume vehicul *</div>
           <input style={s.input} placeholder="ex: A, CAR1, AMB2"
             value={form.id}
             onChange={e => { setForm(f => ({ ...f, id: e.target.value })); setErr(''); }} />
@@ -267,7 +240,7 @@ const CustomScenarioEditor = ({
 
         {/* Directie */}
         <div>
-          <div style={s.fieldLabel}>Direcție de intrare *</div>
+          <div style={s.fieldLabel}>Direcție de deplasare *</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
             {Object.entries(DIRECTION_INFO).map(([dir, info]) => (
               <button key={dir}
@@ -288,7 +261,7 @@ const CustomScenarioEditor = ({
 
         {/* Intentie */}
         <div>
-          <div style={s.fieldLabel}>Intenție la intersecție</div>
+          <div style={s.fieldLabel}>Viraj</div>
           <div style={{ display: 'flex', gap: 4 }}>
             {Object.entries(INTENT_INFO).map(([k, i]) => (
               <button key={k} onClick={() => setForm(f => ({ ...f, intent: k }))}
@@ -326,9 +299,6 @@ const CustomScenarioEditor = ({
         <div>
           <div style={s.fieldLabel}>
             Viteză: <strong style={{ color: '#F9FAFB' }}>{form.speed_kmh} km/h</strong>
-            <span style={{ color: '#4B5563', marginLeft: 6, fontSize: 9 }}>
-              {form.speed_kmh >= 90 ? '🔴 rapid' : form.speed_kmh <= 25 ? '🐢 lent' : '🟢 normal'}
-            </span>
           </div>
           <input type="range" min="10" max="120" step="5"
             style={{ width: '100%', accentColor: DIRECTION_INFO[form.direction].color }}
@@ -358,7 +328,7 @@ const CustomScenarioEditor = ({
             background: isCustomActive ? '#065F46' : '#1E3A5F',
             borderColor: isCustomActive ? '#10B981' : '#3B82F6',
           }}>
-          {busy ? '⏳ Se procesează…' : isCustomActive ? '🔄 Restart scenariu custom' : '▶ Rulează scenariu custom'}
+          {busy ? 'Se procesează…' : isCustomActive ? '🔄 Restart scenariu custom' : '▶ Rulează'}
         </button>
         <button onClick={handleClear} style={{ ...s.clearBtn, opacity: (customScenario.length === 0 || busy) ? 0.4 : 1 }}
           disabled={customScenario.length === 0 || busy}>

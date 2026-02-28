@@ -16,7 +16,7 @@ const STATE_COLOR = {
   yielding: '#F87171', // red-400 (glow)
 };
 
-const INTENT_ICON = { straight: '↑', left: '←', right: '→' };
+const INTENT_ICON = { straight: '↑', left: '↰', right: '↱' };
 const PRIORITY_COLOR = { emergency: '#EF4444', normal: null };
 
 // Heading (unghi radiani) per directie, pentru a roti vehiculul corect
@@ -109,8 +109,6 @@ const IntersectionCanvas = ({
       drawRiskZone(ctx, risk, vehicles, now);
     }
 
-    // 10. Legenda cooperation
-    drawLegend(ctx, cooperation, risk, W);
   }, [vehicles, semaphore, cooperation, risk, agentsMemory, onGrantClearance]);
 
   useEffect(() => {
@@ -319,112 +317,47 @@ function drawSemaphore(ctx, semaphore) {
 }
 
 function drawVehicle(ctx, v, manualMode = false, now) {
-  // Nu desena vehiculul daca a iesit complet din canvas (margine 60px)
   if (v.x < -60 || v.x > 860 || v.y < -60 || v.y > 860) return;
-  const color = PRIORITY_COLOR[v.priority] || STATE_COLOR[v.state] || STATE_COLOR.moving;
-  const isClickable = manualMode && v.state === 'waiting';
-  const isEmergency = v.priority === 'emergency';
-  const isBraking = v.state === 'braking' || v.state === 'yielding';
 
+  const color = PRIORITY_COLOR[v.priority] || STATE_COLOR[v.state] || STATE_COLOR.moving;
+  const isEmergency = v.priority === 'emergency';
   const pulse = 0.5 + 0.5 * Math.sin(now / 150);
 
-  // Glow / Aura per vehiculul in stare speciala
-  if (isEmergency || isBraking) {
-    ctx.save();
-    ctx.shadowBlur = isEmergency ? 15 + pulse * 10 : 8 + pulse * 6;
-    ctx.shadowColor = color;
-    ctx.beginPath();
-    ctx.arc(v.x, v.y, 22, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${isEmergency ? '239, 68, 68' : '248, 113, 113'}, ${0.1 + pulse * 0.1})`;
-    ctx.fill();
-    ctx.restore();
-  }
-
-  // Pulsing ring per vehiculele clickabile (manual mode + waiting)
-  if (isClickable) {
-    ctx.save();
-    ctx.strokeStyle = '#FBBF24';
-    ctx.lineWidth = 2 + pulse;
-    ctx.setLineDash([6, 4]);
-    ctx.beginPath();
-    ctx.arc(v.x, v.y, 28, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
-  }
-
   ctx.save();
   ctx.translate(v.x, v.y);
   ctx.rotate(getVehicleHeading(v));
 
-  // Corp masina
-  const W2 = 14, H2 = 22;
+  // 1. Corp simplu (Dreptunghi rotunjit)
   ctx.fillStyle = color;
+  // Adăugăm un efect de pulsare doar pentru mașinile de urgență (Cerința 12)
+  if (isEmergency) ctx.globalAlpha = 0.7 + 0.3 * Math.sin(now / 100);
+
   ctx.beginPath();
-  ctx.roundRect(-W2, -H2, W2 * 2, H2 * 2, 5);
+  ctx.roundRect(-12, -18, 24, 36, 4);
   ctx.fill();
 
-  // Highlight 3D subtil
-  const grad = ctx.createLinearGradient(-W2, 0, W2, 0);
-  grad.addColorStop(0, 'rgba(255,255,255,0.15)');
-  grad.addColorStop(0.5, 'rgba(255,255,255,0)');
-  grad.addColorStop(1, 'rgba(0,0,0,0.15)');
-  ctx.fillStyle = grad;
-  ctx.roundRect(-W2, -H2, W2 * 2, H2 * 2, 5);
+  // 2. Indicator direcție (un mic triunghi/vârf în față)
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+  ctx.beginPath();
+  ctx.moveTo(-6, -14);
+  ctx.lineTo(6, -14);
+  ctx.lineTo(0, -22);
+  ctx.closePath();
   ctx.fill();
 
-  // Contur
-  ctx.strokeStyle = 'rgba(0,0,0,0.7)';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-
-  // Fata masinii (parbriz / faruri)
-  ctx.fillStyle = 'rgba(255,255,255,0.95)';
-  ctx.fillRect(-W2 + 3, -H2, W2 * 2 - 6, 4);
-
-  // Emergency flashing lights
-  if (isEmergency && now % 500 < 250) {
+  // 3. Indicator frână (linie discretă în spate dacă decelerează)
+  if (v.state === 'braking' || v.state === 'yielding') {
     ctx.fillStyle = '#EF4444';
-    ctx.fillRect(-W2 + 2, -18, 5, 3); // stanga
-    ctx.fillStyle = '#3B82F6';
-    ctx.fillRect(W2 - 7, -18, 5, 3); // dreapta
+    ctx.fillRect(-10, 15, 20, 3);
   }
 
   ctx.restore();
 
-  // ── Intent icon in spatiul rotit al masinii (pe capota, deasupra parbrizului) ──
-  ctx.save();
-  ctx.translate(v.x, v.y);
-  ctx.rotate(getVehicleHeading(v));
-  ctx.font = 'bold 11px Arial';
-  ctx.fillStyle = 'rgba(255,255,255,0.95)';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.shadowBlur = 2;
-  ctx.shadowColor = 'rgba(0,0,0,0.8)';
-  ctx.fillText(INTENT_ICON[v.intent] || '↑', 0, -14);
-  ctx.shadowBlur = 0;
-  ctx.restore();
-
-  // ── Labels externe (in spatiul lumii, nu rotite) ──
-  ctx.save();
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-
-  // ID deasupra
-  ctx.font = "bold 12px 'JetBrains Mono', 'Fira Code', monospace";
-  ctx.fillStyle = '#FFFFFF';
-  ctx.shadowBlur = 4;
-  ctx.shadowColor = 'black';
-  ctx.fillText(v.id, v.x, v.y - 32);
-
-  // Stare badge sub masina
-  const label = v.state.toUpperCase();
-  ctx.font = "bold 9px 'Inter', sans-serif";
-  ctx.fillStyle = color;
-  ctx.shadowBlur = 0;
-  ctx.fillText(label, v.x, v.y + 32);
-
-  ctx.restore();
+  // 4. Etichetă minimalistă (ID-ul lângă mașină)
+  ctx.font = "bold 11px Inter, sans-serif";
+  ctx.fillStyle = "#FFFFFF";
+  ctx.textAlign = "center";
+  ctx.fillText(v.id, v.x, v.y + 4); // ID-ul chiar în mijlocul mașinii sau sub ea
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -551,49 +484,7 @@ function drawRiskZone(ctx, risk, vehicles, now) {
   }
 }
 
-function drawLegend(ctx, cooperation, risk, W) {
-  ctx.save();
-  const hasRisk = risk && risk.risk;
-  const legendH = hasRisk ? 125 : 100;
 
-  // Fundal legenda
-  ctx.fillStyle = 'rgba(17,24,39,0.85)';
-  ctx.fillRect(W - 180, 8, 172, legendH);
-  ctx.strokeStyle = '#374151';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(W - 180, 8, 172, legendH);
-
-  ctx.font = 'bold 11px monospace';
-  ctx.textAlign = 'left';
-  const entries = [
-    { color: '#3B82F6', label: 'moving — se apropie' },
-    { color: '#F59E0B', label: 'waiting — asteapta' },
-    { color: '#22C55E', label: 'crossing — traverseaza' },
-    { color: '#EF4444', label: 'urgenta' },
-  ];
-  entries.forEach((e, i) => {
-    ctx.fillStyle = e.color;
-    ctx.fillRect(W - 172, 18 + i * 21, 12, 12);
-    ctx.fillStyle = '#D1D5DB';
-    ctx.fillText(e.label, W - 155, 28 + i * 21);
-  });
-
-  // Cooperation status
-  ctx.font = "bold 10px 'JetBrains Mono', monospace";
-  ctx.fillStyle = cooperation ? '#10B981' : '#F87171';
-  ctx.fillText(`V2X NETWORK: ${cooperation ? 'STABLE' : 'OFFLINE'}`, W - 172, 106);
-
-  // Risk status in legend
-  if (hasRisk) {
-    const ttc = risk.ttc ?? 999;
-    const col = ttc < TTC_CRITICAL ? '#EF4444' : '#FBBF24';
-    ctx.fillStyle = col;
-    ctx.font = "bold 10px 'Inter', sans-serif";
-    ctx.fillText(`⚡ CONFLICT DETECTED (${ttc.toFixed(1)}s)`, W - 172, 121);
-  }
-
-  ctx.restore();
-}
 
 export default IntersectionCanvas;
 

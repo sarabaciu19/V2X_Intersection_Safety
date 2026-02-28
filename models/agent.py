@@ -1,121 +1,77 @@
 """
-models/agent.py — Agent autonom V2X per vehicul
-Arhitectura:
-  - Fiecare vehicul are propriul agent care decide AUTONOM
-  - Agentul citeste EXCLUSIV din V2X Bus (nu acceseaza obiectele Python direct)
-  - Agentul pastreaza o memorie interna (buffer ultimele 10 decizii)
+models/agent.py — Logica de decizie a agentului V2V + V2I (semafor)
 La fiecare tick:
-  1. Publica propria stare pe V2X Bus
-  2. Citeste starea semaforului din V2X Bus (V2I)
-  3. Daca semafor rosu/galben → yield imediat
-  4. Altfel: calculeaza TTC, consulta ceilalti agenti prin V2X Bus, decide: 'go' | 'brake' | 'yield'
-  5. Aplica decizia si o adauga in memoria proprie
-  6. Logheza decizia
+  1. Citeste recomandarea de viteza V2I din bus (stop / reduce_speed / proceed)
+  2. Daca V2I zice stop → yield imediat
+  3. Daca V2I zice reduce_speed → aplica viteza recomandata
+  4. Verifica semaforul clasic (fallback)
+  5. Negociere V2V (TTC + regula dreptei)
+  6. Aplica si logheza decizia
 cooperation=False → ignora V2X Bus si semaforul (demo coliziune)
 """
-import time
+import math
 from collections import deque
 from services import v2x_bus
 from services.collision import time_to_intersection, TTC_BRAKE, TTC_YIELD, is_right_of
-from services.llm_client import get_llm_decision, executor
 from utils import logger
 
-BRAKE_FACTOR = 0.85   # reduce viteza cu 15% per tick cand frana
-MEMORY_SIZE  = 10     # numarul de decizii retinute in memoria agentului
+BRAKE_FACTOR = 0.85
+MEMORY_SIZE  = 10
 
 
 def _get_my_light(direction: str) -> str:
-    """Citeste culoarea semaforului pentru directia mea EXCLUSIV din V2X Bus."""
     infra = v2x_bus.get_all().get("INFRA", {})
-    lights = infra.get("lights", {})
-    return lights.get(direction, "green")  # default verde daca nu exista
+    return infra.get("lights", {}).get(direction, "green")
+
+
+def _get_v2i_recommendation(vehicle_id: str) -> dict | None:
+    infra = v2x_bus.get_all().get("INFRA", {})
+    return infra.get("speed_recommendations", {}).get(vehicle_id)
 
 
 class Agent:
-    """
-    Agent V2X autonom asociat unui singur vehicul.
-    Decide independent pe baza mesajelor de pe V2X Bus.
-    Pastreaza memorie interna cu ultimele MEMORY_SIZE decizii.
-    """
     def __init__(self, vehicle, cooperation: bool = True):
-        self.vehicle     = vehicle
-        self.cooperation = cooperation
+        self.vehicle      = vehicle
+        self.cooperation  = cooperation
         self.last_action: str = "go"
-        # Memoria agentului: buffer circular cu ultimele MEMORY_SIZE decizii
-        self.memory: deque = deque(maxlen=MEMORY_SIZE)
-        self.ai_cooldown = 0
+        self.memory: deque    = deque(maxlen=MEMORY_SIZE)
         self.last_full_reason = "N/A"
 
     @property
     def vehicle_id(self) -> str:
         return self.vehicle.id
 
-    def _publish_self(self) -> None:
-        """Publica starea proprie pe V2X Bus pentru ca alti agenti sa o vada."""
-        v2x_bus.publish(self.vehicle.id, self.vehicle.to_dict())
+    def get_memory(self) -> list:
+        return list(self.memory)
 
-    def _read_self(self) -> dict:
-        """
-        Citeste propria stare EXCLUSIV din V2X Bus.
-        Agentul nu acceseaza direct atributele vehiculului pentru logica de decizie.
-        """
-        data = v2x_bus.get(self.vehicle.id)
-        if data is None:
-            # Prima publicare — foloseste to_dict() o singura data pentru init
-            self._publish_self()
-            data = v2x_bus.get(self.vehicle.id) or {}
-        return data
-
-    def _record_decision(self, action: str, ttc: float, reason: str, target_id: str = None) -> None:
-        """Adauga decizia curenta in memoria agentului."""
-        entry = {
-            "tick_time": time.strftime("%H:%M:%S"),
+    def _record(self, action: str, ttc: float, reason: str) -> None:
+        import time as _t
+        self.memory.append({
+            "tick_time": _t.strftime("%H:%M:%S"),
             "action":    action,
             "ttc":       round(ttc, 3),
             "reason":    reason,
-            "target_id": target_id,
-            "timestamp": time.time(),
-        }
-        self.memory.append(entry)
-
-    def get_memory(self) -> list:
-        """Returneaza o copie a memoriei agentului (ultima MEMORY_SIZE decizii)."""
-        return list(self.memory)
+        })
 
     def decide(self) -> str:
-        """
-        Agentul decide autonom citind EXCLUSIV V2X Bus.
-        Returneaza: 'go' | 'brake' | 'yield'
-        """
         v = self.vehicle
 
-        # 1. Verifica daca o decizie din fundal s-a terminat
-        if hasattr(self, '_future') and self._future.done():
-            try:
-                result = self._future.result()
-                self.last_action = result["action"].lower()
-                self.last_full_reason = result["reason"]
-            except Exception as e:
-                logger.error(f"Eroare procesare rezultat AI: {e}")
-
-        # 2. Publica propria stare pe bus inainte de a decide
-        self._publish_self()
-
-        # 2. Fara cooperare → ignora V2X, inregistreaza si continua
         if not self.cooperation:
-            v.state = "normal"
+            v.state = "moving"
             self.last_action = "go"
-            self._record_decision("GO", 999.0, "V2X dezactivat — cooperation=False")
             return "go"
 
-        # 3. Citeste propria stare EXCLUSIV din V2X Bus
-        my_data = self._read_self()
-        if not my_data:
-            return "go"
+        my_data = v.to_dict()
+        my_ttc  = time_to_intersection(my_data)
 
-        my_ttc = time_to_intersection(my_data)
-        dist   = round(my_data.get("dist_to_intersection", 0), 1)
+        # ── 1. Recomandare V2I ──────────────────────────────────────────
+        rec = _get_v2i_recommendation(v.id)
+        if rec is not None and rec["type"] != "proceed":
+            rec_type  = rec["type"]
+            adv_speed = rec.get("advisory_speed")
+            reason    = rec.get("reason", "recomandare V2I")
 
+<<<<<<< Updated upstream
         # 4. Decizie Generativa (V2I + V2V)
         # Pentru performanta: Chemam AI-ul doar daca suntem la o distanta relevanta
         if dist > 350 and my_ttc > 10:
@@ -124,10 +80,77 @@ class Agent:
 
         # Citeste starea semaforului si a celorlalti vehicule de pe bus
         light = _get_my_light(v.direction)
+=======
+<<<<<<< HEAD
+            if rec_type == "stop":
+                self._apply("yield", my_ttc, reason=f"V2I: {reason}")
+                return "yield"
+
+            if rec_type == "reduce_speed" and adv_speed is not None:
+                current = math.sqrt(v.vx ** 2 + v.vy ** 2)
+                if current > adv_speed and current > 0:
+                    scale = adv_speed / current
+                    v.vx *= scale
+                    v.vy *= scale
+                    v.state = "braking"
+                    if self.last_action != "brake":
+                        logger.log_decision(v.id, "REDUCE_SPEED", my_ttc,
+                                            f"V2I: {reason} → {adv_speed:.1f} px/tick")
+                    self.last_action = "brake"
+                    self._record("BRAKE", my_ttc, f"V2I reduce_speed → {adv_speed:.1f}")
+                    return "brake"
+
+        # ── 2. Semafor clasic (fallback) ────────────────────────────────
+        if my_ttc < TTC_BRAKE:
+            light = _get_my_light(v.direction)
+            if light == "red":
+                self._apply("yield", my_ttc, reason="SEMAFOR ROSU")
+                return "yield"
+            if light == "yellow":
+                action = "yield" if my_ttc < TTC_YIELD else "brake"
+                self._apply(action, my_ttc, reason="SEMAFOR GALBEN")
+                return action
+
+        # ── 3. Departe de intersectie → revin la viteza normala ─────────
+        if my_ttc >= TTC_BRAKE:
+            if v.state == "braking":
+                v.vx    = v._base_vx
+                v.vy    = v._base_vy
+                v.state = "moving"
+                self.last_action = "go"
+            self._record("GO", my_ttc, "liber")
+            return "go"
+
+        # ── 4. Negociere V2V ────────────────────────────────────────────
+=======
+        # 4. Decizie Generativa (V2I + V2V)
+        # Pentru performanta: Chemam AI-ul doar daca suntem la o distanta relevanta
+        if dist > 350 and my_ttc > 10:
+            self._record_decision("GO", round(my_ttc, 2), f"abordez intersectia (dist={dist}px)")
+            return "go"
+
+        # Citeste starea semaforului si a celorlalti vehicule de pe bus
+        light = _get_my_light(v.direction)
+>>>>>>> 07d2302322b2f0cd6fe91251e994771a3d18f8d2
+>>>>>>> Stashed changes
         others = {
             k: val for k, val in v2x_bus.get_others(v.id).items()
             if val.get("priority") != "infrastructure"
         }
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+        if not others:
+            self._record("GO", my_ttc, "niciun alt vehicul")
+            return "go"
+
+        action = self._evaluate(my_data, my_ttc, others)
+        self._apply(action, my_ttc)
+        return action
+
+    def _evaluate(self, my_data: dict, my_ttc: float, others: dict) -> str:
+=======
+>>>>>>> Stashed changes
 
         # LLM decide tot contextul: distanță, semafor, vecini
         action, target_id = self._evaluate(my_data, my_ttc, light, others)
@@ -182,30 +205,45 @@ class Agent:
         return (self.last_action, target_id)
 
     def _apply(self, action: str, ttc: float, reason: str = None, target_id: str = None) -> None:
+>>>>>>> 07d2302322b2f0cd6fe91251e994771a3d18f8d2
         v = self.vehicle
+        for other_id, other_data in others.items():
+            other_ttc = time_to_intersection(other_data)
+            if other_ttc >= TTC_BRAKE:
+                continue
+            if other_data.get("priority") == "emergency" and v.priority != "emergency":
+                return "yield" if my_ttc < TTC_YIELD else "brake"
+            if v.priority == "emergency":
+                return "go"
+            if is_right_of(my_data, other_data):
+                return "yield" if my_ttc < TTC_YIELD else "brake"
+            if is_right_of(other_data, my_data):
+                return "go"
+            if my_ttc >= other_ttc:
+                return "yield" if my_ttc < TTC_YIELD else "brake"
+        return "go"
+
+    def _apply(self, action: str, ttc: float, reason: str = None) -> None:
+        v    = self.vehicle
         prev = self.last_action
+
         if action == "brake":
-            v.vx *= BRAKE_FACTOR
-            v.vy *= BRAKE_FACTOR
+            v.vx   *= BRAKE_FACTOR
+            v.vy   *= BRAKE_FACTOR
             v.state = "braking"
         elif action == "yield":
-            v.vx = 0.0
-            v.vy = 0.0
-            v.state = "yielding"
+            v.vx    = 0.0
+            v.vy    = 0.0
+            v.state = "waiting"
         else:
-            v.state = "normal"
+            if v.state == "braking":
+                v.vx = v._base_vx
+                v.vy = v._base_vy
+            v.state = "moving"
+
         self.last_action = action
+        final_reason = reason or f"TTC={ttc:.2f}s"
+        self._record(action.upper(), ttc, final_reason)
 
-        default_reason = self.last_full_reason if reason is None else reason
-
-        # Salveaza decizia in memoria agentului (mereu, nu doar la schimbare)
-        self._record_decision(action.upper(), ttc, default_reason, target_id=target_id)
-
-        # Log doar la schimbare de actiune
         if action != prev and action != "go":
-            logger.log_decision(
-                agent_id=v.id,
-                action=action.upper(),
-                ttc=ttc,
-                reason=default_reason,
-            )
+            logger.log_decision(v.id, action.upper(), ttc, final_reason)

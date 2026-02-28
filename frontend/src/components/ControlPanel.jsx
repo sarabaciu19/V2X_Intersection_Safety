@@ -84,9 +84,6 @@ const ControlPanel = ({
                 ⏹ STOP
               </button>
             </div>
-            <div style={{ color: paused ? '#b91c1c' : '#166534', fontSize: 11, textAlign: 'center', fontWeight: 700 }}>
-              {paused ? '⏸ Simulare oprită' : '● Rulează live'}
-            </div>
 
             <div style={s.sep} />
 
@@ -99,7 +96,7 @@ const ControlPanel = ({
               boxShadow: `0 0 12px ${cooperation ? 'rgba(58,138,58,0.2)' : 'rgba(180,83,9,0.2)'}`,
               color: cooperation ? '#1a5a1a' : '#7c3a00',
             }}>
-              {cooperation ? '🤖  AUTO — sistem central' : '✋  MANUAL — tu decizi'}
+              {cooperation ? 'AUTO — sistem central' : 'MANUAL — tu decizi'}
             </button>
             <p style={s.hint}>
               {cooperation
@@ -111,7 +108,7 @@ const ControlPanel = ({
 
             {/* RESET */}
             <button onClick={onReset} style={{ ...s.bigBtn, background: '#ede5d8', borderColor: '#c8b89a', color: '#6b4f35', fontSize: 12 }}>
-              🔄 Reset scenariu curent
+              Reset scenariu curent
             </button>
 
             <div style={{ color: '#a08060', fontSize: 10, textAlign: 'center', fontFamily: "'Inter',sans-serif" }}>

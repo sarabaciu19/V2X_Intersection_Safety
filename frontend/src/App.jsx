@@ -51,17 +51,6 @@ function App() {
   return (
     <div className="app">
       {/* Header */}
-      <header className="app-header">
-        <h1>🚗 V2X Intersection Safety</h1>
-        <div className="connection-status">
-          {isConnected
-            ? <span className="status-badge status-connected">🟢 Live</span>
-            : <span className="status-badge status-disconnected">🔴 Reconectare…</span>}
-          {livePaused && <span style={{ color: '#F87171', fontSize: 12, marginLeft: 8, fontWeight: 700 }}>⏸ OPRIT</span>}
-          {error && <span style={{ color: '#F87171', fontSize: 11, marginLeft: 8 }}>{error}</span>}
-        </div>
-      </header>
-
       {/* Main Layout */}
       <div className="app-layout">
         {/* Left Panel - Control Panel */}
