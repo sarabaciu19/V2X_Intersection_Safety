@@ -17,6 +17,7 @@ import time
 from collections import deque
 from services import v2x_bus
 from services.collision import time_to_intersection, TTC_BRAKE, TTC_YIELD, is_right_of
+from services.llm_client import get_llm_decision, executor
 from utils import logger
 
 BRAKE_FACTOR = 0.85   # reduce viteza cu 15% per tick cand frana
@@ -42,6 +43,8 @@ class Agent:
         self.last_action: str = "go"
         # Memoria agentului: buffer circular cu ultimele MEMORY_SIZE decizii
         self.memory: deque = deque(maxlen=MEMORY_SIZE)
+        self.ai_cooldown = 0
+        self.last_full_reason = "N/A"
 
     @property
     def vehicle_id(self) -> str:
@@ -86,7 +89,16 @@ class Agent:
         """
         v = self.vehicle
 
-        # 1. Publica propria stare pe bus inainte de a decide
+        # 1. Verifica daca o decizie din fundal s-a terminat
+        if hasattr(self, '_future') and self._future.done():
+            try:
+                result = self._future.result()
+                self.last_action = result["action"].lower()
+                self.last_full_reason = result["reason"]
+            except Exception as e:
+                logger.error(f"Eroare procesare rezultat AI: {e}")
+
+        # 2. Publica propria stare pe bus inainte de a decide
         self._publish_self()
 
         # 2. Fara cooperare → ignora V2X, inregistreaza si continua
@@ -138,33 +150,51 @@ class Agent:
         return action
 
     def _evaluate(self, my_data: dict, my_ttc: float, others: dict) -> tuple:
-        """Evalueaza actiunea pe baza datelor citite din V2X Bus."""
-        my_priority = my_data.get("priority", "normal")
-        for other_id, other_data in others.items():
-            other_ttc = time_to_intersection(other_data)
-            if other_ttc >= TTC_BRAKE:
-                continue
+        """Evalueaza actiunea consultand LLM-ul (Ollama)."""
+        # Daca avem deja o cerere in curs, nu facem alta
+        if hasattr(self, '_future') and not self._future.done():
+            return (self.last_action, None)
 
-            # Urgenta → cedez intotdeauna
-            if other_data.get("priority") == "emergency" and my_priority != "emergency":
-                return ("yield" if my_ttc < TTC_YIELD else "brake", other_id)
+        # Throttling/Cooldown: Nu apelam AI-ul la fiecare tick
+        if self.ai_cooldown > 0:
+            self.ai_cooldown -= 1
+            return (self.last_action, None)
 
-            # Eu sunt urgenta → trec
-            if my_priority == "emergency":
-                return ("go", None)
+        # Reset cooldown (ex: la fiecare 10 tick-uri pentru a nu asfixia Ollama)
+        self.ai_cooldown = 10
 
-            # Regula dreapta
-            if is_right_of(my_data, other_data):
-                return ("yield" if my_ttc < TTC_YIELD else "brake", other_id)
+        # Pregatim contextul pentru LLM
+        context = {
+            "my_state": {
+                "id": self.vehicle.id,
+                "ttc": round(my_ttc, 2),
+                "dist": round(my_data.get("dist_to_intersection", 0), 1),
+                "priority": my_data.get("priority", "normal"),
+                "direction": my_data.get("direction", "N"),
+                "intent": my_data.get("intent", "straight")
+            },
+            "others": []
+        }
 
-            if is_right_of(other_data, my_data):
-                return ("go", None)
+        for oid, odata in others.items():
+            ottc = time_to_intersection(odata)
+            if ottc < TTC_BRAKE: # Doar vehiculele relevante
+                context["others"].append({
+                    "id": oid,
+                    "ttc": round(ottc, 2),
+                    "dist": round(odata.get("dist_to_intersection", 0), 1),
+                    "priority": odata.get("priority", "normal")
+                })
 
-            # Frontal: cel cu TTC mai mare frana primul
-            if my_ttc >= other_ttc:
-                return ("yield" if my_ttc < TTC_YIELD else "brake", other_id)
+        # Apelam LLM in fundal (non-blocking)
+        self._future = executor.submit(get_llm_decision, self.vehicle.id, context)
 
-        return ("go", None)
+        # Determinam target_id imediat (optional pt sageti pe canvas)
+        target_id = None
+        if self.last_action != "go" and context["others"]:
+            target_id = context["others"][0]["id"]
+
+        return (self.last_action, target_id)
 
     def _apply(self, action: str, ttc: float, reason: str = None, target_id: str = None) -> None:
         v = self.vehicle
@@ -181,7 +211,7 @@ class Agent:
             v.state = "normal"
         self.last_action = action
 
-        default_reason = reason or f"TTC={ttc:.2f}s < {'1.5' if action == 'yield' else '3.0'}s"
+        default_reason = self.last_full_reason if reason is None else reason
 
         # Salveaza decizia in memoria agentului (mereu, nu doar la schimbare)
         self._record_decision(action.upper(), ttc, default_reason, target_id=target_id)
