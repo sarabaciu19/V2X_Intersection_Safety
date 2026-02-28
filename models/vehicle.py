@@ -83,16 +83,24 @@ class Vehicle:
         if self.direction == 'V':
             return self.x >= self.wait_line
     def is_past_intersection(self) -> bool:
-        """Vehiculul a trecut de intersectie."""
+        """Vehiculul a trecut complet de intersectie (a depasit centrul cu ROAD_WIDTH)."""
         margin = ROAD_WIDTH
-        if self.direction in ('N',):
+        if self.direction == 'N':
             return self.y > INTERSECTION_Y + margin
-        if self.direction in ('S',):
+        if self.direction == 'S':
             return self.y < INTERSECTION_Y - margin
-        if self.direction in ('E',):
+        if self.direction == 'E':
             return self.x < INTERSECTION_X - margin
-        if self.direction in ('V',):
+        if self.direction == 'V':
             return self.x > INTERSECTION_X + margin
+        return False
+
+    def is_off_screen(self) -> bool:
+        """Vehiculul a iesit complet din canvas (800x800)."""
+        margin = 40
+        return (self.x < -margin or self.x > 800 + margin or
+                self.y < -margin or self.y > 800 + margin)
+
     def update(self):
         """Misca vehiculul un tick in functie de stare si clearance."""
 
@@ -108,21 +116,31 @@ class Vehicle:
             self.vy = 0
             return
 
-        # 3. Daca se misca si a ajuns la linia de stop fara clearance → opreste
-        if self.state == 'moving' and self.is_at_wait_line() and not self.clearance:
-            self.state = 'waiting'
-            self.vx = 0
-            self.vy = 0
-            return
+        # 3. Miscare normala (moving) — opreste la linia de stop daca n-are clearance
+        if self.state == 'moving':
+            if self.is_at_wait_line() and not self.clearance:
+                self.state = 'waiting'
+                self.vx = 0
+                self.vy = 0
+                return
+            self.vx = self._base_vx
+            self.vy = self._base_vy
+            self.x += self.vx
+            self.y += self.vy
 
-        # 4. Miscare normala (moving sau crossing)
-        if self.state in ('moving', 'crossing'):
+        # 4. Traversare (crossing)
+        elif self.state == 'crossing':
             self.vx = self._base_vx
             self.vy = self._base_vy
             self.x += self.vx
             self.y += self.vy
             if self.is_past_intersection():
                 self.state = 'done'
+
+        # 5. Stare 'done' — vehiculul continua sa se miste pana iese din canvas
+        elif self.state == 'done':
+            self.x += self._base_vx
+            self.y += self._base_vy
     def reset(self):
         self.x, self.y, self.vx, self.vy = self._init
         self._base_vx = self.vx
