@@ -255,9 +255,8 @@ class Vehicle:
             # Ignora vehiculele care au virat deja — nu mai sunt pe acelasi traseu
             if getattr(other, '_turned', False):
                 continue
-            # Ignora vehiculele care au depasit deja intersectia — cel din spate
-            # se gestioneaza singur prin logica de stop-line
-            if other.is_past_intersection():
+            # Ignora vehiculele crashed/done — nu mai sunt obstacol
+            if other.state in ('done', 'crashed'):
                 continue
             d = self.dist_ahead(other)
             if d < closest_dist:
@@ -303,13 +302,18 @@ class Vehicle:
                         break # Opreste cautarea, e deja ocupata intersecția
 
         # Stop la linia de semafoare (numai daca nu are clearance si nu e no_stop)
+        # Semaforul conteaza DOAR cand masina e inainte de linia de stop
+        # Odata ce a trecut de linie sau e in intersectie, nu mai tine cont de semafor
         if not self.clearance and not self.no_stop:
             dist_stop = self._dist_to_wait_line()
-            if dist_stop <= 0:
-                return 0.0  # e deja la sau dupa linie — opreste
-            elif dist_stop <= BRAKE_ZONE_DIST:
-                t = dist_stop / BRAKE_ZONE_DIST
-                factor = min(factor, MIN_SPEED_FACTOR + (1.0 - MIN_SPEED_FACTOR) * t)
+            if dist_stop > 0:
+                # Inca nu a ajuns la linia de stop — franezi/opreste
+                if dist_stop <= BRAKE_ZONE_DIST:
+                    t = dist_stop / BRAKE_ZONE_DIST
+                    factor = min(factor, MIN_SPEED_FACTOR + (1.0 - MIN_SPEED_FACTOR) * t)
+                if dist_stop <= 1.0:
+                    return 0.0  # exact la linia de stop — opreste
+            # dist_stop <= 0 inseamna ca a trecut deja de linie — NU mai opri
 
         return factor
 
@@ -328,18 +332,22 @@ class Vehicle:
             return
 
         # Vehicul fara V2X: se auto-acorda/revoca clearance (vede semaforul)
-        # Constient de semafor pana cand depaseste centrul intersectiei
+        # Verifica semaforul DOAR cand e aproape de linia de stop (nu dupa ce a trecut)
         if not self.v2x_enabled:
-            from services import v2x_bus as _bus
-            infra = _bus.get_all().get('INFRA', {})
-            lights = infra.get('lights', {})
-            my_light = lights.get(self.direction, 'green')
-            if my_light == 'green':
-                self.clearance = True
-            elif my_light in ('red', 'yellow'):
-                # Daca nu a depasit inca punctul critic al intersectiei, inca respecta semaforul
-                if not self._is_beyond_intersection():
+            dist_to_stop = self._dist_to_wait_line()
+            # Doar daca e inainte de linia de stop (dist > 0) verifica semaforul
+            if dist_to_stop > 0:
+                from services import v2x_bus as _bus
+                infra = _bus.get_all().get('INFRA', {})
+                lights = infra.get('lights', {})
+                my_light = lights.get(self.direction, 'green')
+                if my_light == 'green':
+                    self.clearance = True
+                elif my_light in ('red', 'yellow'):
                     self.clearance = False
+            else:
+                # A trecut deja de linia de stop — nu mai verifica semaforul, merge
+                self.clearance = True
 
         # Primeste clearance → incepe traversarea
         if self.state == 'waiting' and self.clearance:

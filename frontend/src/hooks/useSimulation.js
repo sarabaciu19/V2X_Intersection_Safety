@@ -63,6 +63,7 @@ export default function useSimulation(wsUrl = 'ws://localhost:8000/ws') {
   const customRemoveVehicle = (id)   => call('DELETE', `/custom/vehicle/${id}`);
   const customUpdateVehicle = (id, updates) => call('PATCH', `/custom/vehicle/${id}`, updates);
   const customClear         = ()     => call('DELETE', '/custom/clear');
+  const customSetSemaphore  = (has)  => call('POST',   '/custom/semaphore', { has_semaphore: has });
   const getCustomScenario   = ()     => call('GET',    '/custom/scenario');
 
   return {
@@ -70,6 +71,6 @@ export default function useSimulation(wsUrl = 'ws://localhost:8000/ws') {
     startSimulation, stopSimulation,
     resetSimulation, toggleCooperation, grantClearance,
     customAddVehicle, customRemoveVehicle, customUpdateVehicle,
-    customClear, getCustomScenario,
+    customClear, customSetSemaphore, getCustomScenario,
   };
 }

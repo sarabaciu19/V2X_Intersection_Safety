@@ -86,6 +86,7 @@ class SimulationEngine:
         self._last_state         = {}
         self._event_log: list    = []
         self._custom_scenario: List[Dict[str, Any]] = []
+        self._custom_has_semaphore: bool = True  # default: custom cu semafor
         self._crash_timers: Dict[str, int] = {}   # vehicle_id -> tick cand a intrat in crashed
         self._active_collisions: list = []         # coliziuni active (vizibile pe canvas)
         self._load_scenario('perpendicular')
@@ -93,10 +94,11 @@ class SimulationEngine:
     # ── Configurare ────────────────────────────────────────────────────
 
     def _load_scenario(self, name: str):
-        has_semaphore = name not in NO_SEMAPHORE_SCENARIOS
         if name == 'custom':
+            has_semaphore = self._custom_has_semaphore
             defs = list(self._custom_scenario)
         else:
+            has_semaphore = name not in NO_SEMAPHORE_SCENARIOS
             defs = SCENARIOS.get(name, SCENARIOS['perpendicular'])
         v2x_bus.clear()
         logger.clear()
@@ -193,6 +195,7 @@ class SimulationEngine:
             'vehicles':        [v.to_dict() for v in self.vehicles if v.state != 'done'],
             'semaphore':       sem_state,
             'custom_scenario': self._custom_scenario,
+            'custom_has_semaphore': self._custom_has_semaphore,
             'risk':            global_risk,
             'risk_zones':      risk_zones,
             'event_log':       list(logger.get_all()[-20:]),
@@ -318,10 +321,16 @@ class SimulationEngine:
 
     def custom_clear(self) -> dict:
         self._custom_scenario = []
+        self._custom_has_semaphore = True  # reset la default
         if self.scenario_name == 'custom':
             self.vehicles = []
             self.agents   = []
         return {'ok': True, 'custom_scenario': []}
+
+    def set_custom_semaphore(self, has_semaphore: bool) -> dict:
+        """Setează dacă scenariul custom are semafor sau nu."""
+        self._custom_has_semaphore = has_semaphore
+        return {'ok': True, 'has_semaphore': has_semaphore}
 
     def get_custom_scenario(self) -> list:
         return list(self._custom_scenario)

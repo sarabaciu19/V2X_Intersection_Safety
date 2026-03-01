@@ -19,6 +19,7 @@ const ControlPanel = ({
   paused = false,
   currentScenario = 'perpendicular',
   customScenario = [],
+  customHasSemaphore = true,
   onToggleCooperation,
   onScenarioChange,
   onReset,
@@ -28,6 +29,7 @@ const ControlPanel = ({
   onCustomRemove,
   onCustomUpdate,
   onCustomClear,
+  onCustomSetSemaphore,
 }) => {
   const [tab, setTab] = useState('control');
 
@@ -157,10 +159,12 @@ const ControlPanel = ({
         {tab === 'custom' && (
           <CustomScenarioEditor
             customScenario={customScenario}
+            customHasSemaphore={customHasSemaphore}
             onAdd={onCustomAdd}
             onRemove={onCustomRemove}
             onUpdate={onCustomUpdate}
             onClear={onCustomClear}
+            onSetSemaphore={onCustomSetSemaphore}
             onRunCustom={handleRunCustom}
             isCustomActive={currentScenario === 'custom'}
           />

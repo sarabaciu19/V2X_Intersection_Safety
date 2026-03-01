@@ -30,10 +30,12 @@ const DEFAULT_FORM = {
 
 const CustomScenarioEditor = ({
   customScenario = [],
+  customHasSemaphore = true,
   onAdd,
   onRemove,
   onUpdate,
   onClear,
+  onSetSemaphore,
   onRunCustom,
   isCustomActive = false,
 }) => {
@@ -124,6 +126,32 @@ const CustomScenarioEditor = ({
   return (
     <div style={s.container}>
       <div style={s.title}>🛠 Scenariu Custom</div>
+
+      {/* ── Toggle Semafor ── */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '8px 10px', borderRadius: 8, cursor: 'pointer',
+        background: customHasSemaphore ? 'rgba(22,101,52,0.08)' : 'rgba(217,119,6,0.08)',
+        border: `2px solid ${customHasSemaphore ? '#16a34a' : '#d97706'}`,
+        transition: 'all 0.2s ease',
+      }} onClick={() => onSetSemaphore?.(!customHasSemaphore)}>
+        <input type="checkbox" checked={customHasSemaphore}
+          onChange={() => {}}
+          style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#16a34a' }} />
+        <div style={{ flex: 1 }}>
+          <div style={{
+            fontSize: 12, fontWeight: 700,
+            color: customHasSemaphore ? '#166534' : '#92400e',
+          }}>
+            {customHasSemaphore ? '🚦 Intersecție semaforizată' : '🚧 Intersecție nesemaforizată'}
+          </div>
+          <div style={{ fontSize: 9, color: '#a08060', marginTop: 1 }}>
+            {customHasSemaphore
+              ? 'Semafoare active — cicluri verde / galben / roșu'
+              : 'Fără semafoare — prioritate prin V2X (TTC / viteză)'}
+          </div>
+        </div>
+      </div>
 
       <div style={s.sep} />
 

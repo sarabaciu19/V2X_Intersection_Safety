@@ -134,6 +134,11 @@ async def custom_update_vehicle(vehicle_id: str, body: CustomVehicleUpdate):
 async def custom_clear():
     return engine.custom_clear()
 
+@app.post("/custom/semaphore", summary="Setează dacă scenariul custom are semafor")
+async def custom_set_semaphore(body: dict):
+    has_sem = body.get('has_semaphore', True)
+    return engine.set_custom_semaphore(bool(has_sem))
+
 # ── WebSocket ────────────────────────────────────────────────────────────
 
 class _Manager:

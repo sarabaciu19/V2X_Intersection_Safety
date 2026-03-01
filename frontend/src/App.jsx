@@ -25,6 +25,7 @@ function App() {
     customRemoveVehicle,
     customUpdateVehicle,
     customClear,
+    customSetSemaphore,
   } = useSimulation('ws://localhost:8000/ws');
 
   const [currentScenario, setCurrentScenario] = useState('perpendicular');
@@ -35,6 +36,7 @@ function App() {
   const semaphore = wsState?.semaphore || {};
   const risk = wsState?.risk || { risk: false, pair: null, ttc: 999, ttc_per_vehicle: {} };
   const customScenario = wsState?.custom_scenario || [];
+  const customHasSemaphore = wsState?.custom_has_semaphore ?? true;
   const liveCooperation = wsState?.cooperation ?? true;
   const livePaused = wsState?.paused ?? false;
   const agentsMemory = wsState?.agents_memory ?? {};
@@ -61,6 +63,7 @@ function App() {
             paused={livePaused}
             currentScenario={currentScenario}
             customScenario={customScenario}
+            customHasSemaphore={customHasSemaphore}
             onToggleCooperation={handleToggleCooperation}
             onScenarioChange={handleScenarioChange}
             onReset={handleReset}
@@ -70,6 +73,7 @@ function App() {
             onCustomRemove={customRemoveVehicle}
             onCustomUpdate={customUpdateVehicle}
             onCustomClear={customClear}
+            onCustomSetSemaphore={customSetSemaphore}
           />
         </aside>
 
