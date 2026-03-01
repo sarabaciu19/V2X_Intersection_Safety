@@ -14,6 +14,7 @@ const STATE_COLOR = {
   done: '#9CA3AF',     // gray-400
   braking: '#F87171',  // red-400 (glow)
   yielding: '#F87171', // red-400 (glow)
+  crashed: '#991B1B',  // red-800 (dark red)
 };
 
 const INTENT_ICON = { straight: '↑', left: '↰', right: '↱' };

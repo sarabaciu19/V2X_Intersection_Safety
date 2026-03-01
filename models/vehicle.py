@@ -22,8 +22,9 @@ LANE_OUT_OFFSET =  25   # vehicule care pleaca (banda dreapta)
 
 # Zona de franare graduala inainte de linia de stop (px)
 BRAKE_ZONE_DIST  = 90    # incepe sa franeze la 90px de linia de stop
-MIN_SPEED_FACTOR = 0.15  # viteza minima la care coboara (15% din baza)
-# Distanta dintre centrul intersectiei si linia alba: ROAD_WIDTH/2 + 8px (canvas)
+FOLLOW_YIELD_DIST = 40    # px
+MIN_SPEED_FACTOR = 0.3   # viteza minima (creeping)
+MARGIN           = 50    # px in afara canvasului pana dispare
 # Masina are ~18px jumatate de lungime. Oprim masina cu 20px inainte de linia alba:
 # STOP_MARGIN = 8 (offset linie) + 20 (spatiu) = 28px fata de marginea drumului
 STOP_MARGIN = 28
@@ -78,7 +79,7 @@ def multiplier_to_kmh(mult: float) -> int:
 class Vehicle:
     def __init__(self, id: str, direction: str, intent: str = 'straight',
                  priority: str = 'normal', speed_multiplier: float = 1.0,
-                 v2x_enabled: bool = True):
+                 v2x_enabled: bool = True, spawn_tick: int = 0):
         """
         direction:   'N' | 'S' | 'E' | 'V'  (de unde vine)
         intent:      'straight' | 'left' | 'right'
@@ -91,7 +92,8 @@ class Vehicle:
         self.intent    = intent
         self.priority  = priority
         self.v2x_enabled = v2x_enabled
-        self.state     = 'moving'   # moving | waiting | crossing | done
+        self.spawn_tick = spawn_tick
+        self.state     = 'moving'   # moving | waiting | crossing | crashed | done
         sx, sy    = SPAWN[direction]
         vx0, vy0  = VELOCITY[direction]
         self.speed_multiplier = speed_multiplier
@@ -124,6 +126,14 @@ class Vehicle:
         """Vehiculul se afla in cutia intersectiei."""
         return (abs(self.x - INTERSECTION_X) <= ROAD_WIDTH / 2 + 5 and
                 abs(self.y - INTERSECTION_Y) <= ROAD_WIDTH / 2 + 5)
+
+    def _is_beyond_intersection(self) -> bool:
+        """Vehiculul a depasit centrul intersectiei pe directia sa."""
+        if self.direction == 'N': return self.y > INTERSECTION_Y + 20
+        if self.direction == 'S': return self.y < INTERSECTION_Y - 20
+        if self.direction == 'E': return self.x < INTERSECTION_X - 20
+        if self.direction == 'V': return self.x > INTERSECTION_X + 20
+        return False
 
     def _has_reached_turn_point(self) -> bool:
         """
@@ -182,7 +192,6 @@ class Vehicle:
 
     def is_off_screen(self) -> bool:
         """Vehiculul a iesit complet din canvas (folosind directia de iesire)."""
-        MARGIN = 50
         d = self._exit_dir
         if d == 'N':   return self.y > 800 + MARGIN
         if d == 'S':   return self.y < -MARGIN
@@ -208,8 +217,8 @@ class Vehicle:
         return 999.0
 
     # ── Following distance ───────────────────────────────────────────
-    FOLLOW_MIN_DIST   = 35   # opreste complet daca e mai aproape de atat (px)
-    FOLLOW_BRAKE_DIST = 80   # incepe franarea de la aceasta distanta (px)
+    FOLLOW_MIN_DIST   = 55   # opreste complet daca e mai aproape de atat (px)
+    FOLLOW_BRAKE_DIST = 180  # incepe franarea de la aceasta distanta (px)
 
     def dist_ahead(self, other) -> float:
         """
@@ -228,33 +237,63 @@ class Vehicle:
             d = other.x - self.x
         return d if d > 0 else 9999.0
 
-    def _desired_speed_factor(self, vehicles_same_dir: list) -> float:
+    def _desired_speed_factor(self, vehicles_same_dir: list, all_vehicles: list = None) -> float:
         """
         Calculeaza factorul de viteza dorit (0..1) tinand cont de:
         - distanta fata de vehiculul din fata (following)
         - distanta fata de linia de stop (daca nu are clearance)
-        Vehiculele FARA V2X ignora linia de stop si clearance!
+        Vehiculele FARA V2X respecta semaforul si following-ul,
+        dar nu primesc clearance de la sistemul central.
         """
-        # Vehicul fara V2X — merge mereu cu viteza plina, ignora totul
-        if not self.v2x_enabled:
-            return 1.0
-
         factor = 1.0
 
         # Following: cauta cel mai aproape vehicul din fata
-        closest = 9999.0
+        closest_dist = 9999.0
+        closest_v = None
         for other in vehicles_same_dir:
             if other.id == self.id:
                 continue
             d = self.dist_ahead(other)
-            if d < closest:
-                closest = d
+            if d < closest_dist:
+                closest_dist = d
+                closest_v = other
 
-        if closest <= self.FOLLOW_MIN_DIST:
-            return 0.0  # opreste complet
-        elif closest <= self.FOLLOW_BRAKE_DIST:
-            t = (closest - self.FOLLOW_MIN_DIST) / (self.FOLLOW_BRAKE_DIST - self.FOLLOW_MIN_DIST)
-            factor = min(factor, MIN_SPEED_FACTOR + (1.0 - MIN_SPEED_FACTOR) * t)
+        if closest_v:
+            if closest_dist <= self.FOLLOW_MIN_DIST:
+                return 0.0  # opreste complet
+            elif closest_dist <= self.FOLLOW_BRAKE_DIST:
+                # factor bazat pe distanta
+                t = (closest_dist - self.FOLLOW_MIN_DIST) / (self.FOLLOW_BRAKE_DIST - self.FOLLOW_MIN_DIST)
+                d_factor = MIN_SPEED_FACTOR + (1.0 - MIN_SPEED_FACTOR) * t
+                
+                # factor bazat pe viteza masinii din fata ("eyes on")
+                v_front = math.hypot(closest_v.vx, closest_v.vy)
+                v_ego_base = math.hypot(self._base_vx, self._base_vy)
+                
+                # v_factor: incearca sa se potriveasca cu viteza celui din fata
+                # dar nu mai jos de MIN_SPEED_FACTOR daca distanta permite
+                v_factor = (v_front / v_ego_base) if v_ego_base > 0 else 1.0
+                
+                # Alege factorul care asigura siguranta:
+                # - d_factor ne opreste pe masura ce ne apropiem de MIN_DIST
+                # - v_factor ne ajuta sa nu "pompa m" frana daca cel din fata e constant mai lent
+                factor = min(factor, d_factor)
+                if v_front > 0.1: # Doar daca cel din fata se misca, incercam speed matching
+                    factor = min(factor, max(MIN_SPEED_FACTOR, v_factor))
+
+        # Senzor intersecție: dacă cineva e deja în mijloc, încetinește sau oprește înainte să intre
+        if all_vehicles and not self._is_inside_intersection():
+            for other in all_vehicles:
+                if other.id == self.id: continue
+                if other.state != 'done' and other._is_inside_intersection():
+                    d_wait = self._dist_to_wait_line()
+                    # Dacă e aproape de intrare și cineva e deja în careu, frânează sau oprește
+                    if 0 < d_wait < 150:
+                        t = d_wait / 150
+                        # Opreste la linie daca distanta e mica
+                        f_inter = MIN_SPEED_FACTOR + (1.0 - MIN_SPEED_FACTOR) * t
+                        factor = min(factor, f_inter)
+                        break # Opreste cautarea, e deja ocupata intersecția
 
         # Stop la linia de semafoare (numai daca nu are clearance)
         if not self.clearance:
@@ -267,19 +306,37 @@ class Vehicle:
 
         return factor
 
-    def update(self, vehicles_same_dir: list = None):
+    def update(self, vehicles_same_dir: list = None, **kwargs):
         """
         Misca vehiculul un tick.
         vehicles_same_dir: lista cu celelalte vehicule pe aceeasi directie (pentru following).
         """
-        if self.state == 'done':
+        if self.state in ('done', 'crashed'):
             return
+
+        # Daca nu a venit inca timpul de spawn, nu se misca
+        if getattr(self, 'spawn_tick', 0) > 0 and kwargs.get('current_tick', 0) < self.spawn_tick:
+            self.vx = 0.0
+            self.vy = 0.0
+            return
+
+        # Vehicul fara V2X: se auto-acorda/revoca clearance (vede semaforul)
+        # Constient de semafor pana cand depaseste centrul intersectiei
+        if not self.v2x_enabled:
+            from services import v2x_bus as _bus
+            infra = _bus.get_all().get('INFRA', {})
+            lights = infra.get('lights', {})
+            my_light = lights.get(self.direction, 'green')
+            if my_light == 'green':
+                self.clearance = True
+            elif my_light in ('red', 'yellow'):
+                # Daca nu a depasit inca punctul critic al intersectiei, inca respecta semaforul
+                if not self._is_beyond_intersection():
+                    self.clearance = False
 
         # Primeste clearance → incepe traversarea
         if self.state == 'waiting' and self.clearance:
             self.state = 'crossing'
-            self.vx = self._base_vx
-            self.vy = self._base_vy
 
         # Asteapta fara clearance → sta pe loc
         if self.state == 'waiting':
@@ -287,40 +344,31 @@ class Vehicle:
             self.vy = 0.0
             return
 
-        # Traversare activa → viteza plina, nu mai verifica semaforul
-        if self.state == 'crossing':
-            self.vx = self._base_vx
-            self.vy = self._base_vy
-            if not self._turned and self.intent != 'straight' and self._has_reached_turn_point():
-                self._apply_turn()
-            self.x += self.vx
-            self.y += self.vy
-            if self.is_off_screen():
-                self.state = 'done'
-            return
+        # Calculam viteza dorita (following logic + cross-traffic check)
+        # Factor se aplica pentru moving, braking SI crossing
+        factor = self._desired_speed_factor(vehicles_same_dir or [], all_vehicles=kwargs.get('active_vehicles'))
 
-        # Moving / braking — calculeaza viteza dorita
-        factor = self._desired_speed_factor(vehicles_same_dir or [])
+        # Daca traversam si trebuie sa viram
+        if self.state == 'crossing' and not self._turned and self.intent != 'straight' and self._has_reached_turn_point():
+            self._apply_turn()
 
         if factor <= 0.0:
             # Trebuie sa se opreasca
             self.vx = 0.0
             self.vy = 0.0
-            # Daca e fix la linia de stop si n-are clearance → waiting
-            if not self.clearance and self._dist_to_wait_line() <= 1.0:
-                self.state = 'waiting'
-            else:
-                self.state = 'braking'
-            return
+            if self.state != 'crossing':
+                # Daca e fix la linia de stop si n-are clearance → waiting
+                if not self.clearance and self._dist_to_wait_line() <= 1.0:
+                    self.state = 'waiting'
+                else:
+                    self.state = 'braking'
+        else:
+            self.vx = self._base_vx * factor
+            self.vy = self._base_vy * factor
+            if self.state != 'crossing':
+                self.state = 'moving'
 
-        self.vx = self._base_vx * factor
-        self.vy = self._base_vy * factor
-        self.state = 'moving' if factor > 0.9 else 'braking'
-
-        # Aplica virajul la centrul intersectiei
-        if not self._turned and self.intent != 'straight' and self._has_reached_turn_point():
-            self._apply_turn()
-
+        # Update pozitie
         self.x += self.vx
         self.y += self.vy
 

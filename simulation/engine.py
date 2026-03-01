@@ -69,6 +69,8 @@ class SimulationEngine:
         self._last_state         = {}
         self._event_log: list    = []
         self._custom_scenario: List[Dict[str, Any]] = []
+        self._crash_timers: Dict[str, int] = {}   # vehicle_id -> tick cand a intrat in crashed
+        self._active_collisions: list = []         # coliziuni active (vizibile pe canvas)
         self._load_scenario('perpendicular')
 
     # ── Configurare ────────────────────────────────────────────────────
@@ -85,25 +87,89 @@ class SimulationEngine:
         self.tick_count          = 0
         self.scenario_name       = name
         self._event_log          = []
-        self.vehicles = [
-            Vehicle(
+        self._crash_timers       = {}
+        self._active_collisions  = []
+        # Calculam spawn_tick (2 secunde delay = 60 ticks per vehicul pe aceeasi directie)
+        # Si offset de pozitie ca sa nu se suprapuna la spawn
+        lane_counts = {}
+        SPAWN_GAP = 30
+        self.vehicles = []
+        for d in defs:
+            direction = d['direction']
+            count = lane_counts.get(direction, 0)
+            
+            v = Vehicle(
                 id=d['id'],
-                direction=d['direction'],
+                direction=direction,
                 intent=d.get('intent', 'straight'),
                 priority=d.get('priority', 'normal'),
                 speed_multiplier=d.get('speed_multiplier', 1.0),
                 v2x_enabled=d.get('v2x_enabled', True),
+                spawn_tick=count * 30 # Reduced from 80 to 30 (1s)
             )
-            for d in defs
-        ]
+            
+            # Repozitionam vehiculul "in spate" pe baza indexului de spawn
+            if direction == 'N': v.y -= count * 60
+            elif direction == 'S': v.y += count * 60
+            elif direction == 'E': v.x += count * 60
+            elif direction == 'V': v.x -= count * 60
+            
+            # Sincronizam _init pentru reset
+            v._init = (v.x, v.y, v.vx, v.vy)
+            
+            self.vehicles.append(v)
+            lane_counts[direction] = count + 1
+        
         # Creeaza agenti autonomi per vehicul
         self.agents = [Agent(v, cooperation=self.cooperation) for v in self.vehicles]
-        logger.log_info(f'Scenariu: {name}  cooperation={self.cooperation}')
+        
+        # Publica starea INITIALA pe bus (important daca e pauza)
+        self.semaphore.update()
+        for v in self.vehicles:
+            v2x_bus.publish(v.id, v.to_dict())
+            
+        logger.log_info(f'Scenariu: {name} (cooperation={self.cooperation}) încărcat.')
+        self._update_state()
 
     def reset(self, scenario: str = None):
+        logger.log_info(f"RESET cerut pentru: {scenario} (curent: {self.scenario_name})")
         if scenario and (scenario in SCENARIOS or scenario == 'custom'):
             self.scenario_name = scenario
         self._load_scenario(self.scenario_name)
+        self._update_state()
+
+    def _update_state(self):
+        """Genereaza si salveaza starea curenta pentru API / frontend."""
+        bus_data = {vid: data for vid, data in v2x_bus.get_all().items()
+                    if vid != 'INFRA'}
+        risk_zones = _compute_risk_zones(bus_data)
+        
+        # Sursa principala pentru panoul de sus (banner risc)
+        from services.collision import assess_risk
+        global_risk = assess_risk(bus_data)
+
+        agents_memory = {
+            agent.vehicle_id: agent.get_memory()
+            for agent in self.agents
+        }
+        
+        sem_state = self.semaphore.get_state() if hasattr(self.semaphore, 'get_state') else {}
+
+        self._last_state = {
+            'tick':            self.tick_count,
+            'timestamp':       time.monotonic(),
+            'cooperation':     self.cooperation,
+            'scenario':        self.scenario_name,
+            'paused':          self.paused,
+            'vehicles':        [v.to_dict() for v in self.vehicles if v.state != 'done'],
+            'semaphore':       sem_state,
+            'custom_scenario': self._custom_scenario,
+            'risk':            global_risk,
+            'risk_zones':      risk_zones,
+            'event_log':       list(logger.get_all()[-20:]),
+            'collisions':      list(self._active_collisions),
+            'agents_memory':   agents_memory
+        }
 
     def toggle_cooperation(self) -> bool:
         self.cooperation = not self.cooperation
@@ -162,6 +228,13 @@ class SimulationEngine:
             'speed_multiplier': float(vehicle_def.get('speed_multiplier', 1.0)),
             'v2x_enabled':      vehicle_def.get('v2x_enabled', True),
         }
+        
+        # Calculam spawn_tick si offset bazat pe cate masini sunt deja pe aceeasi directie
+        direction = entry['direction']
+        count = sum(1 for v in self._custom_scenario if v['direction'] == direction)
+        entry['spawn_tick'] = count * 30 # 30 ticks = 1s
+        entry['spawn_offset'] = count * 60 # 60px gap for safety
+        
         self._custom_scenario.append(entry)
 
         if self.scenario_name == 'custom':
@@ -172,7 +245,17 @@ class SimulationEngine:
                 priority=entry['priority'],
                 speed_multiplier=entry['speed_multiplier'],
                 v2x_enabled=entry['v2x_enabled'],
+                spawn_tick=entry.get('spawn_tick', 0)
             )
+            
+            # Aplica offset-ul si pentru custom (bazat pe spawn_offset salvat)
+            offset = entry.get('spawn_offset', 0)
+            if v.direction == 'N': v.y -= offset
+            elif v.direction == 'S': v.y += offset
+            elif v.direction == 'E': v.x += offset
+            elif v.direction == 'V': v.x -= offset
+            v._init = (v.x, v.y, v.vx, v.vy)
+            
             self.vehicles.append(v)
             self.agents.append(Agent(v, cooperation=self.cooperation))
 
@@ -223,8 +306,13 @@ class SimulationEngine:
         self.running = True
         while self.running:
             t0 = time.monotonic()
-            if not self.paused:
-                self._tick()
+            try:
+                if not self.paused:
+                    self._tick()
+            except Exception as e:
+                logger.log_info(f"FATAL Simulation Error: {e}")
+                import traceback
+                traceback.print_exc()
             elapsed = time.monotonic() - t0
             await asyncio.sleep(max(0.0, TICK_INTERVAL - elapsed))
 
@@ -237,9 +325,13 @@ class SimulationEngine:
         self.tick_count += 1
 
         all_done = self.vehicles and all(
-            v.state == 'done' and v.is_off_screen() for v in self.vehicles
+            v.state in ('done', 'crashed') for v in self.vehicles
         )
-        if all_done:
+        # Verifica daca toate masinile au terminat sau au fost crashuite si timeouted
+        really_done = self.vehicles and all(
+            v.state == 'done' for v in self.vehicles
+        )
+        if really_done:
             if self.scenario_name == 'custom':
                 self._load_scenario('custom')
             else:
@@ -266,67 +358,59 @@ class SimulationEngine:
         for v in self.vehicles:
             same_dir = [o for o in active
                         if o.id != v.id and o.direction == v.direction]
-            v.update(same_dir)
+            v.update(same_dir, active_vehicles=active, current_tick=self.tick_count)
 
-        # Publica starea finala
+        # Publica starea finala pentru bus
         for v in self.vehicles:
             v2x_bus.publish(v.id, v.to_dict())
 
-        # ── Calculeaza zone de risc ──────────────────────────────────────
-        bus_data = {vid: data for vid, data in v2x_bus.get_all().items()
-                    if vid != 'INFRA'}
-        risk_zones = _compute_risk_zones(bus_data)
-
-        # ── Event log — sursa unica: logger buffer (V2I + V2V + central) ──
-        self._event_log = logger.get_all()
-
-        # Colecteaza memoria agentilor pentru state
-        agents_memory = {
-            agent.vehicle_id: agent.get_memory()
-            for agent in self.agents
-        }
-
         # ── Detectare coliziuni fizice ────────────────────────────────────
-        active_data = {v.id: v.to_dict() for v in self.vehicles if v.state != 'done'}
-        collisions = check_physical_collision(active_data)
-        collision_list = []
-        for (id1, id2) in collisions:
-            collision_list.append({'vehicles': [id1, id2], 'tick': self.tick_count})
-            logger.log_decision(id1, '💥 COLIZIUNE', 0.0, f'coliziune fizică cu {id2}')
-
-        self._last_state = {
-            'tick':            self.tick_count,
-            'timestamp':       time.time(),
-            'cooperation':     self.cooperation,
-            'scenario':        self.scenario_name,
-            'paused':          self.paused,
-            'vehicles':        [v.to_dict() for v in self.vehicles],
-            'semaphore':       sem_state,
-            'custom_scenario': self._custom_scenario,
-            'risk':            {'risk': False, 'ttc': 999, 'action': 'go', 'pair': None, 'ttc_per_vehicle': {}},
-            'risk_zones':      risk_zones,
-            'collisions':      collision_list,
-            'event_log':       list(self._event_log[-20:]),
-            'agents_memory':   agents_memory,
+        # Ignoram vehiculele care nu s-au spawnat inca
+        active_data = {
+            v.id: v.to_dict() for v in self.vehicles 
+            if v.state not in ('done', 'crashed') and getattr(v, 'spawn_tick', 0) <= self.tick_count
         }
+        collisions = check_physical_collision(active_data)
+        for (id1, id2) in collisions:
+            # Marcam vehiculele ca 'crashed' daca nu sunt deja
+            for vid in (id1, id2):
+                if vid not in self._crash_timers:
+                    self._crash_timers[vid] = self.tick_count
+                    logger.log_decision(vid, '💥 COLIZIUNE', 0.0, f'coliziune fizică cu {id2 if vid == id1 else id1}')
+                for v in self.vehicles:
+                    if v.id == vid and v.state != 'crashed':
+                        v.state = 'crashed'
+                        v.vx = 0.0
+                        v.vy = 0.0
+            pair_key = tuple(sorted([id1, id2]))
+            if not any(tuple(sorted(c['vehicles'])) == pair_key for c in self._active_collisions):
+                self._active_collisions.append({'vehicles': [id1, id2], 'tick': self.tick_count})
+
+        # ── Timeout crashed vehicles: dupa 60 ticks (~2s) → done ─────────
+        CRASH_TIMEOUT = 60
+        for vid, crash_tick in list(self._crash_timers.items()):
+            delta = self.tick_count - crash_tick
+            if delta >= CRASH_TIMEOUT:
+                for v in self.vehicles:
+                    if v.id == vid:
+                        v.state = 'done'
+                        v2x_bus.publish(v.id, v.to_dict()) # update final pentru frontend
+                del self._crash_timers[vid]
+                logger.log_decision(vid, '🗑 REMOVED', 0.0, 'vehicul avariat îndepărtat din scenă')
+
+        # Curata coliziunile active daca ambele vehicule sunt done
+        self._active_collisions = [
+            c for c in self._active_collisions
+            if not all(
+                any(v.id == vid and v.state == 'done' for v in self.vehicles)
+                for vid in c['vehicles']
+            )
+        ]
+
+        self._update_state()
 
     def get_state(self) -> dict:
-        if not self._last_state:
-            return {
-                'tick': 0, 'timestamp': time.time(),
-                'cooperation': self.cooperation,
-                'scenario': self.scenario_name,
-                'paused': self.paused,
-                'vehicles': [], 'semaphore': {'light': 'green'},
-                'custom_scenario': self._custom_scenario,
-                'risk': {'risk': False, 'ttc': 999, 'action': 'go', 'pair': None, 'ttc_per_vehicle': {}},
-                'risk_zones': [],
-                'collisions': [], 'event_log': [],
-                'agents_memory': {},
-            }
-        self._last_state['custom_scenario'] = self._custom_scenario
-        self._last_state['paused'] = self.paused
-        return self._last_state
+        return self._last_state or {}
 
 
 # ── Zone de risc ────────────────────────────────────────────────────────────

@@ -10,7 +10,7 @@ from typing import Dict
 INTERSECTION = (400, 400)   # centrul intersectiei in pixeli
 TTC_BRAKE = 3.0             # secunde → frana
 TTC_YIELD = 1.5             # secunde → stop complet
-COLLISION_DIST = 20         # pixeli → coliziune fizica
+COLLISION_DIST = 32         # pixeli → coliziune fizica (masina are ~36px)
 def time_to_intersection(v: dict) -> float:
     """TTC al unui vehicul fata de centrul intersectiei."""
     dx = INTERSECTION[0] - v["x"]

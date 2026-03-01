@@ -4,6 +4,7 @@ const STATE_COLOR = {
   moving: '#2563eb',
   waiting: '#b45309',
   crossing: '#166534',
+  crashed: '#991b1b',
   done: '#a08060',
 };
 

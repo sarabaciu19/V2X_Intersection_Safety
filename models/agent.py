@@ -104,9 +104,15 @@ class Agent:
     def decide(self) -> str:
         v = self.vehicle
 
-        # Vehicul FARA V2X → merge fara restrictii, ignora TOATE semnalele
+        # Vehicul FARA V2X → nu poate negocia V2V, dar respecta semaforul si following-ul
+        # Singura diferenta: nu cedeaza trecerea altor vehicule la intersectie
         if not v.v2x_enabled:
-            self._record_if_new("GO", 999, "⛔ vehicul FĂRĂ V2X — nu poate citi semnale, ignoră intersecția")
+            if v.state == "waiting":
+                self._record_if_new("WAIT", 999, "⛔ fără V2X — așteaptă semafor (fără negociere V2V)")
+            elif v.state == "crossing":
+                self._record_if_new("GO", 999, "⛔ fără V2X — traversează fără comunicare V2V")
+            else:
+                self._record_if_new("GO", 999, "⛔ fără V2X — conduce normal, fără negociere")
             self.last_action = "go"
             return "go"
 
@@ -119,6 +125,10 @@ class Agent:
         my_ttc  = time_to_intersection(my_data)
 
         # ── Inregistreaza starea curenta a vehiculului ──────────────────
+        if v.state == "crashed":
+            self._record_if_new("CRASH", 0, "💥 vehicul avariat — oprit")
+            return "go"
+
         if v.state == "done":
             self._record_if_new("GO", my_ttc, "vehicul iesit din intersectie")
             return "go"
