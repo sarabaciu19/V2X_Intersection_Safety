@@ -9,7 +9,7 @@ from models.agent import Agent
 from services import v2x_bus
 from services.central_system import CentralSystem
 from services.infrastructure import InfrastructureAgent
-from services.collision import time_to_intersection, TTC_BRAKE, TTC_YIELD, check_physical_collision, check_aeb_trigger
+from services.collision import time_to_intersection, TTC_BRAKE, TTC_YIELD, check_physical_collision
 from utils import logger
 from scenarios import SCENARIOS, NO_SEMAPHORE_SCENARIOS, AEB_DISABLED_SCENARIOS
 
@@ -39,7 +39,6 @@ class SimulationEngine:
         self._custom_has_semaphore: bool = True  # default: custom cu semafor
         self._crash_timers: Dict[str, int] = {}   # vehicle_id -> tick cand a intrat in crashed
         self._active_collisions: list = []         # coliziuni active (vizibile pe canvas)
-        self._aeb_disabled: bool = False           # True = AEB dezactivat pentru scenariul curent
         self._load_scenario('perpendicular')
 
     # ── Configurare ────────────────────────────────────────────────────
@@ -51,7 +50,6 @@ class SimulationEngine:
         else:
             has_semaphore = name not in NO_SEMAPHORE_SCENARIOS
             defs = SCENARIOS.get(name, SCENARIOS['perpendicular'])
-        self._aeb_disabled = name in AEB_DISABLED_SCENARIOS
         v2x_bus.clear()
         logger.clear()
         self.central.reset()
@@ -353,32 +351,6 @@ class SimulationEngine:
             else:  # go
                 v.agent_yield = False
 
-        # ── AEB Fallback (non-V2X vehicles) — INAINTE de update pozitii ────
-        # Setam flag-ul aeb_active INAINTE ca v.update() sa fie apelat,
-        # astfel incat _desired_speed_factor() returneaza 0.0 in acelasi tick
-        # si vehiculul nu mai inainteaza deloc spre obstacol.
-        # AEB este dezactivat complet pentru scenariile cu AEB_DISABLED=True (ex: no_v2x).
-        if not self._aeb_disabled:
-            pre_aeb_data = {
-                v.id: v.to_dict() for v in self.vehicles
-                if v.state not in ('done', 'crashed') and getattr(v, 'spawn_tick', 0) <= self.tick_count
-            }
-            aeb_trigger_ids = check_aeb_trigger(pre_aeb_data)
-            for v in self.vehicles:
-                was_active = getattr(v, 'aeb_active', False)
-                if v.id in aeb_trigger_ids and v.state not in ('crashed', 'done'):
-                    if not was_active:
-                        logger.log_decision(v.id, 'AEB_ACTIVAT', 0.0,
-                            '🛑 radar local: obstacol la <60px — frânare urgență (TARDIVĂ vs. V2X preventiv)')
-                    v.aeb_active = True
-                else:
-                    if was_active and v.state not in ('crashed', 'done'):
-                        v.aeb_active = False
-        else:
-            # AEB dezactivat — asigura-te ca flagul e False pe toate vehiculele
-            for v in self.vehicles:
-                v.aeb_active = False
-
         # Updateaza pozitiile — pasam vehiculele pe aceeasi directie pentru following
         active = [v for v in self.vehicles if v.state != 'done']
         for v in self.vehicles:
@@ -391,9 +363,7 @@ class SimulationEngine:
             v2x_bus.publish(v.id, v.to_dict())
 
         # ── Detectare coliziuni fizice ────────────────────────────────────
-        # Ignoram vehiculele care nu s-au spawnat inca.
-        # Ignoram perechile in care cel putin un vehicul are AEB activ —
-        # AEB a oprit vehiculul, deci nu e coliziune reala.
+        # Ignoram vehiculele care nu s-au spawnat inca
         active_data = {
             v.id: v.to_dict() for v in self.vehicles
             if v.state not in ('done', 'crashed') and getattr(v, 'spawn_tick', 0) <= self.tick_count
@@ -402,10 +372,6 @@ class SimulationEngine:
         aeb_active_ids = {v.id for v in self.vehicles if getattr(v, 'aeb_active', False)}
         collisions = check_physical_collision(active_data)
         for (id1, id2) in collisions:
-            # Daca cel putin unul dintre vehicule are AEB activ → nu e crash, AEB l-a oprit
-            # (numai cand AEB e activat pentru scenariul curent)
-            if not self._aeb_disabled and (id1 in aeb_active_ids or id2 in aeb_active_ids):
-                continue
             # Marcam vehiculele ca 'crashed' daca nu sunt deja
             for vid in (id1, id2):
                 if vid not in self._crash_timers:

@@ -110,12 +110,6 @@ class Agent:
 
         # Vehicul FARA V2X
         if not v.v2x_enabled:
-            # AEB Fallback: radar local a detectat obstacol → înregistrăm în memorie
-            if getattr(v, 'aeb_active', False):
-                self._record_if_new("AEB_ACTIVAT", 0.0,
-                    "🛑 radar local <60px — frânare urgență (TARDIVĂ vs. V2X preventiv)")
-                self.last_action = "go"
-                return "go"
             if v.state == "waiting":
                 self._record_if_new("WAIT", 999, "⛔ fără V2X — așteaptă semafor (fără negociere V2V)")
             elif v.state == "crossing":

@@ -9,9 +9,8 @@ AEB_DISABLED = True: niciun fallback radar — coliziunea se produce inevitabil.
 """
 
 NAME = "no_v2x"
-DESCRIPTION = "Fără V2X — fără AEB — coliziune garantată."
+DESCRIPTION = "Fara V2X — B nu primeste semnale → coliziune garantata."
 NO_SEMAPHORE = True
-AEB_DISABLED = True   # Dezactivează fallback-ul AEB pentru acest scenariu
 
 VEHICLES = [
     {'id': 'A', 'direction': 'N', 'intent': 'straight', 'speed_multiplier': 1.0, 'no_stop': True},

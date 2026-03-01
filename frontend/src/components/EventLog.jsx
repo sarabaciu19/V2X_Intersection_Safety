@@ -14,8 +14,6 @@ const MEM_ACTION_STYLE = {
   STOP:                 { color: '#ef4444', icon: '🔴' },
   HOLD:                 { color: '#f59e0b', icon: '🟡' },
   CRASH:                { color: '#991b1b', icon: '💥' },
-  // AEB Fallback — radar local, frânare violentă/târzie (non-V2X)
-  'AEB_ACTIVAT':        { color: '#f97316', icon: '🛑' },
 };
 
 const EventLog = ({ agentsMemory = {} }) => {
@@ -46,16 +44,13 @@ const EventLog = ({ agentsMemory = {} }) => {
                 const st = MEM_ACTION_STYLE[entry.action] || { color: '#2563eb', icon: 'ℹ' };
                 const isOverride  = entry.action === 'YIELD_SPEED_OVERRIDE';
                 const isSpeedClear = entry.action === 'CLEARANCE_SPEED';
-                const isAEB       = entry.action === 'AEB_ACTIVAT';
                 return (
                   <div key={i} style={{
                     ...s.memRow,
-                    background: isAEB        ? 'rgba(249,115,22,0.14)'
-                              : isOverride   ? 'rgba(220,38,38,0.10)'
+                    background: isOverride   ? 'rgba(220,38,38,0.10)'
                               : isSpeedClear ? 'rgba(249,115,22,0.08)'
                               : 'transparent',
-                    borderLeft: isAEB        ? '3px solid #f97316'
-                              : isOverride   ? '3px solid #dc2626'
+                    borderLeft: isOverride   ? '3px solid #dc2626'
                               : isSpeedClear ? '3px solid #f97316'
                               : '3px solid transparent',
                   }}>
@@ -64,7 +59,6 @@ const EventLog = ({ agentsMemory = {} }) => {
                     <span style={{ color: st.color, fontWeight: 700, fontSize: 10, minWidth: 44 }}>
                       {entry.action === 'YIELD_SPEED_OVERRIDE' ? 'YIELD⚠'
                        : entry.action === 'CLEARANCE_SPEED'    ? 'GO⚡'
-                       : entry.action === 'AEB_ACTIVAT'        ? '⚠AEB!'
                        : entry.action}
                     </span>
                     {entry.target_id && (

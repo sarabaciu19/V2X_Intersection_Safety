@@ -69,33 +69,3 @@ def check_physical_collision(vehicles: Dict[str, dict]) -> list:
             if dist < COLLISION_DIST:
                 collisions.append((ids[i], ids[j]))
     return collisions
-
-# ── Fallback AEB (Autonomous Emergency Braking) ───────────────────────
-# Distanta radar local (px): echivalentul a ~10 metri reali.
-# V2X „vede" de la 200-300px; radarul local „vede" abia la 90px → frana violenta/tarzie.
-AEB_TRIGGER_DIST = 90   # px — camera/radar local detecteaza obstacolul abia de aici
-
-def check_aeb_trigger(vehicles: Dict[str, dict]) -> list:
-    """
-    Fallback pentru vehiculele FARA V2X (v2x_enabled=False).
-    Daca distanta absoluta fata de orice alt vehicul activ scade sub AEB_TRIGGER_DIST,
-    se declanseaza AEB — franare de urgenta violenta si tarzie.
-    Returneaza lista de id-uri ale vehiculelor non-V2X care trebuie sa franeze AEB.
-    """
-    aeb_ids = []
-    ids = list(vehicles.keys())
-    for vid in ids:
-        v = vehicles[vid]
-        if v.get("v2x_enabled", True):
-            continue  # AEB fallback se aplica DOAR vehiculelor fara V2X
-        for other_id in ids:
-            if other_id == vid:
-                continue
-            other = vehicles[other_id]
-            dist = math.sqrt((v["x"] - other["x"]) ** 2 + (v["y"] - other["y"]) ** 2)
-            if dist < AEB_TRIGGER_DIST:
-                if vid not in aeb_ids:
-                    aeb_ids.append(vid)
-                break
-    return aeb_ids
-
