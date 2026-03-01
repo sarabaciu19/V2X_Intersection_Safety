@@ -1,9 +1,18 @@
 import React from 'react';
 
 const MEM_ACTION_STYLE = {
-  GO: { color: '#22c55e', icon: '🟢' },
-  YIELD: { color: '#ef4444', icon: '🛑' },
-  BRAKE: { color: '#f59e0b', icon: '🟠' }, WAIT: { color: '#b45309', icon: '⏸' },
+  GO:                   { color: '#22c55e',  icon: '🟢' },
+  YIELD:                { color: '#ef4444',  icon: '🛑' },
+  BRAKE:                { color: '#f59e0b',  icon: '🟠' },
+  WAIT:                 { color: '#b45309',  icon: '⏸'  },
+  CLEARANCE:            { color: '#34d399',  icon: '✅' },
+  CLEARANCE_SPEED:      { color: '#f97316',  icon: '⚡' },  // prioritate acordata prin viteza
+  YIELD_SPEED_OVERRIDE: { color: '#dc2626',  icon: '⚠️' },  // cedare fortata, regula dreptei incalcata
+  V2I_STOP:             { color: '#ef4444',  icon: '🚦' },
+  V2I_REDUCE:           { color: '#f59e0b',  icon: '📡' },
+  V2I_GO:               { color: '#22c55e',  icon: '📡' },
+  STOP:                 { color: '#ef4444',  icon: '🔴' },
+  HOLD:                 { color: '#f59e0b',  icon: '🟡' },
 };
 
 /**
@@ -33,11 +42,35 @@ const EventLog = ({ agentsMemory = {} }) => {
               )}
               {[...memory].reverse().map((entry, i) => {
                 const st = MEM_ACTION_STYLE[entry.action] || { color: '#2563eb', icon: 'ℹ' };
+                const isOverride = entry.action === 'YIELD_SPEED_OVERRIDE';
+                const isSpeedClear = entry.action === 'CLEARANCE_SPEED';
                 return (
-                  <div key={i} style={s.memRow}>
+                  <div key={i} style={{
+                    ...s.memRow,
+                    background: isOverride
+                      ? 'rgba(220,38,38,0.08)'
+                      : isSpeedClear
+                        ? 'rgba(249,115,22,0.08)'
+                        : 'transparent',
+                    borderLeft: isOverride
+                      ? '3px solid #dc2626'
+                      : isSpeedClear
+                        ? '3px solid #f97316'
+                        : '3px solid transparent',
+                  }}>
                     <span style={{ color: '#a08060', fontSize: 9, minWidth: 52 }}>{entry.tick_time}</span>
                     <span style={{ fontSize: 10, minWidth: 14 }}>{st.icon}</span>
-                    <span style={{ color: st.color, fontWeight: 700, fontSize: 10, minWidth: 44 }}>{entry.action}</span>
+                    <span style={{ color: st.color, fontWeight: 700, fontSize: 10, minWidth: 44 }}>
+                      {entry.action === 'YIELD_SPEED_OVERRIDE' ? 'YIELD⚠' :
+                       entry.action === 'CLEARANCE_SPEED'      ? 'GO⚡'   :
+                       entry.action}
+                    </span>
+                    {entry.target_id && (
+                      <span style={{
+                        color: '#fff', background: '#374151', borderRadius: 3,
+                        fontSize: 8, padding: '1px 4px', marginRight: 3, whiteSpace: 'nowrap',
+                      }}>→ {entry.target_id}</span>
+                    )}
                     <span style={{ color: '#6b4f35', fontSize: 9, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {entry.reason}
                     </span>

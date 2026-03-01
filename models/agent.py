@@ -84,22 +84,25 @@ class Agent:
     def get_memory(self) -> list:
         return list(self.memory)
 
-    def _record(self, action: str, ttc: float, reason: str) -> None:
+    def _record(self, action: str, ttc: float, reason: str, target_id: str = None) -> None:
         import time as _t
-        self.memory.append({
+        entry = {
             "tick_time": _t.strftime("%H:%M:%S"),
             "action":    action,
             "ttc":       round(ttc, 3),
             "reason":    reason,
-        })
+        }
+        if target_id:
+            entry["target_id"] = target_id
+        self.memory.append(entry)
 
-    def _record_if_new(self, action: str, ttc: float, reason: str) -> None:
+    def _record_if_new(self, action: str, ttc: float, reason: str, target_id: str = None) -> None:
         """Inregistreaza in memorie doar daca starea s-a schimbat fata de ultima inregistrare."""
         key = f"{action}|{reason}"
         if key == self._last_state:
             return
         self._last_state = key
-        self._record(action, ttc, reason)
+        self._record(action, ttc, reason, target_id)
 
     def decide(self) -> str:
         v = self.vehicle
@@ -173,8 +176,18 @@ class Agent:
 
         action = self._evaluate(my_data, my_ttc, relevant)
         self.last_action = action
-        reason = f"conflict V2V cu [{','.join(relevant.keys())}]"
-        self._record_if_new(action.upper(), my_ttc, reason)
+        target_ids = list(relevant.keys())
+        reason = f"conflict V2V cu [{','.join(target_ids)}]"
+        # _evaluate poate fi deja inregistrat cu detalii specifice (YIELD_SPEED_OVERRIDE)
+        # Inregistram generic doar daca nu a fost deja inregistrat
+        if action == 'go':
+            self._record_if_new(action.upper(), my_ttc, reason,
+                                target_id=target_ids[0] if target_ids else None)
+        elif action != 'go' and self._last_state.startswith(action.upper()):
+            pass  # deja inregistrat de _evaluate cu detalii complete
+        else:
+            self._record_if_new(action.upper(), my_ttc, reason,
+                                target_id=target_ids[0] if target_ids else None)
         if action != "go":
             logger.log_decision(v.id, action.upper(), my_ttc,
                                 f"conflict cu {list(relevant.keys())}")
@@ -189,14 +202,42 @@ class Agent:
                 continue
             # Urgenta are prioritate absoluta
             if other_data.get("priority") == "emergency" and v.priority != "emergency":
+                self._record_if_new(
+                    "YIELD", my_ttc,
+                    f"vehicul de urgenta {other_id} — prioritate absoluta",
+                    target_id=other_id,
+                )
                 return "yield"
             if v.priority == "emergency":
                 return "go"
             # Regula dreptei
             if is_right_of(my_data, other_data):
+                # Celalalt vine din dreapta mea — normal ar trebui sa cedez
+                # Dar verifica daca celalalt vine cu viteza mult mai mare (speed override)
+                other_kmh = other_data.get("speed_multiplier", 1.0) * 50
+                my_kmh    = my_data.get("speed_multiplier", 1.0) * 50
+                speed_override = (other_ttc < my_ttc - 0.3) and (other_kmh > my_kmh * 1.3)
+                if speed_override:
+                    self._record_if_new(
+                        "YIELD_SPEED_OVERRIDE", my_ttc,
+                        (
+                            f"⚠ {other_id} vine cu {other_kmh:.0f} km/h (TTC={other_ttc:.1f}s) — "
+                            f"EU ({v.id}) am prioritate legala (regula dreptei), "
+                            f"DAR V2X forteaza cedarea: viteza excesiva = risc coliziune. "
+                            f"Fara V2X → accident garantat."
+                        ),
+                        target_id=other_id,
+                    )
                 return "yield"
             # Daca celalalt ajunge mult mai repede → cedeaza
             if other_ttc < my_ttc - 0.5:
+                other_kmh = other_data.get("speed_multiplier", 1.0) * 50
+                my_kmh    = my_data.get("speed_multiplier", 1.0) * 50
+                self._record_if_new(
+                    "YIELD", my_ttc,
+                    f"{other_id} TTC={other_ttc:.1f}s ({other_kmh:.0f} km/h) < meu TTC={my_ttc:.1f}s — cedeaza",
+                    target_id=other_id,
+                )
                 return "yield"
         return "go"
 

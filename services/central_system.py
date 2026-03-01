@@ -125,6 +125,8 @@ class CentralSystem:
         Fara semafor — prioritate prin TTC (viteza).
         Vehiculul care ajunge primul (TTC minim) primeste clearance.
         Ceilalti in conflict cu el cedeaza.
+        Daca vehiculul care cedeaza ar fi avut prioritate legala (regula dreptei),
+        se logheaza explicit ca prioritatea a fost INCALCATA prin viteza.
         """
         import math
 
@@ -132,9 +134,18 @@ class CentralSystem:
             dx = 400 - v.x
             dy = 400 - v.y
             dist = math.sqrt(dx*dx + dy*dy)
-            # Folosim viteza de baza (nu viteza curenta) pt TTC real
             spd = math.sqrt(v._base_vx**2 + v._base_vy**2)
             return dist / spd if spd > 0.1 else 999.0
+
+        def get_kmh(v):
+            spd = math.sqrt(v._base_vx**2 + v._base_vy**2)
+            # 3 px/tick = 50 km/h (baza)
+            return round(spd / 3.0 * 50, 0)
+
+        def has_right_of_way_over(v_yield, v_winner) -> bool:
+            """True daca v_yield ar trebui sa aiba prioritate legala (vine din dreapta lui v_winner)."""
+            right_dir = RIGHT_OF.get(v_winner.direction)
+            return v_yield.direction == right_dir
 
         # Sorteaza dupa TTC (cel mai mic = ajunge primul)
         by_ttc = sorted(waiting, key=get_ttc)
@@ -150,20 +161,55 @@ class CentralSystem:
                 if not v.clearance:
                     v.clearance = True
                     ttc = round(get_ttc(v), 2)
-                    self._log(v.id, 'CLEARANCE',
-                              reason=f'V2V: TTC={ttc}s — viteza mare, trece primul (prioritate prin viteza)')
+                    kmh = get_kmh(v)
+                    # Verifica daca exista un vehicul care cedeaza dar ar fi trebuit sa aiba prioritate
+                    yielders_with_priority = [
+                        w for w in waiting
+                        if w not in can_go and has_right_of_way_over(w, v)
+                        and self._paths_conflict(v, w)
+                    ]
+                    if yielders_with_priority:
+                        yielder_ids = ', '.join(w.id for w in yielders_with_priority)
+                        self._log(v.id, 'CLEARANCE_SPEED',
+                                  reason=(
+                                      f'⚡ V2X: TTC={ttc}s, {kmh:.0f} km/h — prioritate acordata prin VITEZA. '
+                                      f'ATENTIE: {yielder_ids} avea prioritate legala (regula dreptei) '
+                                      f'dar a cedat din cauza vitezei mari a lui {v.id}. '
+                                      f'Fara V2X → coliziune garantata.'
+                                  ))
+                    else:
+                        self._log(v.id, 'CLEARANCE',
+                                  reason=f'V2V: TTC={ttc}s, {kmh:.0f} km/h — ajunge primul, trece')
             else:
-                # Retrage clearance daca il avea, si logheza o singura data
                 had_clearance = v.clearance
                 v.clearance = False
+                winner = can_go[0] if can_go else (crossing[0] if crossing else None)
                 if had_clearance or not getattr(v, '_yielded_logged', False):
                     ttc = round(get_ttc(v), 2)
-                    winner_id = can_go[0].id if can_go else (crossing[0].id if crossing else '?')
-                    w_ttc = round(get_ttc(can_go[0]), 2) if can_go else 0
-                    self._log(v.id, 'YIELD',
-                              reason=f'V2V: TTC={ttc}s > {winner_id} TTC={w_ttc}s — cedeaza (viteza mica, ignorata regula dreptei)')
+                    kmh = get_kmh(v)
+                    if winner:
+                        w_ttc = round(get_ttc(winner), 2) if winner in waiting else 0
+                        w_kmh = get_kmh(winner)
+                        # Verifica daca acest vehicul ar fi trebuit sa aiba prioritate legala
+                        had_legal_priority = has_right_of_way_over(v, winner)
+                        if had_legal_priority:
+                            self._log(v.id, 'YIELD_SPEED_OVERRIDE',
+                                      reason=(
+                                          f'⚠ V2X: {v.id} are prioritate legala (vine din dreapta lui {winner.id}), '
+                                          f'DAR {winner.id} vine cu {w_kmh:.0f} km/h (TTC={w_ttc}s) vs '
+                                          f'{v.id} cu {kmh:.0f} km/h (TTC={ttc}s). '
+                                          f'Sistemul V2X forteaza cedarea prioritatii — '
+                                          f'regula dreptei INCALCATA prin viteza excesiva.'
+                                      ))
+                        else:
+                            self._log(v.id, 'YIELD',
+                                      reason=(
+                                          f'V2V: TTC={ttc}s ({kmh:.0f} km/h) > '
+                                          f'{winner.id} TTC={w_ttc}s ({w_kmh:.0f} km/h) — cedeaza'
+                                      ))
+                    else:
+                        self._log(v.id, 'YIELD', reason=f'V2V: TTC={ttc}s — cedeaza')
                     v._yielded_logged = True
-            # Reseteaza flag cand primeste clearance
             if v.clearance:
                 v._yielded_logged = False
 
