@@ -403,7 +403,8 @@ class SimulationEngine:
         collisions = check_physical_collision(active_data)
         for (id1, id2) in collisions:
             # Daca cel putin unul dintre vehicule are AEB activ → nu e crash, AEB l-a oprit
-            if id1 in aeb_active_ids or id2 in aeb_active_ids:
+            # (numai cand AEB e activat pentru scenariul curent)
+            if not self._aeb_disabled and (id1 in aeb_active_ids or id2 in aeb_active_ids):
                 continue
             # Marcam vehiculele ca 'crashed' daca nu sunt deja
             for vid in (id1, id2):

@@ -7,7 +7,7 @@ const SCENARIOS = [
   { id: 'emergency', icon: '🚑', name: 'Urgență', desc: 'Ambulanță cu prioritate', semaphore: true },
   { id: 'intents', icon: '↰', name: 'Intenții mixte', desc: 'Straight, stânga, dreapta', semaphore: true },
   { id: 'traffic_jam', icon: '🚧', name: 'Traffic Jam', desc: '6 vehicule — trafic intens', semaphore: true },
-  { id: 'no_v2x', icon: '⛔', name: 'Fără V2X', desc: 'O mașină fără V2X cauzează accident', semaphore: false },
+  { id: 'no_v2x', icon: '⛔', name: 'Fără V2X', desc: 'Fără V2X, fără AEB → coliziune garantată', semaphore: false },
   { id: 'custom', icon: '🛠', name: 'Custom', desc: 'Configurează tu vehiculele', semaphore: true },
 ];
 
