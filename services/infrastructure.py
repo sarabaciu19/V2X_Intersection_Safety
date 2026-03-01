@@ -59,24 +59,7 @@ class InfrastructureAgent:
         self.light            = "green"
         self.lights: dict     = {d: "red" for d in ("N", "S", "E", "V")}
         self._last_v2i_rec: dict = {}
-        self.has_semaphore    = True
-        # Nu apelam _update_lights_from_phase aici —
-        # reset() va fi apelat de engine cu flag-ul corect
-
-    def reset(self, has_semaphore: bool = True):
-        """Resetare la inceputul unui scenariu nou."""
-        self.has_semaphore    = has_semaphore
-        self.timer            = 0
-        self.emergency_active = False
-        self.emergency_id     = None
-        self._last_phase      = ""
-        self._last_v2i_rec    = {}
-        if has_semaphore:
-            self._update_lights_from_phase(_phase_at(0))
-        else:
-            for d in ("N", "S", "E", "V"):
-                self.lights[d] = "green"
-            self.light = "green"
+        self._update_lights_from_phase(_phase_at(0))
 
     def _update_lights_from_phase(self, phase: str):
         for d in ("N", "S", "E", "V"):
@@ -96,34 +79,6 @@ class InfrastructureAgent:
             k: v for k, v in _bus.get_all().items()
             if k != "INFRA" and isinstance(v, dict) and "x" in v
         }
-
-        if not self.has_semaphore:
-            # Intersectie fara semafor — toate directiile raman verzi
-            # Se calculeaza recomandari de viteza V2I bazate pe TTC si viteza relativa
-            green_for = list("NSEV")
-            approaching = self._detect_approaching(vehicles)
-            speed_rec   = self._compute_no_semaphore_speed_recommendations(vehicles)
-            state = {
-                "light":                 "green",
-                "lights":                {d: "green" for d in ("N", "S", "E", "V")},
-                "has_semaphore":         False,
-                "emergency":             False,
-                "emergency_vehicle":     None,
-                "approaching":           approaching,
-                "risk_alert":            len(approaching) >= 2,
-                "recommendation":        "no semaphore — V2V only",
-                "speed_recommendations": speed_rec,
-                "green_for":             green_for,
-                "red_for":               [],
-            }
-            _bus.publish("INFRA", {
-                "id": "INFRA", **state,
-                "x": self.intersection_x, "y": self.intersection_y,
-                "vx": 0, "vy": 0, "state": "normal",
-                "priority": "infrastructure", "timestamp": _time.time(),
-            })
-            return state
-
         emergency = self._detect_emergency(vehicles)
         if emergency:
             emerg_dir = emergency.get("direction", "N")
@@ -167,92 +122,7 @@ class InfrastructureAgent:
         return state
 
     # ------------------------------------------------------------------
-    def _compute_no_semaphore_speed_recommendations(self, vehicles: dict) -> dict:
-        """
-        Recomandari V2I la intersectii fara semafor.
-        Daca doua vehicule se apropie simultan, cel mai lent primeste
-        recomandare 'reduce_speed' / 'stop', cel mai rapid primeste 'proceed'.
-        Justificare V2I: infrastructura calculeaza TTC si le transmite vehiculelor.
-        """
-        DIST_ACTIVE = 320   # distanta maxima de activare recomandari (px)
-        recs = {}
-
-        # Filtreaza vehicule care se apropie activ de intersectie
-        active = {}
-        for vid, v in vehicles.items():
-            dist = self._dist(v)
-            if dist > DIST_ACTIVE:
-                continue
-            dx = v["x"] - self.intersection_x
-            dy = v["y"] - self.intersection_y
-            dot = dx * v.get("vx", 0) + dy * v.get("vy", 0)
-            if dot < 0:  # se apropie
-                active[vid] = {"v": v, "dist": dist}
-
-        if len(active) < 2:
-            # Singur — drum liber
-            for vid in active:
-                recs[vid] = {"type": "proceed", "advisory_speed": None, "reason": "drum liber"}
-            return recs
-
-        # Calculeaza TTC per vehicul
-        def ttc(entry):
-            spd = math.sqrt(entry["v"].get("vx", 0)**2 + entry["v"].get("vy", 0)**2)
-            return entry["dist"] / spd if spd > 0.1 else 999.0
-
-        sorted_by_ttc = sorted(active.items(), key=lambda kv: ttc(kv[1]))
-        fastest_id, fastest_entry = sorted_by_ttc[0]
-        fast_ttc = ttc(fastest_entry)
-        fast_speed = math.sqrt(
-            fastest_entry["v"].get("vx", 0)**2 + fastest_entry["v"].get("vy", 0)**2
-        )
-
-        for vid, entry in active.items():
-            v = entry["v"]
-            v_ttc = ttc(entry)
-            speed = math.sqrt(v.get("vx", 0)**2 + v.get("vy", 0)**2)
-
-            if vid == fastest_id:
-                # Cel mai rapid — prioritate prin viteza
-                recs[vid] = {
-                    "type": "proceed",
-                    "advisory_speed": None,
-                    "reason": f"V2I: viteza mare ({speed:.1f}px/tick) — prioritate acordata",
-                }
-                if self._last_v2i_rec.get(vid) != "proceed_fast":
-                    logger.log_v2i(vid, "proceed",
-                                   f"V2I: viteza mare → prioritate la intersectie (TTC={fast_ttc:.1f}s)")
-                    self._last_v2i_rec[vid] = "proceed_fast"
-            else:
-                # Vehicul mai lent — cedeaza prioritate
-                ttc_diff = v_ttc - fast_ttc
-                if ttc_diff < 2.0:
-                    rec_type = "stop"
-                    adv_speed = 0.0
-                    reason = f"V2I: vehicul rapid {fastest_id} (TTC={fast_ttc:.1f}s) → opreste si cedeaza"
-                    log_key = f"stop_{fastest_id}"
-                else:
-                    rec_type = "reduce_speed"
-                    adv_speed = max(1.0, fast_speed * 0.5)
-                    reason = f"V2I: vehicul rapid {fastest_id} (TTC={fast_ttc:.1f}s) → reduce viteza"
-                    log_key = f"reduce_{fastest_id}"
-
-                recs[vid] = {
-                    "type": rec_type,
-                    "advisory_speed": adv_speed,
-                    "reason": reason,
-                }
-                if self._last_v2i_rec.get(vid) != log_key:
-                    logger.log_v2i(vid, rec_type, reason, adv_speed if adv_speed else None)
-                    self._last_v2i_rec[vid] = log_key
-
-        # Vehicule departe — proceed
-        for vid, v in vehicles.items():
-            if vid not in active and vid not in recs:
-                recs[vid] = {"type": "proceed", "advisory_speed": None, "reason": "departe"}
-        return recs
-
-    # ------------------------------------------------------------------
+    def _compute_speed_recommendations(self, vehicles: dict) -> dict:
         """Recomandari V2I per vehicul. Urgentele sunt excluse."""
         ADVISORY_CAUTION  = 1.5
         ADVISORY_APPROACH = 2.5

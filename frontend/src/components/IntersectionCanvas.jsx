@@ -41,10 +41,10 @@ const IntersectionCanvas = ({
   vehicles = [],
   semaphore = {},
   risk = { risk: false, pair: null, ttc: 999, ttc_per_vehicle: {} },
+  collisions = [],
   agentsMemory = {},
   cooperation = true,
   onGrantClearance = null,
-  scenario = 'perpendicular',
   dimensions = { width: 800, height: 800 },
 }) => {
   const canvasRef = useRef(null);
@@ -97,15 +97,8 @@ const IntersectionCanvas = ({
     // 5. Zona centrala a intersectiei
     drawIntersectionBox(ctx);
 
-    // 5b. Cladire in colt stanga-sus (unghi mort) — doar la scenariul perpendicular
-    if (scenario === 'perpendicular') {
-      drawBlindSpotBuilding(ctx);
-    }
-
-    // 6. Semafor (indicator luminos) — ascuns la perpendicular (fara semafor)
-    if (scenario !== 'perpendicular') {
-      drawSemaphore(ctx, semaphore);
-    }
+    // 6. Semafor (indicator luminos)
+    drawSemaphore(ctx, semaphore);
 
     // 7. Vehicule
     vehicles.forEach(v => drawVehicle(ctx, v, !!onGrantClearance, now));
@@ -118,7 +111,12 @@ const IntersectionCanvas = ({
       drawRiskZone(ctx, risk, vehicles, now);
     }
 
-  }, [vehicles, semaphore, cooperation, risk, agentsMemory, onGrantClearance, scenario]);
+    // 10. Coliziuni (explosii animate)
+    if (collisions && collisions.length > 0) {
+      drawCollisions(ctx, collisions, vehicles, now);
+    }
+
+  }, [vehicles, semaphore, cooperation, risk, collisions, agentsMemory, onGrantClearance]);
 
   useEffect(() => {
     // Animate at 60fps for smooth pulsing and arrows
@@ -264,90 +262,6 @@ function drawIntersectionBox(ctx) {
   ctx.strokeRect(CX - HALF, CY - HALF, ROAD_W, ROAD_W);
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// Clădire colț stânga-sus — blochează vizibilitatea A↔B (unghi mort)
-// Plasată exact în colțul format de drumul N (x<CX-HALF) și drumul V (y<CY-HALF)
-// ─────────────────────────────────────────────────────────────────────
-function drawBlindSpotBuilding(ctx) {
-  // Dimensiuni cladire — umple tot coltul stanga-sus pana la marginea drumurilor
-  const bx = 0;           // stanga canvas
-  const by = 0;           // sus canvas
-  const bw = CX - HALF;   // pana la marginea drumului vertical  (=350)
-  const bh = CY - HALF;   // pana la marginea drumului orizontal (=350)
-
-  ctx.save();
-
-  // ── Corp principal cladire (beton gri inchis) ──
-  const grad = ctx.createLinearGradient(bx, by, bx + bw, by + bh);
-  grad.addColorStop(0, '#374151');
-  grad.addColorStop(1, '#1F2937');
-  ctx.fillStyle = grad;
-  ctx.fillRect(bx, by, bw, bh);
-
-  // ── Contur exterior ──
-  ctx.strokeStyle = '#4B5563';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(bx, by, bw, bh);
-
-  // ── Fatada (linii orizontale = etaje) ──
-  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
-  ctx.lineWidth = 1;
-  for (let iy = 40; iy < bh; iy += 40) {
-    ctx.beginPath();
-    ctx.moveTo(bx, by + iy);
-    ctx.lineTo(bx + bw, by + iy);
-    ctx.stroke();
-  }
-  // Linii verticale = sectiuni
-  for (let ix = 50; ix < bw; ix += 50) {
-    ctx.beginPath();
-    ctx.moveTo(bx + ix, by);
-    ctx.lineTo(bx + ix, by + bh);
-    ctx.stroke();
-  }
-
-  // ── Ferestre (grid de dreptunghiuri mici) ──
-  ctx.fillStyle = 'rgba(147,197,253,0.18)'; // albastru pal — lumina de birou
-  const winW = 14, winH = 10, gapX = 22, gapY = 20;
-  const startX = 18, startY = 20;
-  for (let wy = startY; wy + winH < bh - 10; wy += gapY) {
-    for (let wx = startX; wx + winW < bw - 10; wx += gapX) {
-      // Unele ferestre aprinse, altele nu
-      const lit = ((wx + wy) % 44) < 22;
-      ctx.fillStyle = lit ? 'rgba(147,197,253,0.22)' : 'rgba(55,65,81,0.5)';
-      ctx.fillRect(bx + wx, by + wy, winW, winH);
-    }
-  }
-
-  // ── Marginea spre intersectie — bordura ingrosata (simuleaza zidul) ──
-  ctx.strokeStyle = '#6B7280';
-  ctx.lineWidth = 4;
-  // Latura dreapta (spre drumul vertical N)
-  ctx.beginPath();
-  ctx.moveTo(bx + bw, by);
-  ctx.lineTo(bx + bw, by + bh);
-  ctx.stroke();
-  // Latura jos (spre drumul orizontal V)
-  ctx.beginPath();
-  ctx.moveTo(bx, by + bh);
-  ctx.lineTo(bx + bw, by + bh);
-  ctx.stroke();
-
-  // ── Indicatoare sageata de vizibilitate blocata ──
-  // Linie rosie diagonala care sugereaza linia de vedere blocata
-  ctx.setLineDash([6, 4]);
-  ctx.strokeStyle = 'rgba(239,68,68,0.45)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  // De la masina A (col de jos-dreapta al cladirii) spre masina B (col dreapta-sus)
-  ctx.moveTo(bx + bw - 20, by + bh - 10);
-  ctx.lineTo(bx + 10, by + 10);
-  ctx.stroke();
-  ctx.setLineDash([]);
-
-  ctx.restore();
-}
-
 // Pozitiile semafoarelor per directie
 // Fiecare semafor e plasat pe banda de intrare, langa linia de stop
 const LIGHT_POS = {
@@ -412,9 +326,17 @@ function drawSemaphore(ctx, semaphore) {
 function drawVehicle(ctx, v, manualMode = false, now) {
   if (v.x < -60 || v.x > 860 || v.y < -60 || v.y > 860) return;
 
-  const color = PRIORITY_COLOR[v.priority] || STATE_COLOR[v.state] || STATE_COLOR.moving;
+  const isNoV2X = v.v2x_enabled === false;
   const isEmergency = v.priority === 'emergency';
   const pulse = 0.5 + 0.5 * Math.sin(now / 150);
+
+  // Culoarea: non-V2X = gri-închis, altfel normal
+  let color;
+  if (isNoV2X) {
+    color = '#6B7280';  // gri închis
+  } else {
+    color = PRIORITY_COLOR[v.priority] || STATE_COLOR[v.state] || STATE_COLOR.moving;
+  }
 
   ctx.save();
   ctx.translate(v.x, v.y);
@@ -424,10 +346,17 @@ function drawVehicle(ctx, v, manualMode = false, now) {
   ctx.fillStyle = color;
   // Adăugăm un efect de pulsare doar pentru mașinile de urgență (Cerința 12)
   if (isEmergency) ctx.globalAlpha = 0.7 + 0.3 * Math.sin(now / 100);
+  // Non-V2X: contur roșu pulsant
+  if (isNoV2X) {
+    ctx.strokeStyle = '#EF4444';
+    ctx.lineWidth = 2.5;
+    ctx.globalAlpha = 0.8 + 0.2 * Math.sin(now / 200);
+  }
 
   ctx.beginPath();
   ctx.roundRect(-12, -18, 24, 36, 4);
   ctx.fill();
+  if (isNoV2X) ctx.stroke();
 
   // 2. Indicator direcție (un mic triunghi/vârf în față)
   ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
@@ -438,19 +367,40 @@ function drawVehicle(ctx, v, manualMode = false, now) {
   ctx.closePath();
   ctx.fill();
 
-  // 3. Indicator frână (linie discretă în spate dacă decelerează)
+  // 3. Indicator frână (linie discretă în spate dacă decelerază)
   if (v.state === 'braking' || v.state === 'yielding') {
     ctx.fillStyle = '#EF4444';
     ctx.fillRect(-10, 15, 20, 3);
   }
 
+  // 4. X roșu suprapus pentru non-V2X
+  if (isNoV2X) {
+    ctx.globalAlpha = 0.9;
+    ctx.strokeStyle = '#EF4444';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-8, -10);
+    ctx.lineTo(8, 10);
+    ctx.moveTo(8, -10);
+    ctx.lineTo(-8, 10);
+    ctx.stroke();
+  }
+
   ctx.restore();
 
-  // 4. Etichetă minimalistă (ID-ul lângă mașină)
+  // 5. Etichetă minimalistă (ID-ul lângă mașină)
   ctx.font = "bold 11px Inter, sans-serif";
-  ctx.fillStyle = "#FFFFFF";
+  ctx.fillStyle = isNoV2X ? '#F87171' : '#FFFFFF';
   ctx.textAlign = "center";
-  ctx.fillText(v.id, v.x, v.y + 4); // ID-ul chiar în mijlocul mașinii sau sub ea
+  ctx.fillText(v.id, v.x, v.y + 4);
+
+  // 6. Badge "⛔" deasupra vehiculului fără V2X
+  if (isNoV2X) {
+    ctx.font = "bold 9px Inter, sans-serif";
+    ctx.fillStyle = '#EF4444';
+    ctx.textAlign = "center";
+    ctx.fillText('⛔ FĂRĂ V2X', v.x, v.y - 26);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -650,7 +600,73 @@ function drawRiskZone(ctx, risk, vehicles, now) {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────
+// Collision Explosion Animation
+// ─────────────────────────────────────────────────────────────────────
+
+function drawCollisions(ctx, collisions, vehicles, now) {
+  collisions.forEach(col => {
+    const [id1, id2] = col.vehicles || [];
+    const v1 = vehicles.find(v => v.id === id1);
+    const v2 = vehicles.find(v => v.id === id2);
+    if (!v1 || !v2) return;
+
+    const cx = (v1.x + v2.x) / 2;
+    const cy = (v1.y + v2.y) / 2;
+    const pulse = 0.5 + 0.5 * Math.sin(now / 100);
+
+    // Cerc de explozie exterior
+    ctx.save();
+    ctx.globalAlpha = 0.15 + 0.25 * pulse;
+    ctx.fillStyle = '#EF4444';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 55 + 15 * pulse, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Cerc de explozie interior
+    ctx.save();
+    ctx.globalAlpha = 0.3 + 0.4 * pulse;
+    ctx.fillStyle = '#F97316';
+    ctx.beginPath();
+    ctx.arc(cx, cy, 30 + 10 * pulse, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Contur pulsant
+    ctx.save();
+    ctx.globalAlpha = 0.6 + 0.4 * pulse;
+    ctx.strokeStyle = '#EF4444';
+    ctx.lineWidth = 3;
+    ctx.setLineDash([8, 4]);
+    ctx.shadowColor = '#EF4444';
+    ctx.shadowBlur = 25;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 55 + 15 * pulse, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    // Text "💥 COLIZIUNE!"
+    ctx.save();
+    ctx.font = "bold 14px 'Inter', sans-serif";
+    const txt = '💥 COLIZIUNE!';
+    const tw = ctx.measureText(txt).width;
+    ctx.beginPath();
+    ctx.roundRect(cx - tw / 2 - 10, cy - 42, tw + 20, 26, 7);
+    ctx.fillStyle = 'rgba(153,27,27,0.95)';
+    ctx.fill();
+    ctx.strokeStyle = '#FCA5A5';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = '#FCA5A5';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = '#EF4444';
+    ctx.shadowBlur = 8;
+    ctx.fillText(txt, cx, cy - 29);
+    ctx.restore();
+  });
+}
 
 
 export default IntersectionCanvas;
-

@@ -16,65 +16,39 @@ FPS           = 30
 TICK_INTERVAL = 1.0 / FPS
 
 SCENARIOS = {
-    # ── Scenariu 1: Unghi mort — FĂRĂ SEMAFOR, prioritate prin viteză ────
-    # A (90 km/h, N→drept) vs B (50 km/h, V→drept).
-    # B vine din DREAPTA lui A → ar trebui să aibă prioritate (regula dreptei).
-    # DAR V2X calculează TTC: A vine cu viteză mare → ajunge primul → B cedează.
-    # Fără V2X: A nu vede B (clădire în colț) → coliziune garantată.
-    # Clădirea din colțul stânga-sus blochează vizibilitatea directă A↔B.
     'perpendicular': [
-        {'id': 'A', 'direction': 'N', 'intent': 'straight', 'speed_multiplier': 1.8},
-        {'id': 'B', 'direction': 'V', 'intent': 'straight', 'speed_multiplier': 1.0},
+        {'id': 'A', 'direction': 'N', 'intent': 'straight'},
+        {'id': 'B', 'direction': 'V', 'intent': 'straight'},
     ],
-
-    # ── Scenariu 2: 4 direcții, viteze diferite, intenții mixte ──────────
-    # A (N, drept, 60 km/h) vs D (E, stânga, 80 km/h) — conflict major.
-    # C (S, dreapta, 40 km/h) vs B (V, drept, 55 km/h) — conflict secundar.
     'multi': [
-        {'id': 'A', 'direction': 'N', 'intent': 'straight', 'speed_multiplier': 1.2},
-        {'id': 'B', 'direction': 'V', 'intent': 'straight', 'speed_multiplier': 1.1},
-        {'id': 'C', 'direction': 'S', 'intent': 'right',   'speed_multiplier': 0.8},
-        {'id': 'D', 'direction': 'E', 'intent': 'left',    'speed_multiplier': 1.6},
+        {'id': 'A', 'direction': 'N', 'intent': 'straight'},
+        {'id': 'B', 'direction': 'V', 'intent': 'straight'},
+        {'id': 'C', 'direction': 'S', 'intent': 'straight'},
+        {'id': 'D', 'direction': 'E', 'intent': 'straight'},
     ],
-
-    # ── Scenariu 3: Ambulanță cu prioritate absolută ───────────────────
-    # AMB (N, 75 km/h, urgență) forțează B și C să oprească chiar pe verde.
-    # B vireaza stânga (conflict cu AMB). C vireaza dreapta (iese repede).
     'emergency': [
         {'id': 'AMB', 'direction': 'N', 'intent': 'straight', 'priority': 'emergency', 'speed_multiplier': 1.5},
-        {'id': 'B',   'direction': 'V', 'intent': 'left',     'speed_multiplier': 1.0},
-        {'id': 'C',   'direction': 'E', 'intent': 'right',    'speed_multiplier': 0.9},
+        {'id': 'B',   'direction': 'V', 'intent': 'straight'},
+        {'id': 'C',   'direction': 'E', 'intent': 'straight'},
     ],
-
-    # ── Scenariu 4: Intenții mixte, toți virează ──────────────────────
-    # A (N, drept) vs B (V, stânga) — conflict clasic viraj stânga.
-    # C (S, stânga) vs B (V) — al doilea conflict simultan.
-    # D (E, dreapta, 65 km/h) iese repede dar taie calea lui A.
     'intents': [
-        {'id': 'A', 'direction': 'N', 'intent': 'straight', 'speed_multiplier': 1.0},
-        {'id': 'B', 'direction': 'V', 'intent': 'left',     'speed_multiplier': 1.1},
-        {'id': 'C', 'direction': 'S', 'intent': 'left',     'speed_multiplier': 0.9},
-        {'id': 'D', 'direction': 'E', 'intent': 'right',    'speed_multiplier': 1.3},
+        {'id': 'A', 'direction': 'N', 'intent': 'straight'},
+        {'id': 'B', 'direction': 'V', 'intent': 'left'},
+        {'id': 'C', 'direction': 'S', 'intent': 'right'},
     ],
-
-    # ── Scenariu 5: Trafic intens ──────────────────────────────────────
-    # Două conflicte simultane + ambulanță + vehicul lent care blochează.
     'traffic_jam': [
-        {'id': 'A',   'direction': 'N', 'intent': 'straight', 'speed_multiplier': 1.0},
-        {'id': 'B',   'direction': 'V', 'intent': 'left',     'speed_multiplier': 1.3},
-        {'id': 'C',   'direction': 'S', 'intent': 'right',    'speed_multiplier': 0.7},
-        {'id': 'D',   'direction': 'E', 'intent': 'left',     'speed_multiplier': 1.5},
-        {'id': 'E',   'direction': 'N', 'intent': 'right',    'speed_multiplier': 0.6},
-        {'id': 'AMB', 'direction': 'S', 'intent': 'straight', 'priority': 'emergency', 'speed_multiplier': 1.8},
+        {'id': 'A', 'direction': 'N', 'intent': 'straight'},
+        {'id': 'B', 'direction': 'V', 'intent': 'straight'},
+        {'id': 'C', 'direction': 'S', 'intent': 'left'},
+        {'id': 'D', 'direction': 'E', 'intent': 'right'},
+        {'id': 'E', 'direction': 'N', 'intent': 'right', 'speed_multiplier': 0.7},
+        {'id': 'AMB', 'direction': 'S', 'intent': 'straight', 'priority': 'emergency', 'speed_multiplier': 1.4},
     ],
     'no_v2x': [
         {'id': 'A', 'direction': 'N', 'intent': 'straight'},
         {'id': 'BLIND', 'direction': 'V', 'intent': 'straight', 'v2x_enabled': False, 'speed_multiplier': 1.2},
     ],
 }
-
-# Scenariile fara semafor — prioritatea se decide exclusiv prin V2V (TTC + viteza)
-NO_SEMAPHORE_SCENARIOS = {'perpendicular'}
 
 # Scenariul custom editabil de utilizator
 # NOTE: stocat ca atribut pe engine instance, nu ca global,
@@ -102,14 +76,12 @@ class SimulationEngine:
     # ── Configurare ────────────────────────────────────────────────────
 
     def _load_scenario(self, name: str):
-        has_semaphore = name not in NO_SEMAPHORE_SCENARIOS
         if name == 'custom':
             defs = list(self._custom_scenario)
         else:
             defs = SCENARIOS.get(name, SCENARIOS['perpendicular'])
         v2x_bus.clear()
-        # Nu golim logger-ul la fiecare reset — pastreaza ultimele decizii vizibile
-        # logger.clear()  # comentat intentionat
+        logger.clear()
         self.central.reset()
         self.semaphore           = InfrastructureAgent()
         self.tick_count          = 0
@@ -158,12 +130,6 @@ class SimulationEngine:
             
         logger.log_info(f'Scenariu: {name} (cooperation={self.cooperation}) încărcat.')
         self._update_state()
-
-        # Semaforul este resetat in functie de scenariul incarcat
-        self.semaphore.reset(has_semaphore)
-
-        # CentralSystem necesita informatii despre semafor
-        self.central.set_semaphore_state(has_semaphore)
 
     def reset(self, scenario: str = None):
         logger.log_info(f"RESET cerut pentru: {scenario} (curent: {self.scenario_name})")
@@ -365,17 +331,7 @@ class SimulationEngine:
         really_done = self.vehicles and all(
             v.state == 'done' for v in self.vehicles
         )
-        # Reincepe scenariul cand PRIMUL vehicul a iesit de pe ecran
-        # DAR numai daca nu mai sunt vehicule in waiting sau crossing
-        # (nu intrerupem scenariul in timp ce un vehicul asteapta clearance)
-        active_waiting = any(v.state in ('waiting', 'crossing') for v in self.vehicles)
-        any_done = (
-            self.scenario_name != 'custom'
-            and self.vehicles
-            and not active_waiting
-            and any(v.state == 'done' and v.is_off_screen() for v in self.vehicles)
-        )
-        if all_done or any_done:
+        if really_done:
             if self.scenario_name == 'custom':
                 self._load_scenario('custom')
             else:

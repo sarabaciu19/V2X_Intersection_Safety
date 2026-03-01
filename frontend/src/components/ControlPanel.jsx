@@ -7,6 +7,7 @@ const SCENARIOS = [
   { id: 'emergency', icon: '🚑', name: 'Urgență', desc: 'Ambulanță cu prioritate' },
   { id: 'intents', icon: '↰', name: 'Intenții mixte', desc: 'Straight, stânga, dreapta' },
   { id: 'traffic_jam', icon: '🚧', name: 'Traffic Jam', desc: '6 vehicule — trafic intens' },
+  { id: 'no_v2x', icon: '⛔', name: 'Fără V2X', desc: 'O mașină fără V2X cauzează accident' },
   { id: 'custom', icon: '🛠', name: 'Custom', desc: 'Configurează tu vehiculele' },
 ];
 
