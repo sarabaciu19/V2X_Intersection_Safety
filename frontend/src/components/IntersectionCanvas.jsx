@@ -401,6 +401,7 @@ function drawVehicle(ctx, v, manualMode = false, now) {
 
   const isNoV2X = v.v2x_enabled === false;
   const isEmergency = v.priority === 'emergency';
+  const isAEB = v.aeb_active === true;
   const pulse = 0.5 + 0.5 * Math.sin(now / 150);
 
   // Culoarea: non-V2X = gri-închis, altfel normal
@@ -409,6 +410,22 @@ function drawVehicle(ctx, v, manualMode = false, now) {
     color = '#6B7280';  // gri închis
   } else {
     color = PRIORITY_COLOR[v.priority] || STATE_COLOR[v.state] || STATE_COLOR.moving;
+  }
+
+  // ── AEB glow exterior (portocaliu pulsant) ──────────────────────────
+  if (isAEB) {
+    const aebPulse = 0.5 + 0.5 * Math.sin(now / 80);
+    ctx.save();
+    ctx.translate(v.x, v.y);
+    ctx.rotate(getVehicleHeading(v));
+    ctx.shadowColor = '#F97316';
+    ctx.shadowBlur = 20 + aebPulse * 18;
+    ctx.strokeStyle = `rgba(249, 115, 22, ${0.6 + aebPulse * 0.4})`;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.roundRect(-15, -21, 30, 42, 6);
+    ctx.stroke();
+    ctx.restore();
   }
 
   ctx.save();
@@ -421,8 +438,8 @@ function drawVehicle(ctx, v, manualMode = false, now) {
   if (isEmergency) ctx.globalAlpha = 0.7 + 0.3 * Math.sin(now / 100);
   // Non-V2X: contur roșu pulsant
   if (isNoV2X) {
-    ctx.strokeStyle = '#EF4444';
-    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = isAEB ? '#F97316' : '#EF4444';
+    ctx.lineWidth = isAEB ? 3.5 : 2.5;
     ctx.globalAlpha = 0.8 + 0.2 * Math.sin(now / 200);
   }
 
@@ -441,15 +458,15 @@ function drawVehicle(ctx, v, manualMode = false, now) {
   ctx.fill();
 
   // 3. Indicator frână (linie discretă în spate dacă decelerază)
-  if (v.state === 'braking' || v.state === 'yielding') {
-    ctx.fillStyle = '#EF4444';
+  if (v.state === 'braking' || v.state === 'yielding' || isAEB) {
+    ctx.fillStyle = isAEB ? '#F97316' : '#EF4444';
     ctx.fillRect(-10, 15, 20, 3);
   }
 
   // 4. X roșu suprapus pentru non-V2X
   if (isNoV2X) {
     ctx.globalAlpha = 0.9;
-    ctx.strokeStyle = '#EF4444';
+    ctx.strokeStyle = isAEB ? '#F97316' : '#EF4444';
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(-8, -10);
@@ -463,11 +480,21 @@ function drawVehicle(ctx, v, manualMode = false, now) {
 
   // 5. Etichetă minimalistă (ID-ul lângă mașină)
   ctx.font = "bold 11px Inter, sans-serif";
-  ctx.fillStyle = isNoV2X ? '#F87171' : '#FFFFFF';
+  ctx.fillStyle = isAEB ? '#F97316' : (isNoV2X ? '#F87171' : '#FFFFFF');
   ctx.textAlign = "center";
   ctx.fillText(v.id, v.x, v.y + 4);
 
-  if (isNoV2X) {
+  if (isAEB) {
+    // AEB badge — portocaliu pulsant, deasupra vehiculului
+    const aebAlpha = 0.75 + 0.25 * Math.sin(now / 80);
+    ctx.font = "bold 10px Inter, sans-serif";
+    ctx.fillStyle = `rgba(249, 115, 22, ${aebAlpha})`;
+    ctx.textAlign = "center";
+    ctx.fillText('⚠ AEB!', v.x, v.y - 28);
+    ctx.font = "bold 8px Inter, sans-serif";
+    ctx.fillStyle = `rgba(253, 186, 116, ${aebAlpha})`;
+    ctx.fillText('FĂRĂ V2X', v.x, v.y - 18);
+  } else if (isNoV2X) {
     ctx.font = "bold 9px Inter, sans-serif";
     ctx.fillStyle = '#EF4444';
     ctx.textAlign = "center";

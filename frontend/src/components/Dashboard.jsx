@@ -204,6 +204,11 @@ const Dashboard = ({ vehicles = [], semaphore = {}, risk = null, cooperation = t
                       ⛔ FĂRĂ V2X
                     </span>
                   )}
+                  {v.aeb_active === true && (
+                    <span style={{ ...s.pill, background: '#f9731618', color: '#f97316', border: '1px solid #f97316', fontWeight: 900, animation: 'pulse 0.6s infinite alternate' }}>
+                      🛑 AEB!
+                    </span>
+                  )}
                 </div>
                 <span style={{ ...s.pill, background: '#e6ddd0', color: '#a08060', fontSize: 10 }}>
                   {v.clearance ? '🟢 clearance' : '🔴 stop'}

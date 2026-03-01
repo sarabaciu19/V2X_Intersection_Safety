@@ -93,6 +93,7 @@ class Vehicle:
         self.spawn_tick = spawn_tick
         self.no_stop   = no_stop
         self.agent_yield = False   # setat de agentul LLM — opreste vehiculul inainte de intersectie
+        self.aeb_active  = False   # True = AEB fallback activ (radar local, frana violenta/tarzie)
         self.state     = 'moving'   # moving | waiting | crossing | crashed | done
         sx, sy    = SPAWN[direction]
         vx0, vy0  = VELOCITY[direction]
@@ -248,6 +249,10 @@ class Vehicle:
         # Decizia LLM: agentul a decis YIELD — opreste inainte de intersectie
         if self.agent_yield and not self._is_inside_intersection():
             return 0.0
+
+        # AEB Fallback: radar local detectat obstacol — frana de urgenta violenta si tarzie
+        if getattr(self, 'aeb_active', False):
+            return 0.0  # oprire imediata, indiferent de pozitie
 
         factor = 1.0
 
@@ -409,6 +414,7 @@ class Vehicle:
         self.state     = 'moving'
         self.clearance = False
         self.agent_yield = False
+        self.aeb_active  = False
         self.wait_line = self._calc_wait_line()
         self._exit_dir = EXIT_DIRECTION.get((self.direction, self.intent), self.direction)
         self._turned   = False
@@ -425,6 +431,7 @@ class Vehicle:
             'priority':   self.priority,
             'v2x_enabled': self.v2x_enabled,
             'no_stop':    self.no_stop,
+            'aeb_active': self.aeb_active,
             'state':      self.state,
             'clearance':  self.clearance,
             'x':          round(self.x, 1),
