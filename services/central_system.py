@@ -65,7 +65,9 @@ class CentralSystem:
                 pass
 
         waiting  = [v for v in vehicles if v.state == 'waiting' and v.v2x_enabled]
-        crossing = [v for v in vehicles if v.state == 'crossing']
+        # Doar vehiculele crossing care sunt INCA in cutia intersectiei blocheaza altii
+        # Odata ce au iesit fizic din intersectie, nu mai blocheaza clearance-ul
+        crossing = [v for v in vehicles if v.state == 'crossing' and v._is_inside_intersection()]
         self._crossing = {v.id for v in crossing}
 
         if not waiting:
