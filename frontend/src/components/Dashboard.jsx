@@ -11,9 +11,10 @@ const STATE_COLOR = {
 const INTENT_LABEL = { straight: '↑ Înainte', left: '← Stânga', right: '→ Dreapta' };
 const DIR_LABEL = { N: '↓ Nord→Sud', S: '↑ Sud→Nord', E: '← Est→Vest', V: '→ Vest→Est' };
 
-const Dashboard = ({ vehicles = [], semaphore = {}, risk = null, cooperation = true, agentsMemory = {}, collisions = [], onGrantClearance = null }) => {
+const Dashboard = ({ vehicles = [], semaphore = {}, risk = null, cooperation = true, agentsMemory = {}, collisions = [], onGrantClearance = null, scenario = 'perpendicular' }) => {
   const waiting = vehicles.filter(v => v.state === 'waiting').length;
   const crossing = vehicles.filter(v => v.state === 'crossing').length;
+  const hasSemaphore = scenario !== 'perpendicular' && scenario !== 'no_v2x';
 
   const hasRisk = risk?.risk === true;
   const isCritical = hasRisk && (risk.ttc ?? 999) < 1.5;
@@ -132,8 +133,8 @@ const Dashboard = ({ vehicles = [], semaphore = {}, risk = null, cooperation = t
           fontWeight: 600, textAlign: 'center'
         }}>
           {hasRisk
-            ? `⚠️ Risc activ detectat`
-            : '✓ Trafic normal · Niciun risc detectat'}
+            ? `Risc detectat`
+            : 'Niciun risc detectat'}
         </div>
       </section>
 
@@ -171,6 +172,8 @@ const Dashboard = ({ vehicles = [], semaphore = {}, risk = null, cooperation = t
           ))}
         </section>
       )}
+      {/* ── Semafoare V2I ── */}
+      {hasSemaphore ? (
       <section style={s.section}>
         <div style={s.label}>
           Semafoare V2I
@@ -211,12 +214,32 @@ const Dashboard = ({ vehicles = [], semaphore = {}, risk = null, cooperation = t
             );
           })}
         </div>
-
-        {/* Legenda faze */}
         <div style={{ fontSize: 10, color: '#a08060', marginTop: 2 }}>
           Faza A: N/S verde · Faza B: E/V verde · Galben = tranziție
         </div>
       </section>
+      ) : (
+      <section style={{
+        ...s.section,
+        background: scenario === 'no_v2x' ? 'rgba(153,27,27,0.08)' : 'rgba(30,41,59,0.08)',
+        border: `1px solid ${scenario === 'no_v2x' ? '#dc262644' : '#33415544'}`,
+        borderRadius: 8, padding: '10px 12px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 18 }}>{scenario === 'no_v2x' ? '⛔' : '🚫'}</span>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: scenario === 'no_v2x' ? '#dc2626' : '#94a3b8' }}>
+              {scenario === 'no_v2x' ? 'FĂRĂ V2X — Accident inevitabil' : 'Fără semafor'}
+            </div>
+            <div style={{ fontSize: 10, color: '#a08060', marginTop: 2 }}>
+              {scenario === 'no_v2x'
+                ? 'B ignoră toate mesajele V2X. Clădirea blochează vizibilitatea. Coliziune garantată.'
+                : 'Prioritatea se decide exclusiv prin viteză (TTC). B cedează lui A.'}
+            </div>
+          </div>
+        </div>
+      </section>
+      )}
 
       {/* Sumar */}
       <section style={s.section}>

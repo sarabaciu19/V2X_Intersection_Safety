@@ -144,6 +144,7 @@ function App() {
             cooperation={liveCooperation}
             agentsMemory={agentsMemory}
             collisions={collisions}
+            scenario={currentScenario}
             onGrantClearance={!liveCooperation ? grantClearance : null}
           />
         </aside>

@@ -287,8 +287,9 @@ class Vehicle:
                 if v_front > 0.1: # Doar daca cel din fata se misca, incercam speed matching
                     factor = min(factor, max(MIN_SPEED_FACTOR, v_factor))
 
-        # Senzor intersecție: dacă cineva e deja în mijloc, încetinește sau oprește înainte să intre
-        if all_vehicles and not self._is_inside_intersection():
+        # Senzor intersectie: daca cineva e deja in mijloc, incetineste inainte sa intre
+        # NUMAI pentru vehicule cu V2X — cele fara V2X nu au senzori
+        if all_vehicles and not self._is_inside_intersection() and self.v2x_enabled:
             for other in all_vehicles:
                 if other.id == self.id: continue
                 if other.state != 'done' and other._is_inside_intersection():
