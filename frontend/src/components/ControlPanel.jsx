@@ -137,14 +137,8 @@ const ControlPanel = ({
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ color: '#2c1e0f', fontWeight: 700, fontSize: 12 }}>{sc.name}</span>
-                      <span style={{
-                        fontSize: 8, fontWeight: 700, padding: '1px 5px', borderRadius: 4,
-                        background: sc.semaphore ? '#16a34a22' : '#f59e0b22',
-                        color: sc.semaphore ? '#166534' : '#92400e',
-                        border: `1px solid ${sc.semaphore ? '#16a34a44' : '#f59e0b44'}`,
-                      }}>
-                        {sc.semaphore ? '🚦' : '🚧'}
-                      </span>
+
+
                     </div>
                     <div style={{ color: '#a08060', fontSize: 10 }}>{sc.desc}</div>
                   </div>

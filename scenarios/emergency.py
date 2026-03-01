@@ -1,27 +1,16 @@
-from scenarios.scenario_base import ScenarioBase, VehicleDef
+"""
+Scenariu — Vehicul de urgenta
+AMB (ambulanta/urgenta) vine din Nord cu viteza mare.
+B vine din Vest, C vine din Est — ambele cedeaza vehiculului de urgenta.
+Cu V2X: traficul normal cedeaza automat la detectia prioritatii de urgenta.
+"""
 
-SCENARIO = ScenarioBase(
-    name="emergency",
-    description="Vehicul de urgenta vine din Vest si vireaza spre Sud. Vehiculul A vine din Nord si cedeaza automat.",
-    vehicles=[
-        # URGENTA: vine din Vest (x=50, y=400), merge spre Est (vx=+6)
-        # Va vira spre Sud in intersecție (logica in agent)
-        VehicleDef(
-            id="URGENTA",
-            x=50,
-            y=400,
-            vx=6,
-            vy=0,
-            priority="emergency"
-        ),
+NAME = "emergency"
+DESCRIPTION = "Vehicul de urgenta — traficul normal cedeaza automat cu V2X."
+NO_SEMAPHORE = False
 
-        # Vehicul normal A: vine din Nord (x=400, y=50), merge spre Sud (vy=+3)
-        VehicleDef(
-            id="A",
-            x=400,
-            y=50,
-            vx=0,
-            vy=3
-        ),
-    ],
-)
+VEHICLES = [
+    {'id': 'AMB', 'direction': 'N', 'intent': 'straight', 'priority': 'emergency', 'speed_multiplier': 1.5},
+    {'id': 'B',   'direction': 'V', 'intent': 'straight'},
+    {'id': 'C',   'direction': 'E', 'intent': 'straight'},
+]

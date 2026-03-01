@@ -11,61 +11,11 @@ from services.central_system import CentralSystem
 from services.infrastructure import InfrastructureAgent
 from services.collision import time_to_intersection, TTC_BRAKE, TTC_YIELD, check_physical_collision
 from utils import logger
+from scenarios import SCENARIOS, NO_SEMAPHORE_SCENARIOS
 
 FPS           = 30
 TICK_INTERVAL = 1.0 / FPS
 
-SCENARIOS = {
-    # ── Scenariu 1: Unghi mort — FĂRĂ SEMAFOR, prioritate prin viteză ────
-    # A (90 km/h, N→drept, no_stop) vs B (50 km/h, V→drept).
-    # B vine din DREAPTA lui A → prioritate legala prin regula dreptei.
-    # DAR V2X calculeaza TTC: A vine cu viteza mare → ajunge primul → B cedeaza.
-    # A nu se opreste deloc — trece prin intersectie fara a incetini.
-    # B primeste mesaj V2X: "cedeaza prioritate — vehicul rapid se apropie".
-    # Fara V2X: A nu vede B (cladire in colt) → coliziune garantata.
-    'perpendicular': [
-        {'id': 'A', 'direction': 'N', 'intent': 'straight', 'speed_multiplier': 1.8, 'no_stop': True},
-        {'id': 'B', 'direction': 'V', 'intent': 'straight', 'speed_multiplier': 1.0},
-    ],
-    'multi': [
-        {'id': 'A', 'direction': 'N', 'intent': 'straight'},
-        {'id': 'B', 'direction': 'V', 'intent': 'straight'},
-        {'id': 'C', 'direction': 'S', 'intent': 'straight'},
-        {'id': 'D', 'direction': 'E', 'intent': 'straight'},
-    ],
-    'emergency': [
-        {'id': 'AMB', 'direction': 'N', 'intent': 'straight', 'priority': 'emergency', 'speed_multiplier': 1.5},
-        {'id': 'B',   'direction': 'V', 'intent': 'straight'},
-        {'id': 'C',   'direction': 'E', 'intent': 'straight'},
-    ],
-    'intents': [
-        {'id': 'A', 'direction': 'N', 'intent': 'straight'},
-        {'id': 'B', 'direction': 'V', 'intent': 'left'},
-        {'id': 'C', 'direction': 'S', 'intent': 'right'},
-    ],
-    'traffic_jam': [
-        {'id': 'A', 'direction': 'N', 'intent': 'straight'},
-        {'id': 'B', 'direction': 'V', 'intent': 'straight'},
-        {'id': 'C', 'direction': 'S', 'intent': 'left'},
-        {'id': 'D', 'direction': 'E', 'intent': 'right'},
-        {'id': 'E', 'direction': 'N', 'intent': 'right', 'speed_multiplier': 0.7},
-        {'id': 'AMB', 'direction': 'S', 'intent': 'straight', 'priority': 'emergency', 'speed_multiplier': 1.4, 'no_stop': True},
-    ],
-    # ── Scenariu "Fără V2X": ambele masini cu aceeasi viteza, fara semafor ──
-    # A (50 km/h, N→drept, no_stop) si B (50 km/h, V→drept, no_stop, FARA V2X).
-    # spawn_offset_x=-50 pe B => distanta identica pana la punctul de intersectie
-    # → ajung simultan → coliziune garantata.
-    # B nu are V2X: nu primeste mesajul "cedeaza prioritate" trimis de sistemul V2X.
-    # Fara V2X + cladire in colt = B nu vede A, nu primeste semnal → ACCIDENT.
-    # In scenariul perpendicular (cu V2X): B ar fi cedat si coliziunea ar fi evitata.
-    'no_v2x': [
-        {'id': 'A', 'direction': 'N', 'intent': 'straight', 'speed_multiplier': 1.0, 'no_stop': True},
-        {'id': 'B', 'direction': 'V', 'intent': 'straight', 'speed_multiplier': 1.0, 'no_stop': True, 'v2x_enabled': False, 'spawn_x_offset': -50},
-    ],
-}
-
-# Scenariile fara semafor — prioritatea se decide exclusiv prin TTC (viteza)
-NO_SEMAPHORE_SCENARIOS = {'perpendicular', 'no_v2x'}
 
 # Scenariul custom editabil de utilizator
 # NOTE: stocat ca atribut pe engine instance, nu ca global,

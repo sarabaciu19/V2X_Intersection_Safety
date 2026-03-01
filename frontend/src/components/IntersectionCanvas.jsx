@@ -467,12 +467,11 @@ function drawVehicle(ctx, v, manualMode = false, now) {
   ctx.textAlign = "center";
   ctx.fillText(v.id, v.x, v.y + 4);
 
-  // 6. Badge "⛔" deasupra vehiculului fără V2X
   if (isNoV2X) {
     ctx.font = "bold 9px Inter, sans-serif";
     ctx.fillStyle = '#EF4444';
     ctx.textAlign = "center";
-    ctx.fillText('⛔ FĂRĂ V2X', v.x, v.y - 26);
+    ctx.fillText('FĂRĂ V2X', v.x, v.y - 26);
   }
 }
 

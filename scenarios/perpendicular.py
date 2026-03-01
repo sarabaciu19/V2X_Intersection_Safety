@@ -1,14 +1,16 @@
 """
-Scenariu 1 — Coliziune Perpendiculara
-A vine din Nord (x=400, y=50) cu vy=4
-B vine din Vest (x=50, y=400) cu vx=4
+Scenariu 1 — Unghi mort (Perpendicular)
+A (90 km/h, N→drept, no_stop) vs B (50 km/h, V→drept).
+B vine din DREAPTA lui A → prioritate legala prin regula dreptei.
+V2X calculeaza TTC: A vine cu viteza mare → ajunge primul → B cedeaza.
+Fara V2X: A nu vede B (cladire in colt) → coliziune garantata.
 """
-from scenarios.scenario_base import ScenarioBase, VehicleDef
-SCENARIO = ScenarioBase(
-    name="perpendicular",
-    description="Unghi mort — A nu vede B. Fara V2X → coliziune. Cu V2X → B frana.",
-    vehicles=[
-        VehicleDef(id="A", x=400, y=50,  vx=0, vy=4),
-        VehicleDef(id="B", x=50,  y=400, vx=4, vy=0),
-    ],
-)
+
+NAME = "perpendicular"
+DESCRIPTION = "Unghi mort — A nu vede B. Fara V2X → coliziune. Cu V2X → B cedeaza."
+NO_SEMAPHORE = True
+
+VEHICLES = [
+    {'id': 'A', 'direction': 'N', 'intent': 'straight', 'speed_multiplier': 1.8, 'no_stop': True},
+    {'id': 'B', 'direction': 'V', 'intent': 'straight', 'speed_multiplier': 1.0},
+]
