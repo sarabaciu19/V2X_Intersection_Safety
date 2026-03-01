@@ -103,8 +103,8 @@ const IntersectionCanvas = ({
       drawBlindSpotBuilding(ctx, scenario);
     }
 
-    // 6. Semafor — ASCUNS la perpendicular si no_v2x (intersectie fara semafor)
-    if (scenario !== 'perpendicular' && scenario !== 'no_v2x') {
+    // 6. Semafor — ASCUNS la intersecții nesemaforizate
+    if (semaphore?.has_semaphore !== false) {
       drawSemaphore(ctx, semaphore);
     }
 

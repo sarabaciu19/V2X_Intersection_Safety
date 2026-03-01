@@ -181,6 +181,8 @@ class SimulationEngine:
         }
         
         sem_state = self.semaphore.get_state() if hasattr(self.semaphore, 'get_state') else {}
+        # Adaug flag-ul has_semaphore in sem_state pentru frontend
+        sem_state['has_semaphore'] = self.semaphore.has_semaphore
 
         self._last_state = {
             'tick':            self.tick_count,
@@ -437,7 +439,11 @@ class SimulationEngine:
         self._update_state()
 
     def get_state(self) -> dict:
-        return self._last_state or {}
+        st = self._last_state or {}
+        if st:
+            st['paused'] = self.paused
+            st['cooperation'] = self.cooperation
+        return st
 
 
 # ── Zone de risc ────────────────────────────────────────────────────────────

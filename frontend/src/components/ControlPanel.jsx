@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import CustomScenarioEditor from './CustomScenarioEditor';
 
 const SCENARIOS = [
-  { id: 'perpendicular', icon: '⊥', name: 'Perpendicular', desc: 'N vs V — conflict direct' },
-  { id: 'multi', icon: '✦', name: '4 Direcții', desc: 'N, S, E, V simultan' },
-  { id: 'emergency', icon: '🚑', name: 'Urgență', desc: 'Ambulanță cu prioritate' },
-  { id: 'intents', icon: '↰', name: 'Intenții mixte', desc: 'Straight, stânga, dreapta' },
-  { id: 'traffic_jam', icon: '🚧', name: 'Traffic Jam', desc: '6 vehicule — trafic intens' },
-  { id: 'no_v2x', icon: '⛔', name: 'Fără V2X', desc: 'O mașină fără V2X cauzează accident' },
-  { id: 'custom', icon: '🛠', name: 'Custom', desc: 'Configurează tu vehiculele' },
+  { id: 'perpendicular', icon: '⊥', name: 'Perpendicular', desc: 'N vs V — conflict direct', semaphore: false },
+  { id: 'multi', icon: '✦', name: '4 Direcții', desc: 'N, S, E, V simultan', semaphore: true },
+  { id: 'emergency', icon: '🚑', name: 'Urgență', desc: 'Ambulanță cu prioritate', semaphore: true },
+  { id: 'intents', icon: '↰', name: 'Intenții mixte', desc: 'Straight, stânga, dreapta', semaphore: true },
+  { id: 'traffic_jam', icon: '🚧', name: 'Traffic Jam', desc: '6 vehicule — trafic intens', semaphore: true },
+  { id: 'no_v2x', icon: '⛔', name: 'Fără V2X', desc: 'O mașină fără V2X cauzează accident', semaphore: false },
+  { id: 'custom', icon: '🛠', name: 'Custom', desc: 'Configurează tu vehiculele', semaphore: true },
 ];
 
 const TABS = ['control', 'scenarii', 'custom'];
@@ -132,11 +132,21 @@ const ControlPanel = ({
                     boxShadow: currentScenario === sc.id ? '0 0 8px rgba(124,92,56,0.25)' : 'none',
                   }}>
                   <span style={{ fontSize: 24 }}>{sc.icon}</span>
-                  <div>
-                    <div style={{ color: '#2c1e0f', fontWeight: 700, fontSize: 12 }}>{sc.name}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ color: '#2c1e0f', fontWeight: 700, fontSize: 12 }}>{sc.name}</span>
+                      <span style={{
+                        fontSize: 8, fontWeight: 700, padding: '1px 5px', borderRadius: 4,
+                        background: sc.semaphore ? '#16a34a22' : '#f59e0b22',
+                        color: sc.semaphore ? '#166534' : '#92400e',
+                        border: `1px solid ${sc.semaphore ? '#16a34a44' : '#f59e0b44'}`,
+                      }}>
+                        {sc.semaphore ? '🚦' : '🚧'}
+                      </span>
+                    </div>
                     <div style={{ color: '#a08060', fontSize: 10 }}>{sc.desc}</div>
                   </div>
-                  {currentScenario === sc.id && <span style={{ color: '#7c5c38', marginLeft: 'auto', fontSize: 16 }}>●</span>}
+                  {currentScenario === sc.id && <span style={{ color: '#7c5c38', fontSize: 16 }}>●</span>}
                 </div>
               ))}
             </div>

@@ -255,6 +255,7 @@ class InfrastructureAgent:
         return {
             "light":            self.light,
             "lights":           dict(self.lights),
+            "has_semaphore":    self.has_semaphore,
             "timer":            self.timer,
             "emergency_active": self.emergency_active,
             "emergency_id":     self.emergency_id,
