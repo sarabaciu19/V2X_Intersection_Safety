@@ -46,6 +46,9 @@ class CentralSystem:
         folosesc benzi paralele separate → fara conflict.
         Orice alta combinatie (strazi diferite) → conflict potential.
         """
+        # Aceeasi directie — in coloana, fara conflict de traiectorie
+        if v1.direction == v2.direction:
+            return False
         dirs = frozenset({v1.direction, v2.direction})
         if dirs in SAME_ROAD:
             # Aceeasi strada, benzi opuse — pot trece simultan

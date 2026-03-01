@@ -252,6 +252,13 @@ class Vehicle:
         for other in vehicles_same_dir:
             if other.id == self.id:
                 continue
+            # Ignora vehiculele care au virat deja — nu mai sunt pe acelasi traseu
+            if getattr(other, '_turned', False):
+                continue
+            # Ignora vehiculele care au depasit deja intersectia — cel din spate
+            # se gestioneaza singur prin logica de stop-line
+            if other.is_past_intersection():
+                continue
             d = self.dist_ahead(other)
             if d < closest_dist:
                 closest_dist = d

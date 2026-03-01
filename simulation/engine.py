@@ -49,7 +49,7 @@ SCENARIOS = {
         {'id': 'C', 'direction': 'S', 'intent': 'left'},
         {'id': 'D', 'direction': 'E', 'intent': 'right'},
         {'id': 'E', 'direction': 'N', 'intent': 'right', 'speed_multiplier': 0.7},
-        {'id': 'AMB', 'direction': 'S', 'intent': 'straight', 'priority': 'emergency', 'speed_multiplier': 1.4},
+        {'id': 'AMB', 'direction': 'S', 'intent': 'straight', 'priority': 'emergency', 'speed_multiplier': 1.4, 'no_stop': True},
     ],
     'no_v2x': [
         {'id': 'A', 'direction': 'N', 'intent': 'straight'},
