@@ -59,7 +59,23 @@ class InfrastructureAgent:
         self.light            = "green"
         self.lights: dict     = {d: "red" for d in ("N", "S", "E", "V")}
         self._last_v2i_rec: dict = {}
+        self.has_semaphore    = True
         self._update_lights_from_phase(_phase_at(0))
+
+    def reset(self, has_semaphore: bool = True):
+        """Resetare la inceputul unui scenariu nou."""
+        self.has_semaphore    = has_semaphore
+        self.timer            = 0
+        self.emergency_active = False
+        self.emergency_id     = None
+        self._last_phase      = ""
+        self._last_v2i_rec    = {}
+        if has_semaphore:
+            self._update_lights_from_phase(_phase_at(0))
+        else:
+            for d in ("N", "S", "E", "V"):
+                self.lights[d] = "green"
+            self.light = "green"
 
     def _update_lights_from_phase(self, phase: str):
         for d in ("N", "S", "E", "V"):
@@ -79,6 +95,31 @@ class InfrastructureAgent:
             k: v for k, v in _bus.get_all().items()
             if k != "INFRA" and isinstance(v, dict) and "x" in v
         }
+
+        # ── Fara semafor: toate directiile verzi, fara ciclu ─────────────
+        if not self.has_semaphore:
+            for d in ("N", "S", "E", "V"):
+                self.lights[d] = "green"
+            self.light = "green"
+            state = {
+                "light":             "green",
+                "lights":            {d: "green" for d in ("N", "S", "E", "V")},
+                "has_semaphore":     False,
+                "emergency":         False,
+                "emergency_vehicle": None,
+                "approaching":       self._detect_approaching(vehicles),
+                "speed_recommendations": {},
+                "green_for":         list("NSEV"),
+                "red_for":           [],
+            }
+            _bus.publish("INFRA", {
+                "id": "INFRA", **state,
+                "x": self.intersection_x, "y": self.intersection_y,
+                "vx": 0, "vy": 0, "state": "normal",
+                "priority": "infrastructure", "timestamp": _time.time(),
+            })
+            return state
+
         emergency = self._detect_emergency(vehicles)
         if emergency:
             emerg_dir = emergency.get("direction", "N")

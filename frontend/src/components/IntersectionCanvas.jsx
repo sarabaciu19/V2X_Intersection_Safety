@@ -45,6 +45,7 @@ const IntersectionCanvas = ({
   agentsMemory = {},
   cooperation = true,
   onGrantClearance = null,
+  scenario = 'perpendicular',
   dimensions = { width: 800, height: 800 },
 }) => {
   const canvasRef = useRef(null);
@@ -81,7 +82,7 @@ const IntersectionCanvas = ({
 
     ctx.clearRect(0, 0, W, H);
 
-    // 1. Fundal (iarba/trotuar)
+    // 1. Fundal
     ctx.fillStyle = '#1a2e1a';
     ctx.fillRect(0, 0, W, H);
 
@@ -97,26 +98,33 @@ const IntersectionCanvas = ({
     // 5. Zona centrala a intersectiei
     drawIntersectionBox(ctx);
 
-    // 6. Semafor (indicator luminos)
-    drawSemaphore(ctx, semaphore);
+    // 5b. Cladire unghi mort — DOAR la scenariul perpendicular
+    if (scenario === 'perpendicular') {
+      drawBlindSpotBuilding(ctx);
+    }
+
+    // 6. Semafor — ASCUNS la perpendicular (intersectie fara semafor)
+    if (scenario !== 'perpendicular') {
+      drawSemaphore(ctx, semaphore);
+    }
 
     // 7. Vehicule
     vehicles.forEach(v => drawVehicle(ctx, v, !!onGrantClearance, now));
 
-    // 8. Decision Arrows (A franeaza din cauza lui B)
+    // 8. Decision Arrows
     drawDecisionArrows(ctx, vehicles, agentsMemory, now);
 
-    // 9. Risk zone (cerc + linie + label)
+    // 9. Risk zone
     if (risk && risk.risk && risk.pair) {
       drawRiskZone(ctx, risk, vehicles, now);
     }
 
-    // 10. Coliziuni (explosii animate)
+    // 10. Coliziuni
     if (collisions && collisions.length > 0) {
       drawCollisions(ctx, collisions, vehicles, now);
     }
 
-  }, [vehicles, semaphore, cooperation, risk, collisions, agentsMemory, onGrantClearance]);
+  }, [vehicles, semaphore, cooperation, risk, collisions, agentsMemory, onGrantClearance, scenario]);
 
   useEffect(() => {
     // Animate at 60fps for smooth pulsing and arrows
@@ -253,13 +261,100 @@ function drawStopLines(ctx) {
 }
 
 function drawIntersectionBox(ctx) {
-  // Zona centrala — culoare usor diferita
   ctx.fillStyle = '#4B5563';
   ctx.fillRect(CX - HALF, CY - HALF, ROAD_W, ROAD_W);
-  // Contur subtil
   ctx.strokeStyle = 'rgba(255,255,255,0.15)';
   ctx.lineWidth = 1;
   ctx.strokeRect(CX - HALF, CY - HALF, ROAD_W, ROAD_W);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Clădire colț stânga-sus — blochează vizibilitatea A↔B (unghi mort)
+// Ocupă colțul format de drumul N (vertical) și drumul V (orizontal)
+// ─────────────────────────────────────────────────────────────────────
+function drawBlindSpotBuilding(ctx) {
+  // Colțul stânga-sus: de la (0,0) până la marginea drumurilor
+  const bx = 0;
+  const by = 0;
+  const bw = CX - HALF;   // 350px — până la marginea drumului vertical
+  const bh = CY - HALF;   // 350px — până la marginea drumului orizontal
+
+  ctx.save();
+
+  // ── Corp principal (beton gri)
+  const grad = ctx.createLinearGradient(bx, by, bx + bw, by + bh);
+  grad.addColorStop(0, '#1E293B');
+  grad.addColorStop(1, '#0F172A');
+  ctx.fillStyle = grad;
+  ctx.fillRect(bx, by, bw, bh);
+
+  // ── Linii etaje orizontale
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let iy = 35; iy < bh; iy += 35) {
+    ctx.beginPath();
+    ctx.moveTo(bx, by + iy);
+    ctx.lineTo(bx + bw, by + iy);
+    ctx.stroke();
+  }
+  // ── Linii sectiuni verticale
+  for (let ix = 45; ix < bw; ix += 45) {
+    ctx.beginPath();
+    ctx.moveTo(bx + ix, by);
+    ctx.lineTo(bx + ix, by + bh);
+    ctx.stroke();
+  }
+
+  // ── Ferestre
+  const winW = 12, winH = 9, gapX = 20, gapY = 18;
+  for (let wy = 16; wy + winH < bh - 8; wy += gapY) {
+    for (let wx = 14; wx + winW < bw - 8; wx += gapX) {
+      const lit = ((wx * 3 + wy * 7) % 40) < 20;
+      ctx.fillStyle = lit ? 'rgba(147,197,253,0.18)' : 'rgba(30,41,59,0.7)';
+      ctx.fillRect(bx + wx, by + wy, winW, winH);
+    }
+  }
+
+  // ── Bordura spre intersectie (zidul gros)
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 5;
+  // Latura dreapta (spre drumul N)
+  ctx.beginPath();
+  ctx.moveTo(bx + bw, by);
+  ctx.lineTo(bx + bw, by + bh);
+  ctx.stroke();
+  // Latura jos (spre drumul V)
+  ctx.beginPath();
+  ctx.moveTo(bx, by + bh);
+  ctx.lineTo(bx + bw, by + bh);
+  ctx.stroke();
+
+  // ── Eticheta centrala
+  ctx.font = 'bold 14px Inter, sans-serif';
+  ctx.fillStyle = 'rgba(148,163,184,0.9)';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🏢 CLĂDIRE', bx + bw / 2, by + bh / 2 - 18);
+
+  ctx.font = '11px Inter, sans-serif';
+  ctx.fillStyle = 'rgba(239,68,68,0.85)';
+  ctx.fillText('⚠ Unghi mort', bx + bw / 2, by + bh / 2 + 2);
+
+  ctx.font = '10px Inter, sans-serif';
+  ctx.fillStyle = 'rgba(148,163,184,0.55)';
+  ctx.fillText('A nu vede B', bx + bw / 2, by + bh / 2 + 20);
+
+  // ── Linie de vedere blocata (diagonala rosie punctata)
+  ctx.setLineDash([7, 5]);
+  ctx.strokeStyle = 'rgba(239,68,68,0.35)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(bx + bw - 15, by + bh - 10);  // coltul spre intersectie
+  ctx.lineTo(bx + 15, by + 15);              // coltul opus
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.restore();
 }
 
 // Pozitiile semafoarelor per directie
@@ -300,11 +395,10 @@ function drawSemaphore(ctx, semaphore) {
     const activeIdx = { red: 0, yellow: 1, green: 2 }[activeLight] ?? 0;
 
     globColors.forEach((gc, i) => {
-      const lit = (i === activeIdx);
       ctx.beginPath();
       ctx.arc(pos.x, globY[i], 6, 0, Math.PI * 2);
-      ctx.fillStyle = lit ? gc : '#374151';
-      if (lit) {
+      ctx.fillStyle = (i === activeIdx) ? gc : '#374151';
+      if (i === activeIdx) {
         ctx.shadowColor = gc;
         ctx.shadowBlur = 10;
       }

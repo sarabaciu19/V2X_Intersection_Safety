@@ -79,13 +79,11 @@ def multiplier_to_kmh(mult: float) -> int:
 class Vehicle:
     def __init__(self, id: str, direction: str, intent: str = 'straight',
                  priority: str = 'normal', speed_multiplier: float = 1.0,
-                 v2x_enabled: bool = True, spawn_tick: int = 0):
+                 v2x_enabled: bool = True, spawn_tick: int = 0,
+                 no_stop: bool = False):
         """
-        direction:   'N' | 'S' | 'E' | 'V'  (de unde vine)
-        intent:      'straight' | 'left' | 'right'
-        priority:    'normal' | 'emergency'
-        v2x_enabled: True = vehicul cu V2X (respecta semafor/clearance)
-                     False = vehicul FARA V2X (ignora toate semnalele, poate cauza accidente)
+        no_stop: True = vehiculul NU se opreste la linia de stop (merge cu viteza constant).
+                 Folosit pentru vehicule cu viteza mare care au prioritate prin TTC.
         """
         self.id        = id
         self.direction = direction
@@ -93,6 +91,7 @@ class Vehicle:
         self.priority  = priority
         self.v2x_enabled = v2x_enabled
         self.spawn_tick = spawn_tick
+        self.no_stop   = no_stop
         self.state     = 'moving'   # moving | waiting | crossing | crashed | done
         sx, sy    = SPAWN[direction]
         vx0, vy0  = VELOCITY[direction]
@@ -295,8 +294,8 @@ class Vehicle:
                         factor = min(factor, f_inter)
                         break # Opreste cautarea, e deja ocupata intersecția
 
-        # Stop la linia de semafoare (numai daca nu are clearance)
-        if not self.clearance:
+        # Stop la linia de semafoare (numai daca nu are clearance si nu e no_stop)
+        if not self.clearance and not self.no_stop:
             dist_stop = self._dist_to_wait_line()
             if dist_stop <= 0:
                 return 0.0  # e deja la sau dupa linie — opreste
@@ -338,8 +337,8 @@ class Vehicle:
         if self.state == 'waiting' and self.clearance:
             self.state = 'crossing'
 
-        # Asteapta fara clearance → sta pe loc
-        if self.state == 'waiting':
+        # Asteapta fara clearance → sta pe loc (doar daca nu e no_stop)
+        if self.state == 'waiting' and not self.no_stop:
             self.vx = 0.0
             self.vy = 0.0
             return
@@ -356,12 +355,16 @@ class Vehicle:
             # Trebuie sa se opreasca
             self.vx = 0.0
             self.vy = 0.0
-            if self.state != 'crossing':
+            if self.state != 'crossing' and not self.no_stop:
                 # Daca e fix la linia de stop si n-are clearance → waiting
                 if not self.clearance and self._dist_to_wait_line() <= 1.0:
                     self.state = 'waiting'
                 else:
                     self.state = 'braking'
+            elif self.no_stop:
+                # Vehicul no_stop nu intra niciodata in waiting — ramane moving/crossing
+                if self.state not in ('crossing',):
+                    self.state = 'moving'
         else:
             self.vx = self._base_vx * factor
             self.vy = self._base_vy * factor
@@ -387,7 +390,7 @@ class Vehicle:
         self.wait_line = self._calc_wait_line()
         self._exit_dir = EXIT_DIRECTION.get((self.direction, self.intent), self.direction)
         self._turned   = False
-        # v2x_enabled ramane nemodificat la reset
+        # v2x_enabled, no_stop raman nemodificate la reset
 
     def to_dict(self) -> dict:
         import math as _math
@@ -399,6 +402,7 @@ class Vehicle:
             'intent':     self.intent,
             'priority':   self.priority,
             'v2x_enabled': self.v2x_enabled,
+            'no_stop':    self.no_stop,
             'state':      self.state,
             'clearance':  self.clearance,
             'x':          round(self.x, 1),

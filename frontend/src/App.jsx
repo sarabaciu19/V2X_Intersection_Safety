@@ -129,6 +129,7 @@ function App() {
             collisions={collisions}
             agentsMemory={agentsMemory}
             cooperation={liveCooperation}
+            scenario={currentScenario}
             onGrantClearance={!liveCooperation ? grantClearance : null}
             dimensions={{ width: 800, height: 800 }}
           />

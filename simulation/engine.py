@@ -16,9 +16,16 @@ FPS           = 30
 TICK_INTERVAL = 1.0 / FPS
 
 SCENARIOS = {
+    # ── Scenariu 1: Unghi mort — FĂRĂ SEMAFOR, prioritate prin viteză ────
+    # A (90 km/h, N→drept, no_stop) vs B (50 km/h, V→drept).
+    # B vine din DREAPTA lui A → prioritate legala prin regula dreptei.
+    # DAR V2X calculeaza TTC: A vine cu viteza mare → ajunge primul → B cedeaza.
+    # A nu se opreste deloc — trece prin intersectie fara a incetini.
+    # B primeste mesaj V2X: "cedeaza prioritate — vehicul rapid se apropie".
+    # Fara V2X: A nu vede B (cladire in colt) → coliziune garantata.
     'perpendicular': [
-        {'id': 'A', 'direction': 'N', 'intent': 'straight'},
-        {'id': 'B', 'direction': 'V', 'intent': 'straight'},
+        {'id': 'A', 'direction': 'N', 'intent': 'straight', 'speed_multiplier': 1.8, 'no_stop': True},
+        {'id': 'B', 'direction': 'V', 'intent': 'straight', 'speed_multiplier': 1.0},
     ],
     'multi': [
         {'id': 'A', 'direction': 'N', 'intent': 'straight'},
@@ -50,6 +57,9 @@ SCENARIOS = {
     ],
 }
 
+# Scenariile fara semafor — prioritatea se decide exclusiv prin TTC (viteza)
+NO_SEMAPHORE_SCENARIOS = {'perpendicular'}
+
 # Scenariul custom editabil de utilizator
 # NOTE: stocat ca atribut pe engine instance, nu ca global,
 # ca sa supravietuiasca uvicorn --reload
@@ -76,6 +86,7 @@ class SimulationEngine:
     # ── Configurare ────────────────────────────────────────────────────
 
     def _load_scenario(self, name: str):
+        has_semaphore = name not in NO_SEMAPHORE_SCENARIOS
         if name == 'custom':
             defs = list(self._custom_scenario)
         else:
@@ -105,6 +116,7 @@ class SimulationEngine:
                 priority=d.get('priority', 'normal'),
                 speed_multiplier=d.get('speed_multiplier', 1.0),
                 v2x_enabled=d.get('v2x_enabled', True),
+                no_stop=d.get('no_stop', False),
                 spawn_tick=count * 30 # Reduced from 80 to 30 (1s)
             )
             
@@ -123,6 +135,10 @@ class SimulationEngine:
         # Creeaza agenti autonomi per vehicul
         self.agents = [Agent(v, cooperation=self.cooperation) for v in self.vehicles]
         
+        # Configureaza semaforul si sistemul central in functie de scenariu
+        self.semaphore.reset(has_semaphore)
+        self.central.set_semaphore_state(has_semaphore)
+
         # Publica starea INITIALA pe bus (important daca e pauza)
         self.semaphore.update()
         for v in self.vehicles:

@@ -84,28 +84,30 @@ class Agent:
     def get_memory(self) -> list:
         return list(self.memory)
 
-    def _record(self, action: str, ttc: float, reason: str) -> None:
+    def _record(self, action: str, ttc: float, reason: str, target_id: str = None) -> None:
         import time as _t
-        self.memory.append({
+        entry = {
             "tick_time": _t.strftime("%H:%M:%S"),
             "action":    action,
             "ttc":       round(ttc, 3),
             "reason":    reason,
-        })
+        }
+        if target_id:
+            entry["target_id"] = target_id
+        self.memory.append(entry)
 
-    def _record_if_new(self, action: str, ttc: float, reason: str) -> None:
+    def _record_if_new(self, action: str, ttc: float, reason: str, target_id: str = None) -> None:
         """Inregistreaza in memorie doar daca starea s-a schimbat fata de ultima inregistrare."""
         key = f"{action}|{reason}"
         if key == self._last_state:
             return
         self._last_state = key
-        self._record(action, ttc, reason)
+        self._record(action, ttc, reason, target_id)
 
     def decide(self) -> str:
         v = self.vehicle
 
-        # Vehicul FARA V2X → nu poate negocia V2V, dar respecta semaforul si following-ul
-        # Singura diferenta: nu cedeaza trecerea altor vehicule la intersectie
+        # Vehicul FARA V2X
         if not v.v2x_enabled:
             if v.state == "waiting":
                 self._record_if_new("WAIT", 999, "⛔ fără V2X — așteaptă semafor (fără negociere V2V)")
@@ -124,7 +126,6 @@ class Agent:
         my_data = v.to_dict()
         my_ttc  = time_to_intersection(my_data)
 
-        # ── Inregistreaza starea curenta a vehiculului ──────────────────
         if v.state == "crashed":
             self._record_if_new("CRASH", 0, "💥 vehicul avariat — oprit")
             return "go"
@@ -137,6 +138,13 @@ class Agent:
             self._record_if_new("GO", my_ttc, "traverseaza — clearance primit")
             return "go"
 
+        # Vehicul no_stop: inregistreaza GO dar lasa central_system sa logheze CLEARANCE_SPEED
+        if getattr(v, 'no_stop', False):
+            self._record_if_new("GO", my_ttc,
+                                f"⚡ viteza mare ({v.speed_multiplier*50:.0f} km/h) — nu se opreste la intersectie")
+            self.last_action = "go"
+            return "go"
+
         if v.state == "waiting":
             if v.clearance:
                 self._record_if_new("GO", my_ttc, "clearance primit — porneste")
@@ -145,7 +153,7 @@ class Agent:
             self.last_action = "go" if v.clearance else "yield"
             return self.last_action
 
-        # ── Negociere V2V — vehicule in conflict la aceeasi intersectie ──
+        # ── Negociere V2V ──
         my_dist = v.dist_to_intersection()
         if my_dist >= APPROACH_DIST:
             self._record_if_new("GO", my_ttc, "in tranzit — departe de intersectie")
@@ -166,10 +174,8 @@ class Agent:
             other_dist = val.get("dist_to_intersection", 9999)
             if other_dist > APPROACH_DIST:
                 continue
-            # Exclude vehiculele de pe aceeasi banda (in fata sau in spate)
             if val.get("direction") == v.direction:
                 continue
-            # Conflict real (axe perpendiculare sau viraj stanga)
             if not _are_conflicting(v.direction, v.intent,
                                     val.get("direction", ""),
                                     val.get("intent", "straight")):
@@ -183,30 +189,49 @@ class Agent:
 
         action = self._evaluate(my_data, my_ttc, relevant)
         self.last_action = action
-        reason = f"conflict V2V cu [{','.join(relevant.keys())}]"
-        self._record_if_new(action.upper(), my_ttc, reason)
-        if action != "go":
-            logger.log_decision(v.id, action.upper(), my_ttc,
-                                f"conflict cu {list(relevant.keys())}")
         return action
 
     def _evaluate(self, my_data: dict, my_ttc: float, others: dict) -> str:
         v = self.vehicle
         for other_id, other_data in others.items():
             other_ttc = time_to_intersection(other_data)
-            # Celelalalt nu e aproape → ignora
             if other_ttc >= TTC_BRAKE * 2:
                 continue
             # Urgenta are prioritate absoluta
             if other_data.get("priority") == "emergency" and v.priority != "emergency":
+                self._record_if_new("YIELD", my_ttc,
+                                    f"vehicul de urgenta {other_id} — prioritate absoluta",
+                                    target_id=other_id)
                 return "yield"
             if v.priority == "emergency":
                 return "go"
-            # Regula dreptei
-            if is_right_of(my_data, other_data):
+            # Celalalt e no_stop (viteza mare, nu se opreste) → cedeaza intotdeauna
+            other_no_stop = other_data.get("no_stop", False)
+            if other_no_stop and other_ttc < my_ttc:
+                other_kmh = other_data.get("speed_multiplier", 1.0) * 50
+                my_kmh    = v.speed_multiplier * 50
+                self._record_if_new(
+                    "YIELD_SPEED_OVERRIDE", my_ttc,
+                    (f"⚠ {other_id} vine cu {other_kmh:.0f} km/h si NU se opreste. "
+                     f"EU ({v.id}) am prioritate legala (regula dreptei) "
+                     f"DAR V2X forteaza cedarea: risc coliziune fara V2X."),
+                    target_id=other_id,
+                )
                 return "yield"
-            # Daca celalalt ajunge mult mai repede → cedeaza
+            # Regula dreptei standard
+            if is_right_of(my_data, other_data):
+                self._record_if_new("YIELD", my_ttc,
+                                    f"{other_id} vine din dreapta — regula dreptei",
+                                    target_id=other_id)
+                return "yield"
+            # Celalalt ajunge mult mai repede
             if other_ttc < my_ttc - 0.5:
+                other_kmh = other_data.get("speed_multiplier", 1.0) * 50
+                self._record_if_new(
+                    "YIELD", my_ttc,
+                    f"{other_id} TTC={other_ttc:.1f}s ({other_kmh:.0f} km/h) — ajunge primul",
+                    target_id=other_id,
+                )
                 return "yield"
         return "go"
 
