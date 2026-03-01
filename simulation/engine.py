@@ -51,14 +51,21 @@ SCENARIOS = {
         {'id': 'E', 'direction': 'N', 'intent': 'right', 'speed_multiplier': 0.7},
         {'id': 'AMB', 'direction': 'S', 'intent': 'straight', 'priority': 'emergency', 'speed_multiplier': 1.4},
     ],
+    # ── Scenariu "Fără V2X": ambele masini cu aceeasi viteza, fara semafor ──
+    # A (50 km/h, N→drept, no_stop) si B (50 km/h, V→drept, no_stop, FARA V2X).
+    # spawn_offset_x=-50 pe B => distanta identica pana la punctul de intersectie
+    # → ajung simultan → coliziune garantata.
+    # B nu are V2X: nu primeste mesajul "cedeaza prioritate" trimis de sistemul V2X.
+    # Fara V2X + cladire in colt = B nu vede A, nu primeste semnal → ACCIDENT.
+    # In scenariul perpendicular (cu V2X): B ar fi cedat si coliziunea ar fi evitata.
     'no_v2x': [
-        {'id': 'A', 'direction': 'N', 'intent': 'straight'},
-        {'id': 'BLIND', 'direction': 'V', 'intent': 'straight', 'v2x_enabled': False, 'speed_multiplier': 1.2},
+        {'id': 'A', 'direction': 'N', 'intent': 'straight', 'speed_multiplier': 1.0, 'no_stop': True},
+        {'id': 'B', 'direction': 'V', 'intent': 'straight', 'speed_multiplier': 1.0, 'no_stop': True, 'v2x_enabled': False, 'spawn_x_offset': -50},
     ],
 }
 
 # Scenariile fara semafor — prioritatea se decide exclusiv prin TTC (viteza)
-NO_SEMAPHORE_SCENARIOS = {'perpendicular'}
+NO_SEMAPHORE_SCENARIOS = {'perpendicular', 'no_v2x'}
 
 # Scenariul custom editabil de utilizator
 # NOTE: stocat ca atribut pe engine instance, nu ca global,
@@ -125,7 +132,11 @@ class SimulationEngine:
             elif direction == 'S': v.y += count * 60
             elif direction == 'E': v.x += count * 60
             elif direction == 'V': v.x -= count * 60
-            
+
+            # Offset manual de pozitie (pentru sincronizare timpi de sosire)
+            v.x += d.get('spawn_x_offset', 0)
+            v.y += d.get('spawn_y_offset', 0)
+
             # Sincronizam _init pentru reset
             v._init = (v.x, v.y, v.vx, v.vy)
             

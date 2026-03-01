@@ -22,7 +22,7 @@ const EventLog = ({ agentsMemory = {} }) => {
   return (
     <div style={s.container}>
       <div style={s.header}>
-        <span style={s.title}>🧠 Memorie decizii agenți</span>
+        <span style={s.title}>Memorie decizii agenți</span>
         <span style={{ color: '#a08060', fontSize: 11 }}>live · ultimele 10 decizii per vehicul</span>
       </div>
       <div style={s.body}>
@@ -89,7 +89,6 @@ const EventLog = ({ agentsMemory = {} }) => {
     </div>
   );
 };
-
 
 
 const s = {
