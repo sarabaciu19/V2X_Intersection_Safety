@@ -4,6 +4,7 @@ import logging
 import time as _time
 from concurrent.futures import ThreadPoolExecutor, Future
 from typing import Optional
+from services.collision import TTC_BRAKE
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("llm_client")
@@ -85,56 +86,18 @@ def _repair_json(raw: str) -> str:
 
 # Prompt pentru decizia principala (GO/YIELD/BRAKE) — in engleza pt acuratete
 SINGLE_SYSTEM = (
-    'You are a V2X intersection safety agent. Decide what a vehicle should do.\n'
-    'Rules (in priority order):\n'
-    '  1. If any other vehicle has EMERGENCY priority → YIELD\n'
-    '  2. If another vehicle comes from the OPPOSITE direction on the SAME road\n'
-    '     (N<->S on vertical road, or E<->V on horizontal road) → NO PATH CONFLICT.\n'
-    '     Both vehicles use separate parallel lanes and can cross simultaneously → GO.\n'
-    '  3. If your TTC is significantly higher than a CONFLICTING vehicle (>0.3s diff) → YIELD\n'
-    '  4. If your TTC is lower than all conflicting vehicles → GO\n'
-    '  5. If no conflict → GO\n'
-    'Respond ONLY with JSON: {"action": "GO"|"YIELD"|"BRAKE", "reason": "short reason in Romanian (max 8 words)"}\n'
+    'You are an autonomous V2X intersection agent. You perceive the environment through V2X radio messages '
+    'from other vehicles and use your own memory of past decisions to make context-aware choices.\n'
+    'Your goal: safely cross the intersection without collision. You must reason autonomously — '
+    'do NOT blindly follow fixed rules. Consider speed, distance, priorities, and your recent behavior.\n\n'
+    'Guidelines (not strict rules — use judgment):\n'
+    '  - Emergency vehicles (ambulance, fire truck) should always be given priority\n'
+    '  - Vehicles arriving much sooner (lower TTC) generally have practical priority\n'
+    '  - Avoid oscillating: if you just yielded, do not immediately switch to GO unless situation changed\n'
+    '  - Vehicles on the same road going opposite directions use separate lanes — no conflict\n'
+    '  - If no conflict exists, GO\n\n'
+    'Respond ONLY with JSON: {"action": "GO"|"YIELD"|"BRAKE", "reason": "scurt motiv in romana (max 8 cuvinte)"}\n'
 )
-
-# Prompt pentru explicatie text (motiv in romana)
-REASON_PROMPT = (
-    'Esti un sistem V2X. Explica pe scurt IN ROMANA (max 8 cuvinte) decizia unui vehicul la intersectie.\n'
-    'Raspunde DOAR cu JSON: {"reason":"explicatie scurta in romana"}\n'
-)
-
-
-def _get_ai_reason(vid: str, action: str, my_ttc: float, others_summary: str) -> str:
-    """Foloseste Ollama DOAR pentru a genera o explicatie in romana."""
-    global _ollama_available
-    prompt = (
-        f'{REASON_PROMPT}'
-        f'Vehicul {vid} decide {action}. TTC={my_ttc:.1f}s. Conflicte: [{others_summary if others_summary else "niciunul"}].\n'
-        f'JSON:'
-    )
-    payload = {
-        "model":   MODEL_NAME,
-        "prompt":  prompt,
-        "stream":  False,
-        "format":  "json",
-        "options": {"temperature": 0.3, "num_predict": 40},
-    }
-    try:
-        response = requests.post(OLLAMA_URL, json=payload, timeout=6.0)
-        if response.status_code == 200:
-            raw      = response.json().get("response", "{}")
-            repaired = _repair_json(raw)
-            data     = json.loads(repaired)
-            reason   = data.get("reason", "").strip()
-            if reason and len(reason) > 3:
-                return reason
-    except requests.exceptions.ConnectionError:
-        _ollama_available = False
-    except requests.exceptions.Timeout:
-        _ollama_available = False
-    except Exception:
-        pass
-    return ""
 
 
 def _get_single_decision(v: dict) -> tuple:
@@ -147,29 +110,33 @@ def _get_single_decision(v: dict) -> tuple:
     vid     = v["id"]
     ms      = v.get("my_state", {})
     others  = v.get("others", [])
+    memory  = v.get("memory", [])
 
     others_summary = ", ".join(
-        f'{o["id"]}(ttc={o.get("ttc", 999):.1f}s, prio={o.get("priority","normal")})'
+        f'{o["id"]}(ttc={o.get("ttc", 999):.1f}s, prio={o.get("priority","normal")}, dir={o.get("direction","?")})'
         for o in others
     ) or "none"
 
-    has_emergency = any(o.get("priority") == "emergency" for o in others)
-    my_ttc        = ms.get("ttc", 999.0)
-    ttc_conflict  = any(o.get("ttc", 999) < my_ttc - 0.3 for o in others)
-
-    hint = ""
-    if has_emergency:
-        hint = "Emergency vehicle nearby — rule 1 applies.\n"
-    elif ttc_conflict:
-        hint = "Your TTC is higher — you should yield (rule 2).\n"
+    # Rezumat memorie recenta — ajuta LLM-ul sa nu oscileze intre decizii
+    memory_summary = ""
+    if memory:
+        mem_entries = memory[-3:]
+        memory_summary = "My last decisions: " + "; ".join(
+            f'{m.get("action","?")} ({m.get("reason","")[:25]})'
+            for m in mem_entries
+        ) + ".\n"
 
     prompt = (
         f"{SINGLE_SYSTEM}"
-        f"Vehicle {vid}: ttc={my_ttc:.1f}s, priority={ms.get('priority','normal')}, "
-        f"direction={ms.get('direction','?')}, speed={ms.get('speed',0):.1f}px/tick.\n"
-        f"Nearby: [{others_summary}].\n"
-        f"{hint}"
-        f"JSON:"
+        f"\nVehicle {vid}:\n"
+        f"  - TTC to intersection: {ms.get('ttc', 999):.1f}s\n"
+        f"  - Priority: {ms.get('priority', 'normal')}\n"
+        f"  - Direction: {ms.get('direction', '?')}, Intent: {ms.get('intent', 'straight')}\n"
+        f"  - Speed: {ms.get('speed_kmh', 0)} km/h\n"
+        f"  - Distance to intersection: {ms.get('dist_to_intersection', 999):.0f}px\n"
+        f"Conflicting vehicles nearby: [{others_summary}].\n"
+        f"{memory_summary}"
+        f"Decision (JSON only):"
     )
     payload = {
         "model":   MODEL_NAME,
@@ -282,17 +249,24 @@ def get_llm_decision(vehicle_id: str, context: dict) -> dict:
 def _deterministic_fallback(context: dict) -> dict:
     """
     Fallback determinist cand Ollama nu e disponibil.
-    Decide DOAR pe baza conflictelor V2V si urgentei — NU pe baza semaforului.
+    Replica logica din agent._evaluate() pentru consistenta.
     """
     my     = context.get("my_state", {})
     my_ttc = my.get("ttc", 999.0)
     others = context.get("others", [])
 
     if my.get("priority") == "emergency":
-        return {"action": "GO", "reason": "urgenta — prioritate absoluta"}
+        return {"action": "GO", "reason": "urgență — prioritate absolută"}
+
     for o in others:
+        other_ttc = o.get("ttc", 999.0)
+        if other_ttc >= TTC_BRAKE * 2:
+            continue
         if o.get("priority") == "emergency":
-            return {"action": "YIELD", "reason": f"urgenta {o.get('id')} are prioritate"}
-        if o.get("ttc", 999) < my_ttc - 0.5:
-            return {"action": "YIELD", "reason": f"conflict cu {o.get('id')}, TTC mai mic"}
-    return {"action": "GO", "reason": "drum liber"}
+            return {"action": "YIELD", "reason": f"urgență {o.get('id')} — prioritate absolută"}
+        if o.get("no_stop") and other_ttc < my_ttc:
+            return {"action": "YIELD", "reason": f"{o.get('id')} nu se oprește — cedează"}
+        if other_ttc < my_ttc - 0.5:
+            return {"action": "YIELD", "reason": f"TTC mai mic: {o.get('id')} ajunge primul"}
+
+    return {"action": "GO", "reason": "drum liber — niciun conflict"}

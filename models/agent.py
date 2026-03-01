@@ -1,15 +1,16 @@
 """
-models/agent.py — Logica de decizie V2V + V2I
-Filtrare stricta: deciziile sunt bazate DOAR pe vehicule care:
-  1. Se afla la aceeasi intersectie
-  2. Se apropie de intersectie (dist < APPROACH_DIST)
-  3. Sunt in conflict real (perpendiculare sau viraj stanga)
-  Nu se iau in calcul vehiculele din spate sau de pe alte drumuri.
+models/agent.py — Agent autonom V2X cu decizie LLM (Ollama)
+Fiecare agent:
+  - percepe mediul prin V2X Bus (mesaje de la celelalte vehicule)
+  - are memorie proprie (ultimele MEMORY_SIZE decizii)
+  - trimite context complet catre LLM (Ollama) pentru decizie
+  - fallback determinist cand Ollama nu e disponibil
 """
 import math
 from collections import deque
 from services import v2x_bus
 from services.collision import time_to_intersection, TTC_BRAKE, TTC_YIELD, is_right_of
+from services.llm_client import request_llm_decision
 from utils import logger
 
 BRAKE_FACTOR  = 0.85
@@ -187,7 +188,44 @@ class Agent:
             self._record_if_new("GO", my_ttc, "aproape de intersectie — niciun conflict V2V")
             return "go"
 
-        action = self._evaluate(my_data, my_ttc, relevant)
+        # ── Decizie LLM (Ollama) — motorul principal de decizie ──────────
+        # Agentul construieste contextul din perceptia V2X si memoria proprie,
+        # si il trimite catre LLM. Daca Ollama nu e disponibil, llm_client
+        # aplica automat fallback-ul determinist.
+        others_list = [
+            {
+                "id":        oid,
+                "ttc":       round(time_to_intersection(odata), 2),
+                "priority":  odata.get("priority", "normal"),
+                "direction": odata.get("direction", "?"),
+                "intent":    odata.get("intent", "straight"),
+                "speed_kmh": odata.get("speed_kmh", 0),
+                "no_stop":   odata.get("no_stop", False),
+            }
+            for oid, odata in relevant.items()
+        ]
+
+        context = {
+            "my_state": {
+                "ttc":                  round(my_ttc, 2),
+                "priority":             v.priority,
+                "direction":            v.direction,
+                "intent":               v.intent,
+                "speed_kmh":            my_data.get("speed_kmh", 0),
+                "dist_to_intersection": round(my_dist, 1),
+                "no_stop":              getattr(v, "no_stop", False),
+            },
+            "others": others_list,
+            "memory": list(self.memory)[-3:],  # ultimele 3 decizii ale agentului
+        }
+
+        llm_result = request_llm_decision(v.id, context)
+        action_raw = llm_result.get("action", "GO").upper()
+        reason     = llm_result.get("reason", "decizie agent")
+
+        # Mapeaza actiunea LLM la actiunea interna
+        action = "yield" if action_raw in ("YIELD", "BRAKE") else "go"
+        self._record_if_new(action_raw, my_ttc, reason)
         self.last_action = action
         return action
 

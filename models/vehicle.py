@@ -92,6 +92,7 @@ class Vehicle:
         self.v2x_enabled = v2x_enabled
         self.spawn_tick = spawn_tick
         self.no_stop   = no_stop
+        self.agent_yield = False   # setat de agentul LLM — opreste vehiculul inainte de intersectie
         self.state     = 'moving'   # moving | waiting | crossing | crashed | done
         sx, sy    = SPAWN[direction]
         vx0, vy0  = VELOCITY[direction]
@@ -244,6 +245,10 @@ class Vehicle:
         Vehiculele FARA V2X respecta semaforul si following-ul,
         dar nu primesc clearance de la sistemul central.
         """
+        # Decizia LLM: agentul a decis YIELD — opreste inainte de intersectie
+        if self.agent_yield and not self._is_inside_intersection():
+            return 0.0
+
         factor = 1.0
 
         # Following: cauta cel mai aproape vehicul din fata
@@ -403,6 +408,7 @@ class Vehicle:
         self._base_vy = self.vy
         self.state     = 'moving'
         self.clearance = False
+        self.agent_yield = False
         self.wait_line = self._calc_wait_line()
         self._exit_dir = EXIT_DIRECTION.get((self.direction, self.intent), self.direction)
         self._turned   = False

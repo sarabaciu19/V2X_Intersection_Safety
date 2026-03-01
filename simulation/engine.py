@@ -387,9 +387,19 @@ class SimulationEngine:
         if self.cooperation:
             self.central.decide(self.vehicles)
 
-        # Agenti autonomi
+        # Agenti autonomi — decizia LLM seteaza flag-ul agent_yield pe vehicul
+        # vehicle.update() il respecta in _desired_speed_factor() → factor=0 → oprire
         for agent in self.agents:
-            agent.decide()
+            action = agent.decide()
+            v = agent.vehicle
+            # Nu intervenim daca vehiculul e deja in waiting/crossing/crashed/done
+            if v.state in ("waiting", "crossing", "crashed", "done"):
+                v.agent_yield = False
+                continue
+            if action == "yield":
+                v.agent_yield = True
+            else:  # go
+                v.agent_yield = False
 
         # Updateaza pozitiile — pasam vehiculele pe aceeasi directie pentru following
         active = [v for v in self.vehicles if v.state != 'done']
