@@ -32,8 +32,12 @@ def _get_semaphore_lights() -> dict:
 
 class CentralSystem:
     def __init__(self):
-        self._decisions = []
-        self._crossing  = set()
+        self._decisions   = []
+        self._crossing    = set()
+        self._has_semaphore = True   # set by engine per scenario
+
+    def set_semaphore_state(self, has_semaphore: bool):
+        self._has_semaphore = has_semaphore
 
     def _paths_conflict(self, v1, v2) -> bool:
         """
@@ -53,84 +57,161 @@ class CentralSystem:
         """Acorda clearance respectand regulile de prioritate si semaforul."""
         lights = _get_semaphore_lights()
 
-        # Vehiculele fara V2X nu pot fi controlate — le excludem din decizii
-        # dar le logam ca pericol
-        for v in vehicles:
-            if not v.v2x_enabled and v.state not in ('done',):
-                # Marcam ca necontrolabil — nu primeste/asteapta clearance
-                pass
-
-        waiting  = [v for v in vehicles if v.state == 'waiting' and v.v2x_enabled]
+        waiting  = [v for v in vehicles if v.state == 'waiting']
         crossing = [v for v in vehicles if v.state == 'crossing']
-
         self._crossing = {v.id for v in crossing}
 
-        if not waiting:
-            return
-
-        urgency = [v for v in waiting if v.priority == 'emergency']
-        normal  = [v for v in waiting if v.priority != 'emergency']
+        # Urgenta — prioritate absoluta indiferent de semafor
+        urgency = [v for v in vehicles if v.priority == 'emergency' and v.state not in ('done',)]
+        normal  = [v for v in vehicles if v.priority != 'emergency' and v.state not in ('done',)]
 
         if urgency:
             for v in urgency:
                 if not v.clearance:
                     v.clearance = True
-                    self._log(v.id, 'CLEARANCE', reason='urgenta — prioritate absoluta (ignora semafor)')
+                    self._log(v.id, 'CLEARANCE', reason='urgenta — prioritate absoluta')
             for v in normal:
-                if v.clearance:
-                    v.clearance = False
+                v.clearance = False
             return
 
-        # Blocheaza vehiculele pe rosu (retrage clearance daca a schimbat)
-        for v in normal:
+        # ── Fara semafor: prioritate exclusiv prin TTC ─────────────
+        if not self._has_semaphore:
+            # Evalueaza toate vehiculele active (moving + braking + waiting)
+            # Nu doar pe cele in waiting — asa cel mai rapid primeste clearance devreme
+            active = [v for v in normal if v.state not in ('crossing', 'done')]
+            self._decide_by_ttc(active, crossing)
+            return
+
+        # ── Cu semafor: logica normala (doar waiting) ───────────────
+        if not waiting:
+            return
+        normal_waiting = [v for v in waiting if v.priority != 'emergency']
+        lights = _get_semaphore_lights()
+        for v in normal_waiting:
             light = lights.get(v.direction, 'green')
             if light == 'red':
                 if v.clearance:
                     v.clearance = False
                     self._log(v.id, 'STOP', reason=f'semafor rosu pentru directia {v.direction}')
             elif light == 'yellow':
-                # Pe galben: daca nu a primit deja clearance, nu i-l dam
                 if not v.clearance:
                     self._log(v.id, 'HOLD', reason=f'semafor galben pentru directia {v.direction}')
 
-        # Vehicule eligibile = verde
-        eligible = [
-            v for v in normal
-            if lights.get(v.direction, 'green') == 'green'
-        ]
-
+        eligible = [v for v in normal_waiting if lights.get(v.direction, 'green') == 'green']
         if not eligible:
             return
 
-        # Filtreaza vehiculele blocate de cei care traverseaza deja:
-        # un vehicul poate merge daca NU are conflict de traiectorie cu niciunul din cei care traverseaza.
-        can_go = [
-            v for v in eligible
-            if not any(self._paths_conflict(v, c) for c in crossing)
-        ]
-
+        can_go = [v for v in eligible if not any(self._paths_conflict(v, c) for c in crossing)]
         if not can_go:
             return
 
-        # Alege castigatorul principal pe baza regulilor de prioritate
         winner = self._pick_winner(can_go)
         if winner and not winner.clearance:
             winner.clearance = True
-            light_reason = f'semafor verde ({winner.direction})'
-            self._log(winner.id, 'CLEARANCE', reason=f'prioritate acordata, {light_reason}')
+            self._log(winner.id, 'CLEARANCE',
+                      reason=f'prioritate acordata, semafor verde ({winner.direction})')
 
-        # Acorda clearance si celorlalte vehicule care nu au conflict cu nimeni
-        # (nici cu cei care traverseaza, nici cu cei care tocmai au primit clearance)
         for v in can_go:
             if v.clearance:
                 continue
-            already_going = [c for c in crossing] + [w for w in can_go if w.clearance]
+            already_going = crossing + [w for w in can_go if w.clearance]
             if not any(self._paths_conflict(v, g) for g in already_going):
                 v.clearance = True
-                self._log(
-                    v.id, 'CLEARANCE',
-                    reason=f'semafor verde ({v.direction}), benzi paralele — traversare simultana permisa'
-                )
+                self._log(v.id, 'CLEARANCE',
+                          reason=f'semafor verde ({v.direction}), benzi paralele')
+
+    def _decide_by_ttc(self, waiting, crossing):
+        """
+        Fara semafor — prioritate prin TTC (viteza).
+        Vehiculul care ajunge primul (TTC minim) primeste clearance.
+        Ceilalti in conflict cu el cedeaza.
+        Daca vehiculul care cedeaza ar fi avut prioritate legala (regula dreptei),
+        se logheaza explicit ca prioritatea a fost INCALCATA prin viteza.
+        """
+        import math
+
+        def get_ttc(v):
+            dx = 400 - v.x
+            dy = 400 - v.y
+            dist = math.sqrt(dx*dx + dy*dy)
+            spd = math.sqrt(v._base_vx**2 + v._base_vy**2)
+            return dist / spd if spd > 0.1 else 999.0
+
+        def get_kmh(v):
+            spd = math.sqrt(v._base_vx**2 + v._base_vy**2)
+            # 3 px/tick = 50 km/h (baza)
+            return round(spd / 3.0 * 50, 0)
+
+        def has_right_of_way_over(v_yield, v_winner) -> bool:
+            """True daca v_yield ar trebui sa aiba prioritate legala (vine din dreapta lui v_winner)."""
+            right_dir = RIGHT_OF.get(v_winner.direction)
+            return v_yield.direction == right_dir
+
+        # Sorteaza dupa TTC (cel mai mic = ajunge primul)
+        by_ttc = sorted(waiting, key=get_ttc)
+
+        can_go = []
+        for v in by_ttc:
+            in_conflict = any(self._paths_conflict(v, g) for g in (crossing + can_go))
+            if not in_conflict:
+                can_go.append(v)
+
+        for v in waiting:
+            if v in can_go:
+                if not v.clearance:
+                    v.clearance = True
+                    ttc = round(get_ttc(v), 2)
+                    kmh = get_kmh(v)
+                    # Verifica daca exista un vehicul care cedeaza dar ar fi trebuit sa aiba prioritate
+                    yielders_with_priority = [
+                        w for w in waiting
+                        if w not in can_go and has_right_of_way_over(w, v)
+                        and self._paths_conflict(v, w)
+                    ]
+                    if yielders_with_priority:
+                        yielder_ids = ', '.join(w.id for w in yielders_with_priority)
+                        self._log(v.id, 'CLEARANCE_SPEED',
+                                  reason=(
+                                      f'⚡ V2X: TTC={ttc}s, {kmh:.0f} km/h — prioritate acordata prin VITEZA. '
+                                      f'ATENTIE: {yielder_ids} avea prioritate legala (regula dreptei) '
+                                      f'dar a cedat din cauza vitezei mari a lui {v.id}. '
+                                      f'Fara V2X → coliziune garantata.'
+                                  ))
+                    else:
+                        self._log(v.id, 'CLEARANCE',
+                                  reason=f'V2V: TTC={ttc}s, {kmh:.0f} km/h — ajunge primul, trece')
+            else:
+                had_clearance = v.clearance
+                v.clearance = False
+                winner = can_go[0] if can_go else (crossing[0] if crossing else None)
+                if had_clearance or not getattr(v, '_yielded_logged', False):
+                    ttc = round(get_ttc(v), 2)
+                    kmh = get_kmh(v)
+                    if winner:
+                        w_ttc = round(get_ttc(winner), 2) if winner in waiting else 0
+                        w_kmh = get_kmh(winner)
+                        # Verifica daca acest vehicul ar fi trebuit sa aiba prioritate legala
+                        had_legal_priority = has_right_of_way_over(v, winner)
+                        if had_legal_priority:
+                            self._log(v.id, 'YIELD_SPEED_OVERRIDE',
+                                      reason=(
+                                          f'⚠ V2X: {v.id} are prioritate legala (vine din dreapta lui {winner.id}), '
+                                          f'DAR {winner.id} vine cu {w_kmh:.0f} km/h (TTC={w_ttc}s) vs '
+                                          f'{v.id} cu {kmh:.0f} km/h (TTC={ttc}s). '
+                                          f'Sistemul V2X forteaza cedarea prioritatii — '
+                                          f'regula dreptei INCALCATA prin viteza excesiva.'
+                                      ))
+                        else:
+                            self._log(v.id, 'YIELD',
+                                      reason=(
+                                          f'V2V: TTC={ttc}s ({kmh:.0f} km/h) > '
+                                          f'{winner.id} TTC={w_ttc}s ({w_kmh:.0f} km/h) — cedeaza'
+                                      ))
+                    else:
+                        self._log(v.id, 'YIELD', reason=f'V2V: TTC={ttc}s — cedeaza')
+                    v._yielded_logged = True
+            if v.clearance:
+                v._yielded_logged = False
 
     def _pick_winner(self, waiting):
         if not waiting:
