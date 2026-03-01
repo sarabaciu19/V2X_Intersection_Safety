@@ -20,12 +20,12 @@ from pathlib import Path
 SCENARIOS: dict = {}
 NO_SEMAPHORE_SCENARIOS: set = set()
 SCENARIO_DESCRIPTIONS: dict = {}
+AEB_DISABLED_SCENARIOS: set = set()
 
 _package_dir = Path(__file__).parent
 
 for _module_info in pkgutil.iter_modules([str(_package_dir)]):
     _name = _module_info.name
-    # Skip internal/utility modules
     if _name.startswith('_') or _name in ('scenario_base',):
         continue
     try:
@@ -35,6 +35,8 @@ for _module_info in pkgutil.iter_modules([str(_package_dir)]):
             SCENARIO_DESCRIPTIONS[_mod.NAME] = getattr(_mod, 'DESCRIPTION', '')
             if getattr(_mod, 'NO_SEMAPHORE', False):
                 NO_SEMAPHORE_SCENARIOS.add(_mod.NAME)
+            if getattr(_mod, 'AEB_DISABLED', False):
+                AEB_DISABLED_SCENARIOS.add(_mod.NAME)
     except Exception as e:
         import warnings
         warnings.warn(f'Could not load scenario module "{_name}": {e}')
